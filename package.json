@@ -1,0 +1,38 @@
+{
+  "name": "seguimiento-proyectos",
+  "version": "1.0.0",
+  "description": "Sistema de seguimiento de mantenimiento y proyectos",
+  "main": "src/app.js",
+  "engines": {
+    "node": ">=18.x"
+  },
+  "scripts": {
+    "dev": "nodemon src/app.js",
+    "start": "node src/app.js",
+    "build": "echo 'Build completado'",
+    "vercel-build": "echo 'Vercel build completado'"
+  },
+  "keywords": [
+    "seguimiento",
+    "proyectos",
+    "mantenimiento",
+    "redmine",
+    "express",
+    "vercel"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "connect-pg-simple": "^9.0.1",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.21.2",
+    "express-session": "^1.17.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+

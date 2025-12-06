@@ -1,0 +1,262 @@
+<%- include('../layouts/main', { 
+    title: 'Seguimiento de Proyectos',
+    productos: productos,
+    productoActual: productoActual,
+    tipoActual: tipoActual
+}) %>
+
+<% body %>
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <h1 class="page-title">Seguimiento - <%= productoActual %></h1>
+        </div>
+        <div class="toolbar-right">
+            <button class="btn btn-primary" onclick="sincronizar()" id="btnSincronizar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+                <span>Actualizar desde Redmine</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a 
+            href="/?producto=<%= encodeURIComponent(productoActual) %>&tipo=mantenimiento" 
+            class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>"
+        >
+            Mantenimiento
+        </a>
+        <a 
+            href="/?producto=<%= encodeURIComponent(productoActual) %>&tipo=externos" 
+            class="tab <%= tipoActual === 'externos' ? 'active' : '' %>"
+        >
+            Proyectos Externos
+        </a>
+        <a 
+            href="/?producto=<%= encodeURIComponent(productoActual) %>&tipo=internos" 
+            class="tab <%= tipoActual === 'internos' ? 'active' : '' %>"
+        >
+            Proyectos Internos
+        </a>
+    </div>
+
+    <div id="contenido" class="table-container">
+        <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text">Cargando datos...</div>
+        </div>
+    </div>
+<% /body %>
+
+<script>
+    const productoActual = '<%= productoActual %>';
+    const tipoActual = '<%= tipoActual %>';
+
+    // Cargar datos al iniciar
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarDatos();
+    });
+
+    async function cargarDatos() {
+        const contenido = document.getElementById('contenido');
+        contenido.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="empty-state-text">Cargando datos...</div></div>';
+
+        try {
+            let endpoint = '';
+            if (tipoActual === 'mantenimiento') {
+                endpoint = `/api/mantenimiento?producto=${encodeURIComponent(productoActual)}`;
+            } else if (tipoActual === 'externos') {
+                endpoint = `/api/proyectos-externos?producto=${encodeURIComponent(productoActual)}`;
+            } else if (tipoActual === 'internos') {
+                endpoint = `/api/proyectos-internos?producto=${encodeURIComponent(productoActual)}`;
+            }
+
+            const response = await fetch(endpoint);
+            const result = await response.json();
+
+            if (result.success && result.data.length > 0) {
+                renderizarTabla(result.data);
+            } else {
+                contenido.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">No hay datos disponibles</div>
+                        <div class="empty-state-subtext">Haz clic en "Actualizar desde Redmine" para sincronizar</div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error al cargar datos:', error);
+            contenido.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">❌</div>
+                    <div class="empty-state-text">Error al cargar datos</div>
+                    <div class="empty-state-subtext">${error.message}</div>
+                </div>
+            `;
+        }
+    }
+
+    function renderizarTabla(datos) {
+        const contenido = document.getElementById('contenido');
+        
+        if (tipoActual === 'mantenimiento') {
+            contenido.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Línea de Servicio</th>
+                            <th>Equipo</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Proyecto</th>
+                            <th>Estado</th>
+                            <th>Demanda</th>
+                            <th>Estabilidad</th>
+                            <th>Satisfacción</th>
+                            <th>WIN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${datos.map(item => `
+                            <tr>
+                                <td>${item.linea_servicio || '-'}</td>
+                                <td>${item.equipo || '-'}</td>
+                                <td>${item.cliente || '-'}</td>
+                                <td>${item.producto || '-'}</td>
+                                <td>${item.nombre_proyecto || '-'}</td>
+                                <td><input type="text" class="input" value="${item.estado || ''}" onchange="actualizarMantenimiento(${item.id_proyecto}, 'estado', this.value)" style="width: 100px;"></td>
+                                <td><textarea class="input" onchange="actualizarMantenimiento(${item.id_proyecto}, 'demanda', this.value)" style="min-height: 40px;">${item.demanda || ''}</textarea></td>
+                                <td><input type="text" class="input" value="${item.estabilidad || ''}" onchange="actualizarMantenimiento(${item.id_proyecto}, 'estabilidad', this.value)" style="width: 100px;"></td>
+                                <td><input type="text" class="input" value="${item.satisfaccion || ''}" onchange="actualizarMantenimiento(${item.id_proyecto}, 'satisfaccion', this.value)" style="width: 100px;"></td>
+                                <td><textarea class="input" onchange="actualizarMantenimiento(${item.id_proyecto}, 'win', this.value)" style="min-height: 40px;">${item.win || ''}</textarea></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            contenido.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Línea de Servicio</th>
+                            <th>Proyecto</th>
+                            <th>Equipo</th>
+                            <th>Estado</th>
+                            <th>Overall</th>
+                            <th>Alcance</th>
+                            <th>Costo</th>
+                            <th>Plazos</th>
+                            <th>Avance</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>WIN</th>
+                            <th>Riesgos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${datos.map(item => `
+                            <tr>
+                                <td>${item.linea_servicio || '-'}</td>
+                                <td>${item.nombre_proyecto || '-'}</td>
+                                <td>${item.equipo || '-'}</td>
+                                <td><input type="text" class="input" value="${item.estado || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'estado', this.value)" style="width: 100px;"></td>
+                                <td><input type="text" class="input" value="${item.overall || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'overall', this.value)" style="width: 100px;"></td>
+                                <td><textarea class="input" onchange="actualizarProyecto(${item.id_proyecto}, 'alcance', this.value)" style="min-height: 40px;">${item.alcance || ''}</textarea></td>
+                                <td><input type="number" class="input" value="${item.costo || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'costo', this.value)" style="width: 120px;"></td>
+                                <td><input type="text" class="input" value="${item.plazos || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'plazos', this.value)" style="width: 100px;"></td>
+                                <td><input type="text" class="input" value="${item.avance || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'avance', this.value)" style="width: 100px;"></td>
+                                <td><input type="date" class="input" value="${item.fecha_inicio || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'fecha_inicio', this.value)" style="width: 150px;"></td>
+                                <td><input type="date" class="input" value="${item.fecha_fin || ''}" onchange="actualizarProyecto(${item.id_proyecto}, 'fecha_fin', this.value)" style="width: 150px;"></td>
+                                <td><textarea class="input" onchange="actualizarProyecto(${item.id_proyecto}, 'win', this.value)" style="min-height: 40px;">${item.win || ''}</textarea></td>
+                                <td><textarea class="input" onchange="actualizarProyecto(${item.id_proyecto}, 'riesgos', this.value)" style="min-height: 40px;">${item.riesgos || ''}</textarea></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+    }
+
+    async function actualizarMantenimiento(id_proyecto, campo, valor) {
+        try {
+            const datos = { [campo]: valor };
+            const response = await fetch(`/api/mantenimiento/${id_proyecto}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            const result = await response.json();
+            if (result.success) {
+                console.log('Actualizado correctamente');
+            }
+        } catch (error) {
+            console.error('Error al actualizar:', error);
+            alert('Error al actualizar: ' + error.message);
+        }
+    }
+
+    async function actualizarProyecto(id_proyecto, campo, valor) {
+        try {
+            const endpoint = tipoActual === 'externos' 
+                ? `/api/proyectos-externos/${id_proyecto}`
+                : `/api/proyectos-internos/${id_proyecto}`;
+            
+            const datos = { [campo]: valor };
+            const response = await fetch(endpoint, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            const result = await response.json();
+            if (result.success) {
+                console.log('Actualizado correctamente');
+            }
+        } catch (error) {
+            console.error('Error al actualizar:', error);
+            alert('Error al actualizar: ' + error.message);
+        }
+    }
+
+    async function sincronizar() {
+        const btnSincronizar = document.getElementById('btnSincronizar');
+        const textoOriginal = btnSincronizar.innerHTML;
+        btnSincronizar.disabled = true;
+        btnSincronizar.innerHTML = '<div class="spinner"></div> <span>Sincronizando...</span>';
+
+        try {
+            let endpoint = '';
+            if (tipoActual === 'mantenimiento') {
+                endpoint = '/api/sincronizar/mantenimiento';
+            } else if (tipoActual === 'externos') {
+                endpoint = '/api/sincronizar/proyectos-externos';
+            } else if (tipoActual === 'internos') {
+                endpoint = '/api/sincronizar/proyectos-internos';
+            }
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ producto: productoActual })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Sincronización completada exitosamente');
+                cargarDatos();
+            } else {
+                alert('Error en la sincronización: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error al sincronizar:', error);
+            alert('Error al sincronizar: ' + error.message);
+        } finally {
+            btnSincronizar.disabled = false;
+            btnSincronizar.innerHTML = textoOriginal;
+        }
+    }
+</script>
+

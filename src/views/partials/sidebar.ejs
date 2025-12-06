@@ -1,0 +1,33 @@
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <span class="sidebar-title">Productos</span>
+    </div>
+    <nav class="sidebar-nav">
+        <% productos.forEach(producto => { %>
+            <div class="producto-section">
+                <div class="producto-header"><%= producto %></div>
+                <div class="producto-submenu">
+                    <a 
+                        href="/?producto=<%= encodeURIComponent(producto) %>&tipo=mantenimiento" 
+                        class="producto-submenu-item <%= productoActual === producto && tipoActual === 'mantenimiento' ? 'active' : '' %>"
+                    >
+                        Mantenimiento
+                    </a>
+                    <a 
+                        href="/?producto=<%= encodeURIComponent(producto) %>&tipo=externos" 
+                        class="producto-submenu-item <%= productoActual === producto && tipoActual === 'externos' ? 'active' : '' %>"
+                    >
+                        Proyectos Externos
+                    </a>
+                    <a 
+                        href="/?producto=<%= encodeURIComponent(producto) %>&tipo=internos" 
+                        class="producto-submenu-item <%= productoActual === producto && tipoActual === 'internos' ? 'active' : '' %>"
+                    >
+                        Proyectos Internos
+                    </a>
+                </div>
+            </div>
+        <% }); %>
+    </nav>
+</aside>
+
