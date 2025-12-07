@@ -104,3 +104,4 @@ El sistema utiliza las siguientes tablas principales:
 Cada par de tablas se une mediante vistas para mostrar la información completa.
 
 
+

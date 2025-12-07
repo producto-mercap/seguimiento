@@ -16,11 +16,24 @@ async function index(req, res) {
         // Obtener productos con equipos
         const productosEquipos = await ProductosEquiposModel.obtenerTodos();
         
+        // Obtener nombre del equipo actual si existe
+        let equipoNombre = null;
+        if (equipo) {
+            for (const item of productosEquipos) {
+                const equipoEncontrado = item.equipos?.find(e => e.id_equipo_redmine === equipo);
+                if (equipoEncontrado) {
+                    equipoNombre = equipoEncontrado.equipo;
+                    break;
+                }
+            }
+        }
+        
         res.render('pages/index', {
             title: 'Seguimiento de Proyectos',
             productosEquipos: productosEquipos,
             productoActual: producto,
             equipoActual: equipo,
+            equipoNombre: equipoNombre,
             tipoActual: tipo,
             activeMenu: 'seguimiento',
             isAdmin: req.isAdmin || false

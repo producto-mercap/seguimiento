@@ -81,12 +81,24 @@ function mapearProyecto(proyecto) {
 /**
  * Normalizar nombre de producto para Redmine
  * @param {string} producto - Nombre del producto
- * @returns {string} - Nombre normalizado para Redmine
+ * @returns {Promise<string>} - Nombre normalizado para Redmine (desde BD o mapeo por defecto)
  */
-function normalizarProductoParaRedmine(producto) {
+async function normalizarProductoParaRedmine(producto) {
+    // Intentar obtener desde BD primero
+    try {
+        const ProductosEquiposModel = require('../models/ProductosEquiposModel');
+        const productoRedmine = await ProductosEquiposModel.obtenerProductoRedmine(producto);
+        if (productoRedmine) {
+            return productoRedmine;
+        }
+    } catch (error) {
+        console.warn('⚠️ No se pudo obtener producto_redmine desde BD, usando mapeo por defecto:', error.message);
+    }
+    
+    // Mapeo por defecto (fallback)
     const mapeo = {
-        'Order Management': 'OMS',
-        'Portfolio': 'portfolio',
+        'Order Management': 'Order Management',
+        'Portfolio': 'mp',
         'Portfolio Cloud': 'portfolio cloud',
         'Trading Room': 'Trading Room',
         'Abbaco': 'Abbaco',
@@ -120,7 +132,7 @@ async function obtenerProyectos(options = {}) {
     
     // Agregar filtros por custom fields si se especifican
     if (options.producto) {
-        const productoNormalizado = normalizarProductoParaRedmine(options.producto);
+        const productoNormalizado = await normalizarProductoParaRedmine(options.producto);
         params.set('cf_19', productoNormalizado);
     }
     if (options.equipo) {

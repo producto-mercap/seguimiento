@@ -44,6 +44,7 @@
                                 <th>Producto</th>
                                 <th>Equipo</th>
                                 <th>ID Equipo Redmine</th>
+                                <th>Producto Redmine</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -69,21 +70,26 @@
                     
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 500;">Producto</label>
-                        <select id="formProducto" name="producto" class="input" required>
+                        <select id="formProducto" name="producto" class="input" required onchange="manejarCambioProducto(this)">
                             <option value="">Seleccionar...</option>
-                            <option value="Abbaco">Abbaco</option>
-                            <option value="Unitrade">Unitrade</option>
-                            <option value="Order Management">Order Management</option>
-                            <option value="Portfolio">Portfolio</option>
-                            <option value="Portfolio Cloud">Portfolio Cloud</option>
-                            <option value="Pepper">Pepper</option>
-                            <option value="Trading Room">Trading Room</option>
+                            <option value="nuevo-producto">➕ Agregar nuevo producto...</option>
                         </select>
+                        <input type="text" id="formProductoNuevo" name="producto_nuevo" class="input" placeholder="Nombre del nuevo producto" style="display: none; margin-top: 8px;">
                     </div>
                     
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 500;">Equipo</label>
-                        <input type="text" id="formEquipo" name="equipo" class="input" required>
+                        <select id="formEquipo" name="equipo" class="input" required onchange="manejarCambioEquipo(this)">
+                            <option value="">Seleccionar...</option>
+                            <option value="nuevo-equipo">➕ Agregar nuevo equipo...</option>
+                        </select>
+                        <input type="text" id="formEquipoNuevo" name="equipo_nuevo" class="input" placeholder="Nombre del nuevo equipo" style="display: none; margin-top: 8px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Producto Redmine (cf_19)</label>
+                        <input type="text" id="formProductoRedmine" name="producto_redmine" class="input" placeholder="Nombre del producto en Redmine (ej: mp, Order Management)">
+                        <small style="color: var(--text-secondary); font-size: 12px;">Nombre del producto tal como se usa en Redmine (campo cf_19). Si está vacío, se usará el nombre del producto.</small>
                     </div>
                     
                     <div style="margin-bottom: 16px;">
@@ -103,11 +109,77 @@
 
     <script>
         let productoEquipoEditando = null;
+        let productosDisponibles = [];
+        let equiposDisponibles = [];
 
         // Cargar datos al iniciar
         document.addEventListener('DOMContentLoaded', () => {
             cargarProductosEquipos();
+            cargarProductosYEquiposUnicos();
         });
+
+        async function cargarProductosYEquiposUnicos() {
+            try {
+                const response = await fetch('/api/admin/productos-equipos/unicos');
+                const result = await response.json();
+                
+                if (result.success) {
+                    productosDisponibles = result.data.productos || [];
+                    equiposDisponibles = result.data.equipos || [];
+                    actualizarSelects();
+                }
+            } catch (error) {
+                console.error('Error al cargar productos y equipos únicos:', error);
+            }
+        }
+
+        function actualizarSelects() {
+            const selectProducto = document.getElementById('formProducto');
+            const selectEquipo = document.getElementById('formEquipo');
+            
+            // Guardar valores actuales
+            const productoActual = selectProducto.value;
+            const equipoActual = selectEquipo.value;
+            
+            // Limpiar selects (mantener la opción "Seleccionar..." y "Agregar nuevo...")
+            const opcionesProducto = selectProducto.querySelectorAll('option');
+            opcionesProducto.forEach((opt, index) => {
+                if (index > 0 && opt.value !== 'nuevo-producto') {
+                    opt.remove();
+                }
+            });
+            
+            const opcionesEquipo = selectEquipo.querySelectorAll('option');
+            opcionesEquipo.forEach((opt, index) => {
+                if (index > 0 && opt.value !== 'nuevo-equipo') {
+                    opt.remove();
+                }
+            });
+            
+            // Agregar productos existentes
+            productosDisponibles.forEach(producto => {
+                const option = document.createElement('option');
+                option.value = producto;
+                option.textContent = producto;
+                selectProducto.insertBefore(option, selectProducto.querySelector('option[value="nuevo-producto"]'));
+            });
+            
+            // Agregar equipos existentes
+            equiposDisponibles.forEach(equipo => {
+                const option = document.createElement('option');
+                option.value = equipo;
+                option.textContent = equipo;
+                selectEquipo.insertBefore(option, selectEquipo.querySelector('option[value="nuevo-equipo"]'));
+            });
+            
+            // Restaurar valores si estaban seleccionados
+            if (productoActual) {
+                selectProducto.value = productoActual;
+            }
+            if (equipoActual) {
+                selectEquipo.value = equipoActual;
+            }
+        }
 
         async function cargarProductosEquipos() {
             try {
@@ -136,6 +208,7 @@
                         <td>${producto.producto}</td>
                         <td>${equipo.equipo}</td>
                         <td>${equipo.id_equipo_redmine}</td>
+                        <td>${producto.producto_redmine || producto.producto}</td>
                         <td>
                             <button class="btn" onclick="editarProductoEquipo(${equipo.id})" style="padding: 6px 12px; font-size: 13px;">Editar</button>
                             <button class="btn" onclick="eliminarProductoEquipo(${equipo.id})" style="padding: 6px 12px; font-size: 13px; background: #fce8e6; color: #d93025;">Eliminar</button>
@@ -151,7 +224,37 @@
             document.getElementById('modalTitulo').textContent = 'Agregar Producto/Equipo';
             document.getElementById('formProductoEquipo').reset();
             document.getElementById('formId').value = '';
+            document.getElementById('formProductoNuevo').style.display = 'none';
+            document.getElementById('formEquipoNuevo').style.display = 'none';
+            document.getElementById('formProductoRedmine').value = '';
+            actualizarSelects();
             document.getElementById('modalProductoEquipo').style.display = 'flex';
+        }
+
+        function manejarCambioProducto(select) {
+            const inputNuevo = document.getElementById('formProductoNuevo');
+            if (select.value === 'nuevo-producto') {
+                inputNuevo.style.display = 'block';
+                inputNuevo.required = true;
+                inputNuevo.value = '';
+            } else {
+                inputNuevo.style.display = 'none';
+                inputNuevo.required = false;
+                inputNuevo.value = '';
+            }
+        }
+
+        function manejarCambioEquipo(select) {
+            const inputNuevo = document.getElementById('formEquipoNuevo');
+            if (select.value === 'nuevo-equipo') {
+                inputNuevo.style.display = 'block';
+                inputNuevo.required = true;
+                inputNuevo.value = '';
+            } else {
+                inputNuevo.style.display = 'none';
+                inputNuevo.required = false;
+                inputNuevo.value = '';
+            }
         }
 
         function editarProductoEquipo(id) {
@@ -172,9 +275,26 @@
                             productoEquipoEditando = encontrado;
                             document.getElementById('modalTitulo').textContent = 'Editar Producto/Equipo';
                             document.getElementById('formId').value = encontrado.id;
-                            document.getElementById('formProducto').value = encontrado.producto;
-                            document.getElementById('formEquipo').value = encontrado.equipo;
-                            document.getElementById('formIdEquipoRedmine').value = encontrado.id_equipo_redmine;
+                            
+                            // Asegurar que los selects estén actualizados antes de establecer valores
+                            actualizarSelects();
+                            
+                            // Establecer valores después de actualizar selects
+                            setTimeout(() => {
+                                document.getElementById('formProducto').value = encontrado.producto;
+                                document.getElementById('formEquipo').value = encontrado.equipo;
+                                document.getElementById('formIdEquipoRedmine').value = encontrado.id_equipo_redmine;
+                                // Obtener producto_redmine del producto (no del equipo individual)
+                                const productoData = result.data.find(p => p.producto === encontrado.producto);
+                                if (productoData && productoData.producto_redmine) {
+                                    document.getElementById('formProductoRedmine').value = productoData.producto_redmine;
+                                } else {
+                                    document.getElementById('formProductoRedmine').value = '';
+                                }
+                                document.getElementById('formProductoNuevo').style.display = 'none';
+                                document.getElementById('formEquipoNuevo').style.display = 'none';
+                            }, 100);
+                            
                             document.getElementById('modalProductoEquipo').style.display = 'flex';
                         }
                     }
@@ -189,10 +309,30 @@
         async function guardarProductoEquipo(event) {
             event.preventDefault();
             
+            // Determinar producto (existente o nuevo)
+            const selectProducto = document.getElementById('formProducto');
+            const inputProductoNuevo = document.getElementById('formProductoNuevo');
+            const producto = selectProducto.value === 'nuevo-producto' 
+                ? inputProductoNuevo.value.trim() 
+                : selectProducto.value;
+            
+            // Determinar equipo (existente o nuevo)
+            const selectEquipo = document.getElementById('formEquipo');
+            const inputEquipoNuevo = document.getElementById('formEquipoNuevo');
+            const equipo = selectEquipo.value === 'nuevo-equipo' 
+                ? inputEquipoNuevo.value.trim() 
+                : selectEquipo.value;
+            
+            if (!producto || !equipo) {
+                alert('Por favor, completa todos los campos requeridos');
+                return;
+            }
+            
             const formData = {
-                producto: document.getElementById('formProducto').value,
-                equipo: document.getElementById('formEquipo').value,
-                id_equipo_redmine: document.getElementById('formIdEquipoRedmine').value
+                producto: producto,
+                equipo: equipo,
+                id_equipo_redmine: document.getElementById('formIdEquipoRedmine').value,
+                producto_redmine: document.getElementById('formProductoRedmine').value.trim() || null
             };
             
             const id = document.getElementById('formId').value;
@@ -221,6 +361,7 @@
                     alert('Guardado correctamente');
                     cerrarModal();
                     cargarProductosEquipos();
+                    cargarProductosYEquiposUnicos(); // Recargar listas para próximos usos
                 } else {
                     alert('Error: ' + result.error);
                 }
@@ -254,12 +395,33 @@
             }
         }
 
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('modalProductoEquipo').addEventListener('click', (e) => {
-            if (e.target.id === 'modalProductoEquipo') {
-                cerrarModal();
+        // Configurar eventos del modal después de que el DOM esté listo
+        function configurarEventosModal() {
+            const modal = document.getElementById('modalProductoEquipo');
+            const modalContent = modal?.querySelector('.modal-content');
+            
+            if (modal && modalContent) {
+                // Cerrar modal al hacer clic fuera (pero no dentro del contenido)
+                modal.addEventListener('click', (e) => {
+                    // Solo cerrar si se hace clic en el overlay (fondo), no en el contenido del modal
+                    if (e.target.id === 'modalProductoEquipo') {
+                        cerrarModal();
+                    }
+                });
+
+                // Prevenir que el clic dentro del modal-content cierre el modal
+                modalContent.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
             }
-        });
+        }
+
+        // Configurar eventos cuando el DOM esté listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', configurarEventosModal);
+        } else {
+            configurarEventosModal();
+        }
     </script>
 
     <style>
@@ -284,6 +446,8 @@
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1001;
         }
 
         .modal-header {
@@ -327,5 +491,6 @@
     <script src="/js/main.js"></script>
 </body>
 </html>
+
 
 

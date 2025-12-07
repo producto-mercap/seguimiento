@@ -8,3 +8,4 @@ router.get('/', seguimientoController.index);
 module.exports = router;
 
 
+

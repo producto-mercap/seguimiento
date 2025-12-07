@@ -42,11 +42,35 @@ async function obtenerProductosEquipos(req, res) {
 }
 
 /**
+ * Obtener productos y equipos únicos para los desplegables
+ */
+async function obtenerProductosYEquiposUnicos(req, res) {
+    try {
+        const productos = await ProductosEquiposModel.obtenerProductos();
+        const equipos = await ProductosEquiposModel.obtenerEquipos();
+        
+        res.json({
+            success: true,
+            data: {
+                productos,
+                equipos
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener productos y equipos únicos:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener productos y equipos únicos'
+        });
+    }
+}
+
+/**
  * Crear nuevo producto/equipo
  */
 async function crearProductoEquipo(req, res) {
     try {
-        const { producto, equipo, id_equipo_redmine } = req.body;
+        const { producto, equipo, id_equipo_redmine, producto_redmine } = req.body;
         
         if (!producto || !equipo || !id_equipo_redmine) {
             return res.status(400).json({
@@ -58,7 +82,8 @@ async function crearProductoEquipo(req, res) {
         const resultado = await ProductosEquiposModel.crear({
             producto,
             equipo,
-            id_equipo_redmine
+            id_equipo_redmine,
+            producto_redmine: producto_redmine || null
         });
         
         res.json({
@@ -80,12 +105,13 @@ async function crearProductoEquipo(req, res) {
 async function actualizarProductoEquipo(req, res) {
     try {
         const { id } = req.params;
-        const { producto, equipo, id_equipo_redmine } = req.body;
+        const { producto, equipo, id_equipo_redmine, producto_redmine } = req.body;
         
         const resultado = await ProductosEquiposModel.actualizar(id, {
             producto,
             equipo,
-            id_equipo_redmine
+            id_equipo_redmine,
+            producto_redmine: producto_redmine || null
         });
         
         if (!resultado) {
@@ -140,9 +166,11 @@ async function eliminarProductoEquipo(req, res) {
 module.exports = {
     index,
     obtenerProductosEquipos,
+    obtenerProductosYEquiposUnicos,
     crearProductoEquipo,
     actualizarProductoEquipo,
     eliminarProductoEquipo
 };
+
 
 

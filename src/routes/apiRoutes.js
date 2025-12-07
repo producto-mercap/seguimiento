@@ -51,6 +51,7 @@ router.post('/sincronizar/epics', requireAuthJWT, seguimientoController.sincroni
 
 // Rutas de administración (requieren admin)
 router.get('/admin/productos-equipos', requireAdmin, adminController.obtenerProductosEquipos);
+router.get('/admin/productos-equipos/unicos', requireAdmin, adminController.obtenerProductosYEquiposUnicos);
 router.post('/admin/productos-equipos', requireAdmin, adminController.crearProductoEquipo);
 router.put('/admin/productos-equipos/:id', requireAdmin, adminController.actualizarProductoEquipo);
 router.delete('/admin/productos-equipos/:id', requireAdmin, adminController.eliminarProductoEquipo);

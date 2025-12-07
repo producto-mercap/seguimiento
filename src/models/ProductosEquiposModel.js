@@ -10,6 +10,7 @@ class ProductosEquiposModel {
             const query = `
                 SELECT 
                     producto,
+                    MAX(producto_redmine) as producto_redmine,
                     array_agg(
                         json_build_object(
                             'id', id,
@@ -70,6 +71,25 @@ class ProductosEquiposModel {
     }
 
     /**
+     * Obtener todos los equipos únicos
+     * @returns {Promise<Array>} - Array de equipos
+     */
+    static async obtenerEquipos() {
+        try {
+            const query = `
+                SELECT DISTINCT equipo
+                FROM productos_equipos
+                ORDER BY equipo
+            `;
+            const result = await pool.query(query);
+            return result.rows.map(row => row.equipo);
+        } catch (error) {
+            console.error('Error al obtener equipos:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Agregar nuevo producto con equipo
      * @param {Object} datos - Datos del producto y equipo
      * @returns {Promise<Object>} - Producto creado
@@ -77,14 +97,15 @@ class ProductosEquiposModel {
     static async crear(datos) {
         try {
             const query = `
-                INSERT INTO productos_equipos (producto, equipo, id_equipo_redmine)
-                VALUES ($1, $2, $3)
+                INSERT INTO productos_equipos (producto, equipo, id_equipo_redmine, producto_redmine)
+                VALUES ($1, $2, $3, $4)
                 RETURNING *
             `;
             const result = await pool.query(query, [
                 datos.producto,
                 datos.equipo,
-                datos.id_equipo_redmine
+                datos.id_equipo_redmine,
+                datos.producto_redmine || null
             ]);
             return result.rows[0];
         } catch (error) {
@@ -106,14 +127,16 @@ class ProductosEquiposModel {
                 SET producto = $1,
                     equipo = $2,
                     id_equipo_redmine = $3,
+                    producto_redmine = $4,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE id = $4
+                WHERE id = $5
                 RETURNING *
             `;
             const result = await pool.query(query, [
                 datos.producto,
                 datos.equipo,
                 datos.id_equipo_redmine,
+                datos.producto_redmine || null,
                 id
             ]);
             return result.rows[0];
@@ -160,8 +183,30 @@ class ProductosEquiposModel {
             throw error;
         }
     }
+
+    /**
+     * Obtener producto_redmine por nombre de producto
+     * @param {string} producto - Nombre del producto
+     * @returns {Promise<string|null>} - Nombre del producto en Redmine
+     */
+    static async obtenerProductoRedmine(producto) {
+        try {
+            const query = `
+                SELECT DISTINCT producto_redmine
+                FROM productos_equipos
+                WHERE producto = $1 AND producto_redmine IS NOT NULL
+                LIMIT 1
+            `;
+            const result = await pool.query(query, [producto]);
+            return result.rows[0]?.producto_redmine || null;
+        } catch (error) {
+            console.error('Error al obtener producto_redmine:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = ProductosEquiposModel;
+
 
 

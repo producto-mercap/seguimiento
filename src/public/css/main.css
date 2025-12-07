@@ -866,7 +866,8 @@ body {
 }
 
 .modern-select.face-select.satisfaccion-calavera {
-    background-color: #f1f3f4 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
 }
 
 /* Por defecto, mantener gris si no hay valor */

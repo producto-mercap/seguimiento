@@ -15,8 +15,9 @@
     <!-- Header General -->
     <header class="top-header">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
-            <span style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">Seguimiento</span>
+            <a href="/" style="display: flex; align-items: center; text-decoration: none;">
+                <img src="/images/Mercap-logo-horizontal-1920x1080.png" alt="Logo Mercap" style="height: 50px; width: auto; display: block;" onerror="this.style.display='none';" />
+            </a>
         </div>
     </header>
     
@@ -25,21 +26,16 @@
         
         <div class="main-content">
             <div class="content-area">
-                <div class="toolbar">
-                    <div class="toolbar-left" style="display: flex; align-items: center; gap: 12px;">
-                        <h1 class="page-title">Seguimiento<% if (productoActual) { %> - <%= productoActual === 'OMS' ? 'Order Management' : productoActual %><% } %></h1>
-                    </div>
-                    <div class="toolbar-right" style="display: flex; align-items: center; gap: 12px;">
-                        <!-- Botón Actualizar -->
-                        <button class="button button-secondary" onclick="sincronizar()" id="btnSincronizar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                            </svg>
-                            <span>Actualizar</span>
-                        </button>
-                    </div>
+                <% if (productoActual) { %>
+                <!-- Botón Actualizar (solo cuando hay producto seleccionado) -->
+                <div style="padding: 16px 24px; display: flex; justify-content: flex-end;">
+                    <button class="button button-secondary" onclick="sincronizar()" id="btnSincronizar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        </svg>
+                        <span>Actualizar</span>
+                    </button>
                 </div>
-
                 <div class="tabs" style="padding: 0 24px; margin-top: 0;">
                     <a 
                         href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=mantenimiento" 
@@ -54,10 +50,12 @@
                         Proyectos
                     </a>
                 </div>
+                <% } %>
 
                 <!-- Filtros y buscador solo para proyectos -->
-                <% if (tipoActual === 'proyectos') { %>
-                <div id="filtrosProyectos" style="padding: 16px 24px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <% if (productoActual && tipoActual === 'proyectos') { %>
+                <div id="filtrosProyectos" style="padding: 16px 24px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <!-- Filtro Cliente -->
                     <button class="filter-btn" onclick="toggleFilterClientes(this)" title="Filtrar por Cliente">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
@@ -100,17 +98,13 @@
                             <span style="font-size: 13px;">Rework</span>
                         </label>
                         <label style="display: flex; align-items: center; padding: 10px 16px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='white'">
-                            <input type="checkbox" class="filter-checkbox-estado" value="Cerrado" style="margin-right: 8px; cursor: pointer;" onchange="aplicarFiltrosProyectos()" />
-                            <span style="font-size: 13px;">Cerrado</span>
-                        </label>
-                        <label style="display: flex; align-items: center; padding: 10px 16px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='white'">
                             <input type="checkbox" class="filter-checkbox-estado" value="Bloqueado" style="margin-right: 8px; cursor: pointer;" onchange="aplicarFiltrosProyectos()" />
                             <span style="font-size: 13px;">Bloqueado</span>
                         </label>
                     </div>
                     
                     <!-- Buscador -->
-                    <div style="position: relative; flex: 1; max-width: 600px; margin: 0;">
+                    <div style="position: relative; flex: 1; max-width: 900px; min-width: 500px; margin: 0 auto;">
                         <form onsubmit="buscar(event)" class="google-search-box" style="position: relative;">
                             <div class="google-search-box-container" id="searchBoxContainer" style="display: flex; align-items: center;">
                                 <svg style="width: 20px; height: 20px; color: #9aa0a6; margin-right: 12px; flex-shrink: 0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -146,6 +140,12 @@
                             <div id="searchSuggestions" class="google-search-suggestions"></div>
                         </form>
                     </div>
+                    </div>
+                    <!-- Checkbox "Incluir cerrados" -->
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin-left: auto;">
+                        <input type="checkbox" id="incluirCerrados" style="cursor: pointer;" onchange="aplicarFiltrosProyectos()" />
+                        <span style="font-size: 13px; color: var(--text-secondary);">Incluir cerrados</span>
+                    </label>
                 </div>
                 <!-- Chips de filtros aplicados (debajo del panel de filtros) -->
                 <div id="filtrosAplicados" style="display: none; padding: 12px 24px; background: white; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 8px; align-items: center;"></div>
@@ -177,9 +177,31 @@
                 cargarClientesParaFiltro();
             }
         } else {
-            document.getElementById('contenido').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Selecciona un producto del menú lateral</div></div>';
+            mostrarDashboard();
         }
     });
+
+    function mostrarDashboard() {
+        const contenido = document.getElementById('contenido');
+        const productosEquipos = <%- JSON.stringify(productosEquipos) %>;
+        
+        let dashboardHTML = '<div style="padding: 24px;">';
+        dashboardHTML += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">';
+        
+        productosEquipos.forEach(function(item) {
+            const producto = item.producto;
+            const productoNormalizado = producto === 'OMS' ? 'Order Management' : producto;
+            dashboardHTML += '<div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">';
+            dashboardHTML += '<h3 style="font-size: 18px; font-weight: 500; color: var(--text-primary); margin-bottom: 16px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + productoNormalizado + '</h3>';
+            dashboardHTML += '<div style="color: var(--text-secondary); font-size: 14px;">Métricas próximamente...</div>';
+            dashboardHTML += '</div>';
+        });
+        
+        dashboardHTML += '</div>';
+        dashboardHTML += '</div>';
+        
+        contenido.innerHTML = dashboardHTML;
+    }
 
     async function cargarClientesParaFiltro() {
         try {
@@ -243,6 +265,11 @@
                     }
                     if (filtrosEstados.length > 0) {
                         datosFiltrados = datosFiltrados.filter(d => filtrosEstados.includes(d.estado));
+                    }
+                    // Filtrar cerrados: por defecto excluir, a menos que el checkbox esté activado
+                    const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
+                    if (!incluirCerrados) {
+                        datosFiltrados = datosFiltrados.filter(d => (d.estado || '').toLowerCase() !== 'cerrado');
                     }
                     actualizarFiltrosAplicados();
                 }

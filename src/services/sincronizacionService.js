@@ -15,19 +15,42 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
     console.log('   =================================\n');
     console.log(`   Producto: ${producto || 'todos'}`);
     console.log(`   Equipo: ${equipo || 'todos'}`);
-    console.log(`   Categoría: Mantenimiento`);
+    console.log(`   Categoría: Mantenimiento + On-Site`);
     console.log(`   Línea de Servicio: Si`);
     console.log(`   Límite: ${maxTotal || 'sin límite'}\n`);
     
     try {
-        // 1. Obtener proyectos de Redmine con filtros
+        // 1. Obtener proyectos de Redmine con filtros (hacer dos llamados: Mantenimiento y On-Site)
         console.log('📥 Paso 1: Obteniendo proyectos de Redmine...');
-        const proyectosMapeados = await redmineService.obtenerProyectosMapeados({
+        
+        // Llamado para categoría "Mantenimiento"
+        console.log('   📋 Obteniendo proyectos de categoría "Mantenimiento"...');
+        const proyectosMantenimiento = await redmineService.obtenerProyectosMapeados({
             producto,
             equipo,
             categoria: 'Mantenimiento',
             maxTotal
         });
+        console.log(`   ✅ ${proyectosMantenimiento.length} proyectos de categoría "Mantenimiento" obtenidos`);
+        
+        // Llamado para categoría "On-Site"
+        console.log('   📋 Obteniendo proyectos de categoría "On-Site"...');
+        const proyectosOnSite = await redmineService.obtenerProyectosMapeados({
+            producto,
+            equipo,
+            categoria: 'On-Site',
+            maxTotal
+        });
+        console.log(`   ✅ ${proyectosOnSite.length} proyectos de categoría "On-Site" obtenidos\n`);
+        
+        // Combinar ambos resultados y eliminar duplicados por id_proyecto
+        const proyectosMap = new Map();
+        [...proyectosMantenimiento, ...proyectosOnSite].forEach(p => {
+            if (!proyectosMap.has(p.id_proyecto)) {
+                proyectosMap.set(p.id_proyecto, p);
+            }
+        });
+        const proyectosMapeados = Array.from(proyectosMap.values());
         
         if (proyectosMapeados.length === 0) {
             console.log('⚠️ No se encontraron proyectos para sincronizar');
@@ -40,14 +63,13 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
             };
         }
         
-        console.log(`✅ ${proyectosMapeados.length} proyectos obtenidos de Redmine\n`);
+        console.log(`✅ ${proyectosMapeados.length} proyectos únicos obtenidos de Redmine (Mantenimiento + On-Site)\n`);
         
-        // 2. Filtrar proyectos de categoría "Mantenimiento" o "On-Site" y excluir "Licencias"
-        const proyectosMantenimiento = proyectosMapeados.filter(p => 
-            (p.categoria === 'Mantenimiento' || p.categoria === 'On-Site') && 
+        // 2. Filtrar proyectos excluyendo "Licencias" (ya están filtrados por categoría)
+        const proyectosMantenimientoFiltrados = proyectosMapeados.filter(p => 
             p.categoria !== 'Licencias'
         );
-        console.log(`✅ ${proyectosMantenimiento.length} proyectos de mantenimiento/on-site (excluyendo licencias)\n`);
+        console.log(`✅ ${proyectosMantenimientoFiltrados.length} proyectos de mantenimiento/on-site (excluyendo licencias)\n`);
         
         // 3. Insertar/actualizar en redmine_mantenimiento
         console.log('💾 Paso 2: Guardando proyectos en la base de datos...');
@@ -55,7 +77,7 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
         let insertados = 0;
         let actualizados = 0;
         
-        for (const proyecto of proyectosMantenimiento) {
+        for (const proyecto of proyectosMantenimientoFiltrados) {
             try {
                 const result = await query(`
                     INSERT INTO redmine_mantenimiento (
@@ -135,7 +157,7 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
             redmine_mantenimiento: {
                 insertados,
                 actualizados,
-                total: proyectosMantenimiento.length
+                total: proyectosMantenimientoFiltrados.length
             },
             mantenimiento: {
                 nuevos: mantenimientosNuevos
