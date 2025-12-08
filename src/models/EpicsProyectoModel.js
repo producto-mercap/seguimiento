@@ -153,6 +153,52 @@ class EpicsProyectoModel {
             throw error;
         }
     }
+
+    /**
+     * Obtener epics secundarios (donde proyecto_padre <> id_proyecto) para múltiples proyectos
+     * @param {Array<number>} ids_proyectos - Array de IDs de proyectos
+     * @returns {Promise<Object>} - Objeto con id_proyecto como clave y array de epics secundarios como valor
+     */
+    static async obtenerEpicsSecundariosPorProyectos(ids_proyectos) {
+        try {
+            if (!ids_proyectos || ids_proyectos.length === 0) {
+                return {};
+            }
+            
+            // Optimizar: solo seleccionar columnas necesarias y usar COUNT para verificar existencia
+            const query = `
+                SELECT 
+                    id_proyecto,
+                    proyecto_padre,
+                    nombre_proyecto_padre
+                FROM epics_proyecto
+                WHERE id_proyecto = ANY($1::int[])
+                AND proyecto_padre IS NOT NULL
+                AND proyecto_padre != id_proyecto
+                GROUP BY id_proyecto, proyecto_padre, nombre_proyecto_padre
+                ORDER BY id_proyecto, proyecto_padre ASC
+            `;
+            const result = await pool.query(query, [ids_proyectos]);
+            
+            // Agrupar por id_proyecto (solo necesitamos saber si tiene epics secundarios)
+            const epicsPorProyecto = {};
+            result.rows.forEach(epic => {
+                if (!epicsPorProyecto[epic.id_proyecto]) {
+                    epicsPorProyecto[epic.id_proyecto] = [];
+                }
+                // Solo guardar la información mínima necesaria
+                epicsPorProyecto[epic.id_proyecto].push({
+                    proyecto_padre: epic.proyecto_padre,
+                    nombre_proyecto_padre: epic.nombre_proyecto_padre
+                });
+            });
+            
+            return epicsPorProyecto;
+        } catch (error) {
+            console.error('Error al obtener epics secundarios:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = EpicsProyectoModel;

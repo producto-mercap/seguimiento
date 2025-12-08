@@ -88,6 +88,15 @@ class ProyectosExternosModel {
      */
     static async actualizar(id_proyecto, datos) {
         try {
+            // Verificar primero que el proyecto existe en redmine_proyectos_externos
+            // Esto es necesario porque hay una foreign key constraint
+            const checkQuery = `SELECT id_proyecto FROM redmine_proyectos_externos WHERE id_proyecto = $1`;
+            const checkResult = await pool.query(checkQuery, [id_proyecto]);
+            
+            if (checkResult.rows.length === 0) {
+                throw new Error(`El proyecto con id_proyecto=${id_proyecto} no existe en redmine_proyectos_externos. Debe sincronizarse primero desde Redmine.`);
+            }
+            
             // Construir dinámicamente los campos a actualizar usando EXCLUDED
             const campos = [];
             
@@ -143,6 +152,7 @@ class ProyectosExternosModel {
             ];
             
             // Usar UPSERT (INSERT ... ON CONFLICT DO UPDATE) para crear o actualizar
+            // Ahora es seguro porque ya verificamos que existe en redmine_proyectos_externos
             const query = `
                 INSERT INTO proyectos_externos (id_proyecto, estado, overall, alcance, costo, plazos, avance, fecha_inicio, fecha_fin, win, riesgos, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -222,6 +232,31 @@ class ProyectosExternosModel {
             return result.rows.map(row => row.equipo);
         } catch (error) {
             console.error('Error al obtener equipos:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener métricas del dashboard por producto
+     * @returns {Promise<Array>} - Array de métricas por producto
+     */
+    static async obtenerMetricasDashboard() {
+        try {
+            const query = `
+                SELECT 
+                    producto,
+                    COUNT(DISTINCT equipo) as total_equipos,
+                    COUNT(DISTINCT cliente) as total_clientes,
+                    COUNT(CASE WHEN estado IN ('En curso', 'en curso', 'Testing', 'Entregado', 'Rework') THEN 1 END) as proyectos_en_curso
+                FROM v_proyectos_externos_completo
+                WHERE producto IS NOT NULL
+                GROUP BY producto
+                ORDER BY producto
+            `;
+            const result = await pool.query(query);
+            return result.rows;
+        } catch (error) {
+            console.error('Error al obtener métricas del dashboard:', error);
             throw error;
         }
     }

@@ -45,7 +45,7 @@ body {
     left: 0;
     right: 0;
     height: 56px;
-    background: white;
+    background: white !important;
     border-bottom: 1px solid var(--border-color);
     z-index: 1000;
     display: flex;
@@ -552,7 +552,7 @@ body {
     gap: 12px;
     padding: 12px 16px;
     background: #f8f9fa;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-secondary);
     border-bottom: none;
@@ -560,25 +560,25 @@ body {
 }
 
 .modern-table-header .modern-table-cell {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .modern-table-cell.header-cell {
-    text-align: center;
-    justify-content: center;
+    text-align: left;
+    justify-content: flex-start;
     align-items: center;
 }
 
 /* Mejorar alineación de valores con headers */
 .modern-table-row .modern-table-cell {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .modern-table-row .modern-table-cell.item-text {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .modern-table-row .modern-table-cell:has(.modern-select),
@@ -591,13 +591,39 @@ body {
 /* Mantenimiento: 7 columnas - WIN llena el espacio restante */
 .modern-table.mantenimiento .modern-table-header,
 .modern-table.mantenimiento .modern-table-row {
-    grid-template-columns: 140px 90px 70px 70px 70px 70px 1fr;
+    grid-template-columns: 350px 90px 70px 70px 70px 70px 1fr;
+    gap: 0 16px;
 }
 
-/* Proyectos: 10 columnas - Cliente reducido, Proyecto más ancho, Plazos y Riesgos con mismo ancho que Overall/Alcance/Costo */
+/* Separar columna WIN de Satisfacción en mantenimiento */
+.modern-table.mantenimiento .modern-table-header > .modern-table-cell:last-of-type,
+.modern-table.mantenimiento .modern-table-row > .modern-table-cell:last-of-type {
+    padding-left: 24px;
+    border-left: 1px solid #e8eaed;
+    margin-left: 8px;
+}
+
+/* Proyectos: 11 columnas - Flecha expandir, Cliente reducido, Proyecto más ancho, Plazos y Riesgos con mismo ancho que Overall/Alcance/Costo */
 .modern-table.proyectos .modern-table-header,
 .modern-table.proyectos .modern-table-row {
-    grid-template-columns: 200px 400px 120px 70px 70px 70px 70px 70px 100px 100px;
+    grid-template-columns: 40px 200px 400px 120px 70px 70px 70px 70px 70px 100px 100px;
+}
+
+/* Estilos para filas de subproyectos */
+.modern-table-row.subproyecto-row {
+    background-color: rgba(227, 242, 253, 0.3) !important; /* Celeste suave con transparencia */
+    min-height: 40px; /* Más pequeñas que las filas normales */
+    padding: 8px 0; /* Padding reducido */
+}
+
+.modern-table-row.subproyecto-row .modern-table-cell {
+    font-size: 13px; /* Texto más pequeño */
+    padding: 6px 16px; /* Padding reducido */
+}
+
+.modern-table-row.subproyecto-row .modern-table-cell.item-text {
+    font-size: 13px;
+    color: var(--text-secondary);
 }
 
 /* Celda que ocupa 2 columnas para el botón de sincronizar epics */
@@ -619,15 +645,15 @@ body {
 }
 
 
-/* Centrar valores en celdas (excepto item-text) */
+/* Alinear valores en celdas a la izquierda */
 .modern-table-row .modern-table-cell:not(.item-text) {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .modern-table-row .modern-table-cell.item-text {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .modern-table-row:hover {
@@ -699,8 +725,8 @@ body {
 
 /* Selectores modernos */
 .modern-select {
-    border: none;
-    border-bottom: 2px solid transparent;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
     padding: 8px 4px;
     font-size: 20px;
     font-family: 'Google Sans', 'Roboto', sans-serif;
@@ -719,6 +745,59 @@ body {
     color: var(--text-primary);
     text-align: center;
     line-height: 1.2;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Eliminar bordes del dropdown cuando se abre */
+.modern-select:focus {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.modern-select:focus-visible {
+    outline: none !important;
+    border: none !important;
+}
+
+.modern-select option {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Estilos más agresivos para eliminar bordes de los selects nativos */
+select.modern-select {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+select.modern-select:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+select.modern-select:active {
+    border: none !important;
+    outline: none !important;
+}
+
+/* Intentar eliminar bordes del dropdown nativo usando pseudo-elementos */
+select.modern-select::-ms-expand {
+    display: none;
+}
+
+select.modern-select::-webkit-appearance {
+    border: none !important;
+    outline: none !important;
+}
+
+select.modern-select::-moz-appearance {
+    border: none !important;
+    outline: none !important;
 }
 
 /* Selectores de iconos y caras - solo mostrar iconos grandes */
@@ -737,12 +816,14 @@ body {
 .face-select option {
     font-size: 20px;
     text-align: center;
-    padding: 12px 16px;
+    padding: 10px 16px;
     background: white;
     color: var(--text-primary);
     transition: background 0.2s;
     width: 100%;
     box-sizing: border-box;
+    border: none;
+    cursor: pointer;
 }
 
 .icon-select option:hover,
@@ -942,13 +1023,14 @@ body {
 
 .modern-select.estado-select:focus {
     background-color: #e8eaed;
-    outline: none;
-    box-shadow: none;
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
 /* Mejorar estilo del dropdown de estado-select */
 .modern-select.estado-select option {
-    padding: 12px 16px;
+    padding: 10px 16px;
     font-size: 13px;
     font-weight: 400;
     font-family: 'Google Sans', 'Roboto', sans-serif;
@@ -956,6 +1038,8 @@ body {
     color: var(--text-primary);
     transition: background 0.2s;
     text-align: center;
+    border: none !important;
+    cursor: pointer;
 }
 
 .modern-select.estado-select option:hover {
@@ -976,7 +1060,17 @@ body {
 }
 
 .modern-select.estado-select.estado-progreso {
-    background-color: #fef7e0 !important;
+    background-color: #e3f2fd !important; /* Celeste suave */
+    border: none !important;
+}
+
+.modern-select.estado-select.estado-testing {
+    background-color: #f3e5f5 !important; /* Violeta suave */
+    border: none !important;
+}
+
+.modern-select.estado-select.estado-rework {
+    background-color: #fef7e0 !important; /* Amarillo suave (color que tenía progreso) */
     border: none !important;
 }
 
@@ -992,20 +1086,55 @@ body {
 
 /* Textarea de WIN con fondo gris redondeado */
 .win-textarea {
-    background-color: #f8f9fa !important;
-    border-radius: 8px !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
     border: none !important;
-    padding: 10px 12px !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    padding: 8px 4px !important;
     font-size: 13px !important;
     font-family: 'Google Sans', 'Roboto', sans-serif !important;
-    resize: vertical !important;
+    resize: none !important;
+    min-height: 32px !important;
+    max-height: 120px !important;
+    overflow-y: auto !important;
+    transition: all 0.2s ease !important;
+    line-height: 1.5 !important;
+    color: var(--text-primary) !important;
+}
+
+.win-textarea:hover {
+    border-bottom-color: #bdc1c6 !important;
+    background-color: #f8f9fa !important;
+    border-radius: 4px 4px 0 0 !important;
+    padding: 8px 8px !important;
 }
 
 .win-textarea:focus {
-    background-color: white !important;
     outline: none !important;
     border: none !important;
-    box-shadow: none !important;
+    border-bottom: 2px solid var(--primary-color) !important;
+    background-color: #f8f9fa !important;
+    border-radius: 4px 4px 0 0 !important;
+    padding: 8px 8px !important;
+    box-shadow: 0 1px 0 0 var(--primary-color) !important;
+}
+
+/* Scrollbar personalizado para el textarea WIN */
+.win-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+.win-textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.win-textarea::-webkit-scrollbar-thumb {
+    background: #dadce0;
+    border-radius: 3px;
+}
+
+.win-textarea::-webkit-scrollbar-thumb:hover {
+    background: #bdc1c6;
 }
 
 /* Inputs de fecha y textarea - fuente igual que headers pero sin bold */
@@ -1018,23 +1147,26 @@ textarea.modern-input {
 }
 
 .modern-select:focus {
-    outline: none;
-    border-bottom-color: var(--primary-color);
+    outline: none !important;
+    border: none !important;
+    border-bottom: none !important;
     background-color: #f8f9fa;
     background-image: none;
     border-radius: 4px;
     padding: 8px 12px;
+    box-shadow: none !important;
 }
 
 .modern-select:hover {
     background-color: #f8f9fa;
     border-radius: 4px;
     padding: 8px 12px;
+    border: none !important;
 }
 
 /* Estilos modernos para opciones de overall-select */
 .overall-select option {
-    padding: 12px 16px;
+    padding: 10px 16px;
     font-size: 20px;
     text-align: center;
     background: white;
@@ -1042,6 +1174,8 @@ textarea.modern-input {
     transition: background 0.2s;
     width: 100%;
     box-sizing: border-box;
+    border: none;
+    cursor: pointer;
 }
 
 .overall-select option:hover {
@@ -1286,12 +1420,14 @@ input[type="date"] {
 
 /* Estilos modernos para opciones de riesgo-select */
 .riesgo-select option {
-    padding: 12px 16px;
+    padding: 10px 16px;
     font-size: 18px;
     text-align: center;
     background: white;
     color: var(--text-primary);
     transition: background 0.2s;
+    border: none;
+    cursor: pointer;
 }
 
 .riesgo-select option:hover {
@@ -1440,6 +1576,18 @@ input[type="date"] {
     text-align: center;
     padding: 60px 20px;
     color: var(--text-secondary);
+}
+
+/* Dropdowns personalizados (sin bordes) */
+.custom-dropdown {
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+.custom-dropdown > div {
+    border: none !important;
+    outline: none !important;
 }
 
 .empty-state-icon {

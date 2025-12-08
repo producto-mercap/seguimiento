@@ -25,39 +25,38 @@
         <%- include('../partials/sidebar', { productosEquipos, productoActual, equipoActual, tipoActual, isAdmin }) %>
         
         <div class="main-content">
-            <div class="content-area">
+            <div class="content-area" style="position: relative;">
+                <!-- Imagen de fondo con opacidad -->
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; opacity: 0.2; background-image: url('/images/cover.png'); background-size: cover; background-position: center; background-repeat: no-repeat; pointer-events: none;"></div>
+                <div style="position: relative; z-index: 1;">
                 <% if (productoActual) { %>
-                <!-- Título y Botón Actualizar (solo cuando hay producto seleccionado) -->
-                <div style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
-                    <h1 style="font-size: 32px; font-weight: 500; color: #424242; margin: 0; font-family: 'Google Sans', 'Roboto', sans-serif;">
-                        Seguimiento<% if (equipoNombre) { %> - <%= equipoNombre %><% } %>
-                    </h1>
-                    <button class="button button-secondary" onclick="sincronizar()" id="btnSincronizar">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                        </svg>
-                        <span>Actualizar</span>
-                    </button>
-                </div>
-                <div class="tabs" style="padding: 0 24px; margin-top: 0;">
-                    <a 
-                        href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=mantenimiento" 
-                        class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>"
-                    >
-                        Mantenimiento
-                    </a>
-                    <a 
-                        href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=proyectos" 
-                        class="tab <%= tipoActual === 'proyectos' ? 'active' : '' %>"
-                    >
-                        Proyectos
-                    </a>
-                </div>
-                <% } %>
-
-                <!-- Filtros y buscador solo para proyectos -->
-                <% if (productoActual && tipoActual === 'proyectos') { %>
-                <div id="filtrosProyectos" style="padding: 16px 24px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <!-- Contenedor agrupado: Título, Tabs y Filtros -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); position: relative; z-index: 2; margin-bottom: 16px; overflow: hidden;">
+                    <!-- Título (solo cuando hay producto seleccionado) -->
+                    <div style="padding: 16px 24px; position: relative; z-index: 2;">
+                        <h1 style="font-size: 32px; font-weight: 500; color: #5f6368; margin: 0; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                            Seguimiento<% if (equipoNombre) { %> - <%= equipoNombre %><% } %>
+                        </h1>
+                    </div>
+                    <div class="tabs" style="padding: 0 24px; margin: 0; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; border-top: 1px solid var(--border-color);">
+                        <div style="display: flex;">
+                            <a 
+                                href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=mantenimiento" 
+                                class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>"
+                            >
+                                Mantenimiento
+                            </a>
+                            <a 
+                                href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=proyectos" 
+                                class="tab <%= tipoActual === 'proyectos' ? 'active' : '' %>"
+                            >
+                                Proyectos
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Filtros y buscador solo para proyectos -->
+                    <% if (tipoActual === 'proyectos') { %>
+                    <div id="filtrosProyectos" style="padding: 16px 24px; margin-top: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 2; border-top: 1px solid var(--border-color);">
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                     <!-- Filtro Cliente -->
                     <button class="filter-btn" onclick="toggleFilterClientes(this)" title="Filtrar por Cliente">
@@ -145,15 +144,24 @@
                         </form>
                     </div>
                     
-                    <!-- Checkbox "Incluir cerrados" -->
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin-left: auto;">
-                        <input type="checkbox" id="incluirCerrados" style="cursor: pointer;" onchange="aplicarFiltrosProyectos()" />
-                        <span style="font-size: 13px; color: var(--text-secondary);">Incluir cerrados</span>
-                        <span id="contadorProyectos" style="font-size: 13px; color: var(--text-secondary); font-weight: 500; margin-left: 4px;">total proyectos: 0</span>
-                    </label>
+                    <!-- Botón Actualizar y Checkbox "Incluir cerrados" -->
+                    <div style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
+                        <button class="button button-secondary" onclick="sincronizar()" id="btnSincronizar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                            <span>Actualizar</span>
+                        </button>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                            <input type="checkbox" id="incluirCerrados" style="cursor: pointer;" onchange="aplicarFiltrosProyectos()" />
+                            <span style="font-size: 13px; color: var(--text-secondary);">Incluir cerrados</span>
+                            <span id="contadorProyectos" style="font-size: 13px; color: var(--text-secondary); font-weight: 500; margin-left: 4px;">total proyectos: 0</span>
+                        </label>
+                    </div>
+                    <% } %>
                 </div>
                 <!-- Chips de filtros aplicados (debajo del panel de filtros) -->
-                <div id="filtrosAplicados" style="display: none; padding: 12px 24px; background: white; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 8px; align-items: center;"></div>
+                <div id="filtrosAplicados" style="display: none; padding: 12px 24px; background: white; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 8px; align-items: center; position: relative; z-index: 2;"></div>
                 <% } %>
 
                 <div id="contenido" class="table-container">
@@ -161,6 +169,7 @@
                         <div class="spinner"></div>
                         <div class="empty-state-text">Cargando datos...</div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -176,6 +185,446 @@
     let datosTablaActual = []; // Almacenar datos actuales de la tabla para el filtro de clientes
     let datosOriginales = []; // Almacenar datos originales (sin filtros de clientes/estados) para el filtro de clientes
 
+    // Funciones helper para crear dropdowns personalizados
+    function crearDropdownOverall(idProyecto, campo, valorActual, clasesAdicionales) {
+        // Verificar si clasesAdicionales contiene 'subproyecto' (puede tener múltiples clases separadas por espacio)
+        const esSubproyecto = clasesAdicionales && clasesAdicionales.includes('subproyecto');
+        // Usar prefijo diferente para subproyectos para evitar colisiones de IDs
+        const dropdownId = esSubproyecto ? 'dropdown-' + campo + '-sub-' + idProyecto : 'dropdown-' + campo + '-' + idProyecto;
+        const valorActualClass = valorActual ? 'color-' + valorActual : '';
+        const opciones = [
+            { valor: '', texto: '-', icono: '-' },
+            { valor: 'verde', texto: '🟢', icono: '🟢' },
+            { valor: 'amarillo', texto: '🟡', icono: '🟡' },
+            { valor: 'rojo', texto: '🔴', icono: '🔴' }
+        ];
+        const textoMostrado = valorActual ? opciones.find(o => o.valor === valorActual)?.icono || '-' : '-';
+        let bgColor = '#f8f9fa';
+        if (valorActual === 'verde') bgColor = '#e6f4ea';
+        else if (valorActual === 'amarillo') bgColor = '#fef7e0';
+        else if (valorActual === 'rojo') bgColor = '#fce8e6';
+        
+        let html = '<div style="position: relative; display: inline-block;">';
+        html += '<button class="modern-select overall-select ' + valorActualClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: left; border: none; background: ' + bgColor + '; padding: 6px 10px; border-radius: 16px; cursor: pointer; font-size: 20px; min-width: 50px; white-space: nowrap;">' + textoMostrado + '</button>';
+        html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 60px;">';
+        opciones.forEach(opcion => {
+            const isSelected = opcion.valor === valorActual;
+            const onclickFunc = esSubproyecto ? 'seleccionarDropdownOptionSubproyecto' : 'seleccionarDropdownOption';
+            html += '<div onclick="' + onclickFunc + '(\'' + dropdownId + '\', \'' + campo + '\', ' + idProyecto + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 20px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.icono + '</div>';
+        });
+        html += '</div></div>';
+        return html;
+    }
+
+    function crearDropdownIconos(idProyecto, campo, valorActual, tipo, clasesAdicionales) {
+        const dropdownId = 'dropdown-' + campo + '-' + idProyecto;
+        let opciones = [];
+        if (tipo === 'demanda') {
+            opciones = [
+                { valor: '', texto: '-', icono: '-' },
+                { valor: 'llama', texto: '🔥', icono: '🔥' },
+                { valor: 'congelado', texto: '❄️', icono: '❄️' },
+                { valor: 'herramientas', texto: '🔧', icono: '🔧' },
+                { valor: 'palmera', texto: '🌴', icono: '🌴' }
+            ];
+        } else if (tipo === 'estabilidad') {
+            opciones = [
+                { valor: '', texto: '-', icono: '-' },
+                { valor: 'llama', texto: '🔥', icono: '🔥' },
+                { valor: 'herramientas', texto: '🔧', icono: '🔧' },
+                { valor: 'cohete', texto: '🚀', icono: '🚀' }
+            ];
+        }
+        const textoMostrado = valorActual ? opciones.find(o => o.valor === valorActual)?.icono || '-' : '-';
+        const valorActualClass = valorActual ? tipo + '-' + valorActual : '';
+        
+        let html = '<div style="position: relative; display: inline-block;">';
+        html += '<button class="modern-select icon-select ' + valorActualClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: left; border: none; background: #f8f9fa; padding: 6px 10px; border-radius: 16px; cursor: pointer; font-size: 20px; min-width: 50px; white-space: nowrap;">' + textoMostrado + '</button>';
+        html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 60px;">';
+        opciones.forEach(opcion => {
+            const isSelected = opcion.valor === valorActual;
+            html += '<div onclick="seleccionarDropdownOption(\'' + dropdownId + '\', \'' + campo + '\', ' + idProyecto + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 20px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.icono + '</div>';
+        });
+        html += '</div></div>';
+        return html;
+    }
+
+    function crearDropdownCaras(idProyecto, campo, valorActual, clasesAdicionales) {
+        const dropdownId = 'dropdown-' + campo + '-' + idProyecto;
+        const opciones = [
+            { valor: '', texto: '-', icono: '-' },
+            { valor: 'feliz', texto: '😄', icono: '😄' },
+            { valor: 'buena', texto: '😊', icono: '😊' },
+            { valor: 'regular', texto: '😐', icono: '😐' },
+            { valor: 'mala', texto: '😞', icono: '😞' },
+            { valor: 'enojado', texto: '😠', icono: '😠' },
+            { valor: 'calavera', texto: '💀', icono: '💀' }
+        ];
+        const textoMostrado = valorActual ? opciones.find(o => o.valor === valorActual)?.icono || '-' : '-';
+        const valorActualClass = valorActual ? 'satisfaccion-' + valorActual : '';
+        
+        let html = '<div style="position: relative; display: inline-block;">';
+        html += '<button class="modern-select face-select ' + valorActualClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: left; border: none; background: ' + (valorActualClass === 'satisfaccion-calavera' ? '#000000' : '#f8f9fa') + '; padding: 6px 10px; border-radius: 16px; cursor: pointer; font-size: 20px; min-width: 50px; white-space: nowrap; color: ' + (valorActualClass === 'satisfaccion-calavera' ? '#ffffff' : 'var(--text-primary)') + ';">' + textoMostrado + '</button>';
+        html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 60px;">';
+        opciones.forEach(opcion => {
+            const isSelected = opcion.valor === valorActual;
+            html += '<div onclick="seleccionarDropdownOption(\'' + dropdownId + '\', \'' + campo + '\', ' + idProyecto + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 20px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.icono + '</div>';
+        });
+        html += '</div></div>';
+        return html;
+    }
+
+    function crearDropdownEstado(idProyecto, valorActual, clasesAdicionales) {
+        // Verificar si clasesAdicionales contiene 'subproyecto' (puede tener múltiples clases separadas por espacio)
+        const esSubproyecto = clasesAdicionales && clasesAdicionales.includes('subproyecto');
+        // Usar prefijo diferente para subproyectos para evitar colisiones de IDs
+        const dropdownId = esSubproyecto ? 'dropdown-estado-sub-' + idProyecto : 'dropdown-estado-' + idProyecto;
+        
+        // Debug logging
+        if (esSubproyecto) {
+            console.log('🔵 crearDropdownEstado para SUBPROYECTO - idProyecto:', idProyecto, 'dropdownId:', dropdownId, 'clasesAdicionales:', clasesAdicionales);
+        }
+        const opciones = [
+            { valor: '', texto: '-', label: '-' },
+            { valor: 'sin comenzar', texto: 'Sin comenzar', label: 'Sin comenzar' },
+            { valor: 'en curso', texto: 'En curso', label: 'En curso' },
+            { valor: 'Testing', texto: 'Testing', label: 'Testing' },
+            { valor: 'Entregado', texto: 'Entregado', label: 'Entregado' },
+            { valor: 'Cerrado', texto: 'Cerrado', label: 'Cerrado' },
+            { valor: 'Rework', texto: 'Rework', label: 'Rework' },
+            { valor: 'Bloqueado', texto: 'Bloqueado', label: 'Bloqueado' }
+        ];
+        const textoMostrado = valorActual ? opciones.find(o => o.valor === valorActual)?.label || '-' : '-';
+        let estadoClass = '';
+        if (valorActual === 'Entregado' || valorActual === 'Cerrado') {
+            estadoClass = 'estado-entregado';
+        } else if (valorActual === 'sin comenzar') {
+            estadoClass = 'estado-sin-comenzar';
+        } else if (valorActual === 'en curso') {
+            estadoClass = 'estado-progreso';
+        } else if (valorActual === 'Testing') {
+            estadoClass = 'estado-testing';
+        } else if (valorActual === 'Rework') {
+            estadoClass = 'estado-rework';
+        } else if (valorActual === 'Bloqueado') {
+            estadoClass = 'estado-bloqueado';
+        }
+        
+        let html = '<div style="position: relative; display: inline-block;">';
+        html += '<button class="modern-select estado-select ' + estadoClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: left; border: none; padding: 6px 10px; border-radius: 16px; cursor: pointer; font-size: 13px; font-weight: 400; font-family: \'Google Sans\', \'Roboto\', sans-serif; min-width: 100px; white-space: nowrap;">' + textoMostrado + '</button>';
+        html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 120px;">';
+        opciones.forEach(opcion => {
+            const isSelected = opcion.valor === valorActual;
+            const onclickFunc = esSubproyecto ? 'seleccionarDropdownEstadoSubproyecto' : 'seleccionarDropdownEstado';
+            
+            // Debug logging para subproyectos
+            if (esSubproyecto) {
+                console.log('🔵 Generando opción de dropdown SUBPROYECTO - onclickFunc:', onclickFunc, 'idProyecto:', idProyecto);
+            }
+            
+            html += '<div onclick="' + onclickFunc + '(\'' + dropdownId + '\', ' + idProyecto + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 13px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.label + '</div>';
+        });
+        html += '</div></div>';
+        return html;
+    }
+
+    function crearDropdownRiesgo(idProyecto, valorActual, clasesAdicionales) {
+        // Verificar si clasesAdicionales contiene 'subproyecto' (puede tener múltiples clases separadas por espacio)
+        const esSubproyecto = clasesAdicionales && clasesAdicionales.includes('subproyecto');
+        // Usar prefijo diferente para subproyectos para evitar colisiones de IDs
+        const dropdownId = esSubproyecto ? 'dropdown-riesgos-sub-' + idProyecto : 'dropdown-riesgos-' + idProyecto;
+        const opciones = [
+            { valor: '', texto: '-', icono: '-' },
+            { valor: 'ok', texto: '✓', icono: '✓' },
+            { valor: 'red flag', texto: '🚩', icono: '🚩' }
+        ];
+        const textoMostrado = valorActual ? opciones.find(o => o.valor === valorActual || (valorActual === 'okey' && o.valor === 'ok') || (valorActual === 'redflag' && o.valor === 'red flag'))?.icono || '-' : '-';
+        let riesgoClass = '';
+        if (valorActual === 'ok' || valorActual === 'okey') {
+            riesgoClass = 'riesgo-ok';
+        } else if (valorActual === 'red flag' || valorActual === 'redflag') {
+            riesgoClass = 'riesgo-red';
+        }
+        
+        let html = '<div style="position: relative; display: inline-block;">';
+        html += '<button class="modern-select riesgo-select ' + riesgoClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: left; border: none; background: #f8f9fa; padding: 6px 10px; border-radius: 16px; cursor: pointer; font-size: 20px; min-width: 50px; white-space: nowrap;">' + textoMostrado + '</button>';
+        html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 60px;">';
+        opciones.forEach(opcion => {
+            const isSelected = opcion.valor === valorActual || (valorActual === 'okey' && opcion.valor === 'ok') || (valorActual === 'redflag' && opcion.valor === 'red flag');
+            const onclickFunc = esSubproyecto ? 'seleccionarDropdownRiesgoSubproyecto' : 'seleccionarDropdownRiesgo';
+            html += '<div onclick="' + onclickFunc + '(\'' + dropdownId + '\', ' + idProyecto + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 20px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.icono + '</div>';
+        });
+        html += '</div></div>';
+        return html;
+    }
+
+    // Funciones para manejar los dropdowns personalizados
+    function toggleCustomDropdown(dropdownId, button) {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) return;
+        
+        // Cerrar todos los otros dropdowns
+        document.querySelectorAll('.custom-dropdown').forEach(dd => {
+            if (dd.id !== dropdownId) {
+                dd.style.display = 'none';
+            }
+        });
+        
+        const isVisible = dropdown.style.display === 'block';
+        if (isVisible) {
+            dropdown.style.display = 'none';
+        } else {
+            const rect = button.getBoundingClientRect();
+            dropdown.style.position = 'fixed';
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.left = rect.left + 'px';
+            dropdown.style.width = rect.width + 'px';
+            dropdown.style.zIndex = '10000';
+            dropdown.style.display = 'block';
+        }
+    }
+
+    function seleccionarDropdownOption(dropdownId, campo, idProyecto, valor, elemento) {
+        const dropdown = document.getElementById(dropdownId);
+        const button = dropdown.previousElementSibling;
+        
+        // Actualizar el botón
+        const opciones = Array.from(dropdown.children);
+        opciones.forEach(op => {
+            op.style.background = 'white';
+            op.style.color = 'var(--text-primary)';
+        });
+        elemento.style.background = '#e8f0fe';
+        elemento.style.color = 'var(--primary-color)';
+        
+        // Cerrar dropdown
+        dropdown.style.display = 'none';
+        
+        // Actualizar valor
+        if (campo === 'overall' || campo === 'alcance' || campo === 'costo' || campo === 'plazos') {
+            actualizarProyecto(idProyecto, campo, valor);
+            // Actualizar clase del botón
+            button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
+            button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
+            // Actualizar color de fondo
+            if (valor === 'verde') button.style.background = '#e6f4ea';
+            else if (valor === 'amarillo') button.style.background = '#fef7e0';
+            else if (valor === 'rojo') button.style.background = '#fce8e6';
+            else button.style.background = '#f8f9fa';
+        } else if (campo === 'estado') {
+            actualizarMantenimiento(idProyecto, campo, valor);
+            // Actualizar clase del botón
+            button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
+            button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
+            // Actualizar color de fondo
+            if (valor === 'verde') button.style.background = '#e6f4ea';
+            else if (valor === 'amarillo') button.style.background = '#fef7e0';
+            else if (valor === 'rojo') button.style.background = '#fce8e6';
+            else button.style.background = '#f8f9fa';
+        } else if (campo === 'demanda' || campo === 'estabilidad') {
+            actualizarMantenimiento(idProyecto, campo, valor);
+            // Actualizar clase del botón
+            const tipo = campo === 'demanda' ? 'demanda' : 'estabilidad';
+            button.className = 'modern-select icon-select ' + (valor ? tipo + '-' + valor : '');
+            const iconos = {
+                'demanda': { 'llama': '🔥', 'congelado': '❄️', 'herramientas': '🔧', 'palmera': '🌴' },
+                'estabilidad': { 'llama': '🔥', 'herramientas': '🔧', 'cohete': '🚀' }
+            };
+            button.textContent = valor ? (iconos[tipo][valor] || '-') : '-';
+        } else if (campo === 'satisfaccion') {
+            actualizarMantenimiento(idProyecto, campo, valor);
+            // Actualizar clase del botón
+            button.className = 'modern-select face-select ' + (valor ? 'satisfaccion-' + valor : '');
+            const caras = { 'feliz': '😄', 'buena': '😊', 'regular': '😐', 'mala': '😞', 'enojado': '😠', 'calavera': '💀' };
+            button.textContent = valor ? (caras[valor] || '-') : '-';
+            if (valor === 'calavera') {
+                button.style.background = '#000000';
+                button.style.color = '#ffffff';
+            } else {
+                button.style.background = '#f8f9fa';
+                button.style.color = 'var(--text-primary)';
+            }
+        }
+    }
+
+    function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
+        console.log('🟢 seleccionarDropdownEstado llamado - dropdownId:', dropdownId, 'idProyecto:', idProyecto, 'valor:', valor);
+        
+        // Verificar si este dropdown es de un subproyecto (tiene el prefijo -sub-)
+        if (dropdownId && dropdownId.includes('-sub-')) {
+            console.warn('⚠️ Dropdown de subproyecto detectado en seleccionarDropdownEstado, redirigiendo a seleccionarDropdownEstadoSubproyecto');
+            // Extraer el id_subproyecto del dropdownId
+            const idSubproyecto = parseInt(dropdownId.split('-sub-')[1]);
+            return seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, elemento);
+        }
+        
+        const dropdown = document.getElementById(dropdownId);
+        const button = dropdown.previousElementSibling;
+        
+        // Actualizar el botón
+        const opciones = Array.from(dropdown.children);
+        opciones.forEach(op => {
+            op.style.background = 'white';
+            op.style.color = 'var(--text-primary)';
+        });
+        elemento.style.background = '#e8f0fe';
+        elemento.style.color = 'var(--primary-color)';
+        
+        // Cerrar dropdown
+        dropdown.style.display = 'none';
+        
+        // Actualizar valor
+        console.log('🟢 Llamando a actualizarProyecto con id_proyecto:', idProyecto);
+        actualizarProyecto(idProyecto, 'estado', valor);
+        
+        // Actualizar texto del botón
+        const estados = {
+            '': '-',
+            'sin comenzar': 'Sin comenzar',
+            'en curso': 'En curso',
+            'Testing': 'Testing',
+            'Entregado': 'Entregado',
+            'Cerrado': 'Cerrado',
+            'Rework': 'Rework',
+            'Bloqueado': 'Bloqueado'
+        };
+        button.textContent = estados[valor] || '-';
+        
+        // Actualizar color del botón basado en el valor
+        actualizarEstadoColor(button, valor);
+    }
+
+    function seleccionarDropdownRiesgo(dropdownId, idProyecto, valor, elemento) {
+        const dropdown = document.getElementById(dropdownId);
+        const button = dropdown.previousElementSibling;
+        
+        // Actualizar el botón
+        const opciones = Array.from(dropdown.children);
+        opciones.forEach(op => {
+            op.style.background = 'white';
+            op.style.color = 'var(--text-primary)';
+        });
+        elemento.style.background = '#e8f0fe';
+        elemento.style.color = 'var(--primary-color)';
+        
+        // Cerrar dropdown
+        dropdown.style.display = 'none';
+        
+        // Actualizar valor
+        actualizarProyecto(idProyecto, 'riesgos', valor);
+        actualizarRiesgoColor(button);
+        
+        // Actualizar texto del botón
+        button.textContent = valor === 'ok' ? '✓' : valor === 'red flag' ? '🚩' : '-';
+    }
+    
+    // Funciones para subproyectos
+    function seleccionarDropdownOptionSubproyecto(dropdownId, campo, idSubproyecto, valor, elemento) {
+        const dropdown = document.getElementById(dropdownId);
+        const button = dropdown.previousElementSibling;
+        
+        // Actualizar el botón
+        const opciones = Array.from(dropdown.children);
+        opciones.forEach(op => {
+            op.style.background = 'white';
+            op.style.color = 'var(--text-primary)';
+        });
+        elemento.style.background = '#e8f0fe';
+        elemento.style.color = 'var(--primary-color)';
+        
+        // Cerrar dropdown
+        dropdown.style.display = 'none';
+        
+        // Actualizar valor
+        if (campo === 'overall' || campo === 'alcance' || campo === 'costo' || campo === 'plazos') {
+            actualizarSubproyecto(idSubproyecto, campo, valor);
+            // Actualizar clase del botón
+            button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
+            button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
+            // Actualizar color de fondo
+            if (valor === 'verde') button.style.background = '#e6f4ea';
+            else if (valor === 'amarillo') button.style.background = '#fef7e0';
+            else if (valor === 'rojo') button.style.background = '#fce8e6';
+            else button.style.background = '#f8f9fa';
+        }
+    }
+    
+    function seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, elemento) {
+        console.log('🔵 seleccionarDropdownEstadoSubproyecto llamado - dropdownId:', dropdownId, 'idSubproyecto:', idSubproyecto, 'valor:', valor);
+        
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) {
+            console.error('❌ Dropdown no encontrado:', dropdownId);
+            return;
+        }
+        const button = dropdown.previousElementSibling;
+        
+        // Actualizar el botón
+        const opciones = Array.from(dropdown.children);
+        opciones.forEach(op => {
+            op.style.background = 'white';
+            op.style.color = 'var(--text-primary)';
+        });
+        elemento.style.background = '#e8f0fe';
+        elemento.style.color = 'var(--primary-color)';
+        
+        // Cerrar dropdown
+        dropdown.style.display = 'none';
+        
+        // Actualizar valor - Asegurarse de que se llama a actualizarSubproyecto, no a actualizarProyecto
+        console.log('🔵 Llamando a actualizarSubproyecto con id_subproyecto:', idSubproyecto);
+        actualizarSubproyecto(idSubproyecto, 'estado', valor);
+        
+        // Actualizar texto del botón
+        const estados = {
+            '': '-',
+            'sin comenzar': 'Sin comenzar',
+            'en curso': 'En curso',
+            'Testing': 'Testing',
+            'Entregado': 'Entregado',
+            'Cerrado': 'Cerrado',
+            'Rework': 'Rework',
+            'Bloqueado': 'Bloqueado'
+        };
+        button.textContent = estados[valor] || '-';
+        
+        // Actualizar color del botón basado en el valor
+        actualizarEstadoColor(button, valor);
+    }
+    
+    function seleccionarDropdownRiesgoSubproyecto(dropdownId, idSubproyecto, valor, elemento) {
+        const dropdown = document.getElementById(dropdownId);
+        const button = dropdown.previousElementSibling;
+        
+        // Actualizar el botón
+        const opciones = Array.from(dropdown.children);
+        opciones.forEach(op => {
+            op.style.background = 'white';
+            op.style.color = 'var(--text-primary)';
+        });
+        elemento.style.background = '#e8f0fe';
+        elemento.style.color = 'var(--primary-color)';
+        
+        // Cerrar dropdown
+        dropdown.style.display = 'none';
+        
+        // Actualizar valor
+        actualizarSubproyecto(idSubproyecto, 'riesgos', valor);
+        actualizarRiesgoColor(button);
+        
+        // Actualizar texto del botón
+        button.textContent = valor === 'ok' ? '✓' : valor === 'red flag' ? '🚩' : '-';
+    }
+
+    // Cerrar dropdowns al hacer click fuera
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-dropdown') && !e.target.closest('button[onclick*="toggleCustomDropdown"]')) {
+            document.querySelectorAll('.custom-dropdown').forEach(dd => {
+                dd.style.display = 'none';
+            });
+        }
+    });
+
     // Cargar datos al iniciar
     document.addEventListener('DOMContentLoaded', () => {
         if (productoActual) {
@@ -188,26 +637,81 @@
         }
     });
 
-    function mostrarDashboard() {
+    async function mostrarDashboard() {
         const contenido = document.getElementById('contenido');
         const productosEquipos = <%- JSON.stringify(productosEquipos) %>;
         
-        let dashboardHTML = '<div style="padding: 24px;">';
-        dashboardHTML += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">';
+        // Mostrar loading
+        contenido.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="empty-state-text">Cargando métricas...</div></div>';
         
-        productosEquipos.forEach(function(item) {
-            const producto = item.producto;
-            const productoNormalizado = producto === 'OMS' ? 'Order Management' : producto;
-            dashboardHTML += '<div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">';
-            dashboardHTML += '<h3 style="font-size: 18px; font-weight: 500; color: var(--text-primary); margin-bottom: 16px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + productoNormalizado + '</h3>';
-            dashboardHTML += '<div style="color: var(--text-secondary); font-size: 14px;">Métricas próximamente...</div>';
-            dashboardHTML += '</div>';
-        });
-        
-        dashboardHTML += '</div>';
-        dashboardHTML += '</div>';
-        
-        contenido.innerHTML = dashboardHTML;
+        try {
+            // Obtener métricas del dashboard
+            const response = await fetch('/api/dashboard/metricas');
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error al cargar métricas');
+            }
+            
+            const metricas = result.data || [];
+            
+            // Crear un mapa de métricas por producto
+            const metricasMap = {};
+            metricas.forEach(m => {
+                metricasMap[m.producto] = m;
+            });
+            
+            let dashboardHTML = '<div style="padding: 24px;">';
+            dashboardHTML += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 24px;">';
+            
+            productosEquipos.forEach(function(item) {
+                const producto = item.producto;
+                const productoNormalizado = producto === 'OMS' ? 'Order Management' : producto;
+                const equipos = item.equipos || [];
+                const metrica = metricasMap[producto] || { total_equipos: 0, total_clientes: 0, proyectos_en_curso: 0 };
+                
+                dashboardHTML += '<div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);">';
+                dashboardHTML += '<h3 style="font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 24px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + productoNormalizado + '</h3>';
+                
+                // Equipos
+                if (equipos.length > 0) {
+                    dashboardHTML += '<div style="margin-bottom: 20px;">';
+                    dashboardHTML += '<div style="font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Equipos (' + equipos.length + ')</div>';
+                    dashboardHTML += '<div style="display: flex; flex-wrap: wrap; gap: 8px;">';
+                    equipos.forEach(function(equipo) {
+                        dashboardHTML += '<span style="display: inline-block; padding: 6px 12px; background: #e8f0fe; color: var(--primary-color); border-radius: 16px; font-size: 13px; font-weight: 500;">' + equipo.equipo + '</span>';
+                    });
+                    dashboardHTML += '</div>';
+                    dashboardHTML += '</div>';
+                }
+                
+                // Métricas
+                dashboardHTML += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px;">';
+                
+                // Total Clientes
+                dashboardHTML += '<div style="padding: 16px; background: #f8f9fa; border-radius: 8px;">';
+                dashboardHTML += '<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total Clientes</div>';
+                dashboardHTML += '<div style="font-size: 28px; font-weight: 600; color: var(--text-primary);">' + parseInt(metrica.total_clientes || 0) + '</div>';
+                dashboardHTML += '</div>';
+                
+                // Proyectos en Curso
+                dashboardHTML += '<div style="padding: 16px; background: #f8f9fa; border-radius: 8px;">';
+                dashboardHTML += '<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Proyectos en Curso</div>';
+                dashboardHTML += '<div style="font-size: 28px; font-weight: 600; color: var(--text-primary);">' + parseInt(metrica.proyectos_en_curso || 0) + '</div>';
+                dashboardHTML += '</div>';
+                
+                dashboardHTML += '</div>'; // Cierre grid métricas
+                dashboardHTML += '</div>'; // Cierre card
+            });
+            
+            dashboardHTML += '</div>'; // Cierre grid
+            dashboardHTML += '</div>'; // Cierre padding
+            
+            contenido.innerHTML = dashboardHTML;
+        } catch (error) {
+            console.error('Error al cargar métricas:', error);
+            contenido.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error al cargar métricas</div><div class="empty-state-subtext">' + error.message + '</div></div>';
+        }
     }
 
     async function cargarClientesParaFiltro() {
@@ -412,7 +916,7 @@
         const contenido = document.getElementById('contenido');
         
         if (tipoActual === 'mantenimiento') {
-            let tablaHTML = '<div class="modern-table-wrapper"><div class="modern-table mantenimiento"><div class="modern-table-header">';
+            let tablaHTML = '<div class="modern-table-wrapper"><div class="modern-table mantenimiento"><div class="modern-table-header" style="position: relative;">';
             tablaHTML += '<div class="modern-table-cell header-cell">Cliente</div>';
             tablaHTML += '<div class="modern-table-cell header-cell">Límite Horas</div>';
             tablaHTML += '<div class="modern-table-cell header-cell">Overall</div>';
@@ -420,6 +924,10 @@
             tablaHTML += '<div class="modern-table-cell header-cell">Estabilidad</div>';
             tablaHTML += '<div class="modern-table-cell header-cell">Satisfacción</div>';
             tablaHTML += '<div class="modern-table-cell header-cell" style="flex: 1;">WIN</div>';
+            tablaHTML += '<button onclick="sincronizar()" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #dfe1e5; background: white; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'white\'" title="Actualizar mantenimiento">';
+            tablaHTML += '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368;">';
+            tablaHTML += '<path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>';
+            tablaHTML += '</svg></button>';
             tablaHTML += '</div>';
             
             datos.forEach(function(item) {
@@ -427,19 +935,16 @@
                 tablaHTML += '<div class="modern-table-cell item-text">' + (item.cliente || '-') + '</div>';
                 tablaHTML += '<div class="modern-table-cell item-text">' + (item.limite_horas || '-') + '</div>';
                 const estadoValue = item.estado || '';
-                const estadoClass = estadoValue ? 'color-' + estadoValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select overall-select ' + estadoClass + '" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'estado\', this.value); this.className=\'modern-select overall-select \' + (this.value ? \'color-\' + this.value : \'\');"><option value="">-</option><option value="verde" ' + (estadoValue === 'verde' ? 'selected' : '') + '>🟢</option><option value="amarillo" ' + (estadoValue === 'amarillo' ? 'selected' : '') + '>🟡</option><option value="rojo" ' + (estadoValue === 'rojo' ? 'selected' : '') + '>🔴</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'estado', estadoValue, '') + '</div>';
+                
                 const demandaValue = item.demanda || '';
-                const demandaClass = demandaValue ? 'demanda-' + demandaValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select icon-select ' + demandaClass + '" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'demanda\', this.value); this.className=\'modern-select icon-select \' + (this.value ? \'demanda-\' + this.value : \'\');"><option value="">-</option><option value="llama" ' + (demandaValue === 'llama' ? 'selected' : '') + '>🔥</option><option value="congelado" ' + (demandaValue === 'congelado' ? 'selected' : '') + '>❄️</option><option value="herramientas" ' + (demandaValue === 'herramientas' ? 'selected' : '') + '>🔧</option><option value="palmera" ' + (demandaValue === 'palmera' ? 'selected' : '') + '>🌴</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownIconos(item.id_proyecto, 'demanda', demandaValue, 'demanda', '') + '</div>';
                 
                 const estabilidadValue = item.estabilidad || '';
-                const estabilidadClass = estabilidadValue ? 'estabilidad-' + estabilidadValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select icon-select ' + estabilidadClass + '" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'estabilidad\', this.value); this.className=\'modern-select icon-select \' + (this.value ? \'estabilidad-\' + this.value : \'\');"><option value="">-</option><option value="llama" ' + (estabilidadValue === 'llama' ? 'selected' : '') + '>🔥</option><option value="herramientas" ' + (estabilidadValue === 'herramientas' ? 'selected' : '') + '>🔧</option><option value="cohete" ' + (estabilidadValue === 'cohete' ? 'selected' : '') + '>🚀</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownIconos(item.id_proyecto, 'estabilidad', estabilidadValue, 'estabilidad', '') + '</div>';
                 
                 const satisfaccionValue = item.satisfaccion || '';
-                const satisfaccionClass = satisfaccionValue ? 'satisfaccion-' + satisfaccionValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select face-select ' + satisfaccionClass + '" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'satisfaccion\', this.value); this.className=\'modern-select face-select \' + (this.value ? \'satisfaccion-\' + this.value : \'\');"><option value="">-</option><option value="feliz" ' + (satisfaccionValue === 'feliz' ? 'selected' : '') + '>😄</option><option value="buena" ' + (satisfaccionValue === 'buena' ? 'selected' : '') + '>😊</option><option value="regular" ' + (satisfaccionValue === 'regular' ? 'selected' : '') + '>😐</option><option value="mala" ' + (satisfaccionValue === 'mala' ? 'selected' : '') + '>😞</option><option value="enojado" ' + (satisfaccionValue === 'enojado' ? 'selected' : '') + '>😠</option><option value="calavera" ' + (satisfaccionValue === 'calavera' ? 'selected' : '') + '>💀</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownCaras(item.id_proyecto, 'satisfaccion', satisfaccionValue, '') + '</div>';
                 tablaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'win\', this.value)">' + (item.win || '') + '</textarea></div>';
                 tablaHTML += '</div>';
             });
@@ -517,6 +1022,8 @@
             let tablaHTML = '<div class="modern-table-wrapper"><div class="modern-table proyectos"><div class="modern-table-header">';
             const flechaAsc = '▲';
             const flechaDesc = '▼';
+            // Agregar columna para la flecha de expandir/contraer
+            tablaHTML += '<div class="modern-table-cell header-cell" style="width: 40px;"></div>';
             tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'cliente\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'cliente' ? ' color: var(--primary-color);' : '') + '">Cliente' + (ordenActual.columna === 'cliente' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
             tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'proyecto\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'proyecto' ? ' color: var(--primary-color);' : '') + '">Proyecto' + (ordenActual.columna === 'proyecto' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
             tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'estado\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'estado' ? ' color: var(--primary-color);' : '') + '">Estado' + (ordenActual.columna === 'estado' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
@@ -560,6 +1067,10 @@
                 if (nombreProyecto.includes(' | ')) {
                     nombreProyecto = nombreProyecto.split(' | ').slice(1).join(' | ');
                 }
+                
+                // Verificar si tiene subproyectos (pero no cargarlos todavía - carga lazy)
+                const tieneSecundarios = item.tiene_subproyectos || false;
+                
                 // Guardar datos del item para el modal
                 const itemData = {
                     id_proyecto: item.id_proyecto,
@@ -573,13 +1084,25 @@
                     fecha_fin: item.fecha_fin || '',
                     win: item.win || '',
                     tiene_epics: item.tiene_epics || false,
-                    estado: item.estado || ''
+                    estado: item.estado || '',
+                    redmineUrl: redmineUrl
                 };
                 const itemDataJson = JSON.stringify(itemData).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 
-                tablaHTML += '<div class="modern-table-row">';
+                // Fila del proyecto principal
+                tablaHTML += '<div class="modern-table-row" data-id-proyecto="' + item.id_proyecto + '">';
+                
+                // Agregar flecha si tiene epics secundarios
+                if (tieneSecundarios) {
+                    tablaHTML += '<div class="modern-table-cell" style="width: 40px; padding: 0; text-align: center;"><button class="expand-btn" onclick="toggleProyectosSecundarios(' + item.id_proyecto + ', this)" style="background: none; border: none; cursor: pointer; padding: 8px; color: var(--text-secondary); font-size: 16px; transition: transform 0.2s;" title="Expandir/Contraer proyectos secundarios">▶</button></div>';
+                } else {
+                    tablaHTML += '<div class="modern-table-cell" style="width: 40px;"></div>';
+                }
+                
                 tablaHTML += '<div class="modern-table-cell item-text">' + (item.cliente || '-') + '</div>';
-                tablaHTML += '<div class="modern-table-cell item-text"><a href="' + redmineUrl + '" target="_blank" style="color: var(--primary-color); text-decoration: none;">' + nombreProyecto + '</a></div>';
+                
+                // Cambiar el enlace para que abra el modal en lugar de redirigir a Redmine
+                tablaHTML += '<div class="modern-table-cell item-text"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + '); event.stopPropagation();" data-item="' + itemDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer;">' + nombreProyecto + '</a></div>';
                 
                 const estadoValue = item.estado || '';
                 let estadoClass = '';
@@ -587,37 +1110,31 @@
                     estadoClass = 'estado-entregado';
                 } else if (estadoValue === 'sin comenzar') {
                     estadoClass = 'estado-sin-comenzar';
-                } else if (estadoValue === 'en curso' || estadoValue === 'Testing') {
+                } else if (estadoValue === 'en curso') {
                     estadoClass = 'estado-progreso';
-                } else if (estadoValue === 'Rework' || estadoValue === 'Bloqueado') {
+                } else if (estadoValue === 'Testing') {
+                    estadoClass = 'estado-testing';
+                } else if (estadoValue === 'Rework') {
+                    estadoClass = 'estado-rework';
+                } else if (estadoValue === 'Bloqueado') {
                     estadoClass = 'estado-bloqueado';
                 }
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select estado-select ' + estadoClass + '" onchange="actualizarProyecto(' + item.id_proyecto + ', \'estado\', this.value); actualizarEstadoColor(this);"><option value="">-</option><option value="sin comenzar" ' + (estadoValue === 'sin comenzar' ? 'selected' : '') + '>Sin comenzar</option><option value="en curso" ' + (estadoValue === 'en curso' ? 'selected' : '') + '>En curso</option><option value="Testing" ' + (estadoValue === 'Testing' ? 'selected' : '') + '>Testing</option><option value="Entregado" ' + (estadoValue === 'Entregado' ? 'selected' : '') + '>Entregado</option><option value="Cerrado" ' + (estadoValue === 'Cerrado' ? 'selected' : '') + '>Cerrado</option><option value="Rework" ' + (estadoValue === 'Rework' ? 'selected' : '') + '>Rework</option><option value="Bloqueado" ' + (estadoValue === 'Bloqueado' ? 'selected' : '') + '>Bloqueado</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownEstado(item.id_proyecto, estadoValue, estadoClass) + '</div>';
                 
                 const overallValue = item.overall || '';
-                const overallClass = overallValue ? 'color-' + overallValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select overall-select ' + overallClass + '" onchange="actualizarProyecto(' + item.id_proyecto + ', \'overall\', this.value); this.className=\'modern-select overall-select \' + (this.value ? \'color-\' + this.value : \'\');"><option value="">-</option><option value="verde" ' + (overallValue === 'verde' ? 'selected' : '') + '>🟢</option><option value="amarillo" ' + (overallValue === 'amarillo' ? 'selected' : '') + '>🟡</option><option value="rojo" ' + (overallValue === 'rojo' ? 'selected' : '') + '>🔴</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'overall', overallValue, '') + '</div>';
                 
                 const alcanceValue = item.alcance || '';
-                const alcanceClass = alcanceValue ? 'color-' + alcanceValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select overall-select ' + alcanceClass + '" onchange="actualizarProyecto(' + item.id_proyecto + ', \'alcance\', this.value); this.className=\'modern-select overall-select \' + (this.value ? \'color-\' + this.value : \'\');"><option value="">-</option><option value="verde" ' + (alcanceValue === 'verde' ? 'selected' : '') + '>🟢</option><option value="amarillo" ' + (alcanceValue === 'amarillo' ? 'selected' : '') + '>🟡</option><option value="rojo" ' + (alcanceValue === 'rojo' ? 'selected' : '') + '>🔴</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'alcance', alcanceValue, '') + '</div>';
                 
                 const costoValue = item.costo || '';
-                const costoClass = costoValue ? 'color-' + costoValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select overall-select ' + costoClass + '" onchange="actualizarProyecto(' + item.id_proyecto + ', \'costo\', this.value); this.className=\'modern-select overall-select \' + (this.value ? \'color-\' + this.value : \'\');"><option value="">-</option><option value="verde" ' + (costoValue === 'verde' ? 'selected' : '') + '>🟢</option><option value="amarillo" ' + (costoValue === 'amarillo' ? 'selected' : '') + '>🟡</option><option value="rojo" ' + (costoValue === 'rojo' ? 'selected' : '') + '>🔴</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'costo', costoValue, '') + '</div>';
                 
                 const plazosValue = item.plazos || '';
-                const plazosClass = plazosValue ? 'color-' + plazosValue : '';
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select overall-select ' + plazosClass + '" onchange="actualizarProyecto(' + item.id_proyecto + ', \'plazos\', this.value); this.className=\'modern-select overall-select \' + (this.value ? \'color-\' + this.value : \'\');"><option value="">-</option><option value="verde" ' + (plazosValue === 'verde' ? 'selected' : '') + '>🟢</option><option value="amarillo" ' + (plazosValue === 'amarillo' ? 'selected' : '') + '>🟡</option><option value="rojo" ' + (plazosValue === 'rojo' ? 'selected' : '') + '>🔴</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'plazos', plazosValue, '') + '</div>';
                 
                 const riesgoValue = item.riesgos || '';
-                let riesgoClass = '';
-                if (riesgoValue === 'ok' || riesgoValue === 'okey') {
-                    riesgoClass = 'riesgo-ok';
-                } else if (riesgoValue === 'red flag' || riesgoValue === 'redflag') {
-                    riesgoClass = 'riesgo-red';
-                }
-                tablaHTML += '<div class="modern-table-cell"><select class="modern-select riesgo-select ' + riesgoClass + '" onchange="actualizarProyecto(' + item.id_proyecto + ', \'riesgos\', this.value); actualizarRiesgoColor(this);"><option value="">-</option><option value="ok" ' + (riesgoValue === 'ok' || riesgoValue === 'okey' ? 'selected' : '') + '>✓</option><option value="red flag" ' + (riesgoValue === 'red flag' || riesgoValue === 'redflag' ? 'selected' : '') + '>🚩</option></select></div>';
+                tablaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(item.id_proyecto, riesgoValue, '') + '</div>';
                 
                 const avanceValue = parseInt(item.avance) || 0;
                 let avanceGradient = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
@@ -635,6 +1152,9 @@
                 // Botón "Ver más" - guardar datos del item en un atributo data, color azul como enlace
                 tablaHTML += '<div class="modern-table-cell"><button class="button button-secondary" onclick="abrirModalDetalle(' + item.id_proyecto + ')" data-item="' + itemDataJson + '" style="padding: 6px 12px; font-size: 13px; border: none; color: var(--primary-color); background: transparent;">Ver más</button></div>';
                 tablaHTML += '</div>';
+                
+                // NO renderizar subproyectos todavía - se cargarán bajo demanda cuando se expanda
+                // Las filas de subproyectos se agregarán dinámicamente en toggleProyectosSecundarios
             });
             
             tablaHTML += '</div></div>';
@@ -677,17 +1197,44 @@
         });
     }
 
-    function actualizarEstadoColor(select) {
-        const value = select.value;
-        select.className = 'modern-select estado-select';
+    function actualizarEstadoColor(element, value) {
+        // Si no se pasa el valor, intentar leerlo del elemento
+        if (!value) {
+            value = element.value || element.textContent.trim();
+            // Normalizar el valor del texto
+            const estadosMap = {
+                '-': '',
+                'Sin comenzar': 'sin comenzar',
+                'En curso': 'en curso',
+                'Testing': 'Testing',
+                'Entregado': 'Entregado',
+                'Cerrado': 'Cerrado',
+                'Rework': 'Rework',
+                'Bloqueado': 'Bloqueado'
+            };
+            value = estadosMap[value] || value;
+        }
+        
+        // Limpiar clases de estado anteriores
+        element.className = 'modern-select estado-select';
+        
+        // Eliminar estilos inline de background que puedan interferir
+        element.style.removeProperty('background');
+        element.style.removeProperty('background-color');
+        
+        // Agregar la clase correspondiente al estado
         if (value === 'Entregado' || value === 'Cerrado') {
-            select.classList.add('estado-entregado');
+            element.classList.add('estado-entregado');
         } else if (value === 'sin comenzar') {
-            select.classList.add('estado-sin-comenzar');
-        } else if (value === 'en curso' || value === 'Testing') {
-            select.classList.add('estado-progreso');
-        } else if (value === 'Rework' || value === 'Bloqueado') {
-            select.classList.add('estado-bloqueado');
+            element.classList.add('estado-sin-comenzar');
+        } else if (value === 'en curso') {
+            element.classList.add('estado-progreso');
+        } else if (value === 'Testing') {
+            element.classList.add('estado-testing');
+        } else if (value === 'Rework') {
+            element.classList.add('estado-rework');
+        } else if (value === 'Bloqueado') {
+            element.classList.add('estado-bloqueado');
         }
     }
 
@@ -760,6 +1307,36 @@
             alert('Error al actualizar: ' + error.message);
         }
     }
+    
+    async function actualizarSubproyecto(id_subproyecto, campo, valor) {
+        try {
+            const endpoint = '/api/subproyectos/' + id_subproyecto;
+            
+            const datos = { [campo]: valor };
+            console.log('Actualizando subproyecto:', { id_subproyecto, campo, valor });
+            
+            const response = await fetch(endpoint, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(datos)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log('✅ Subproyecto actualizado correctamente:', result.data);
+            } else {
+                console.error('❌ Error al actualizar subproyecto:', result.error);
+                alert('Error al actualizar: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('❌ Error al actualizar subproyecto:', error);
+            alert('Error al actualizar: ' + error.message);
+        }
+    }
 
     let progresoSincronizacion = 0;
     let intervaloProgreso = null;
@@ -770,12 +1347,21 @@
             return;
         }
         
+        console.log('🔄 Iniciando sincronización...');
+        console.log('   Producto:', productoActual);
+        console.log('   Equipo:', equipoActual || 'todos');
+        console.log('   Tipo:', tipoActual);
+        
         mostrarPopupSincronizacion();
         
+        // Buscar el botón de sincronización (puede estar en el panel de filtros o en la tabla)
         const btnSincronizar = document.getElementById('btnSincronizar');
-        const textoOriginal = btnSincronizar.innerHTML;
-        btnSincronizar.disabled = true;
-        btnSincronizar.innerHTML = '<div class="spinner"></div> <span>Sincronizando...</span>';
+        let textoOriginal = null;
+        if (btnSincronizar) {
+            textoOriginal = btnSincronizar.innerHTML;
+            btnSincronizar.disabled = true;
+            btnSincronizar.innerHTML = '<div class="spinner"></div> <span>Sincronizando...</span>';
+        }
 
         try {
             let endpoint = '';
@@ -788,7 +1374,12 @@
                 endpoint = '/api/sincronizar/mantenimiento';
             } else if (tipoActual === 'proyectos') {
                 endpoint = '/api/sincronizar/proyectos';
+            } else {
+                throw new Error('Tipo de sincronización no válido: ' + tipoActual);
             }
+
+            console.log('📡 Llamando a:', endpoint);
+            console.log('📦 Datos enviados:', bodyData);
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -797,7 +1388,14 @@
                 body: JSON.stringify(bodyData)
             });
 
+            console.log('📥 Respuesta recibida, status:', response.status);
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+            }
+
             const result = await response.json();
+            console.log('✅ Resultado de sincronización:', result);
             
             // Completar barra de progreso
             actualizarProgresoSincronizacion(100);
@@ -805,18 +1403,23 @@
             setTimeout(() => {
                 ocultarPopupSincronizacion();
                 if (result.success) {
+                    console.log('✅ Sincronización exitosa, recargando datos...');
                     cargarDatos();
                 } else {
+                    console.error('❌ Error en sincronización:', result.error);
                     alert('Error en la sincronización: ' + (result.error || 'Error desconocido'));
                 }
             }, 500);
         } catch (error) {
-            console.error('Error al sincronizar:', error);
+            console.error('❌ Error al sincronizar:', error);
+            console.error('   Stack:', error.stack);
             ocultarPopupSincronizacion();
             alert('Error al sincronizar: ' + error.message);
         } finally {
-            btnSincronizar.disabled = false;
-            btnSincronizar.innerHTML = textoOriginal;
+            if (btnSincronizar && textoOriginal) {
+                btnSincronizar.disabled = false;
+                btnSincronizar.innerHTML = textoOriginal;
+            }
         }
     }
 
@@ -886,9 +1489,10 @@
         try {
             // Buscar el botón con los datos del proyecto
             // Usar window.tempModalButton si existe (para recargas), sino usar event normal
-            let btn = window.tempModalButton || (typeof event !== 'undefined' && event?.target) || document.querySelector('button[data-item][onclick*="' + id_proyecto + '"]');
+            // Buscar el elemento con data-item (puede ser un botón o un enlace)
+            let btn = window.tempModalButton || (typeof event !== 'undefined' && event?.target) || document.querySelector('button[data-item][onclick*="' + id_proyecto + '"]') || document.querySelector('a[data-item][onclick*="' + id_proyecto + '"]');
             if (!btn) {
-                console.error('No se encontró el botón del proyecto');
+                console.error('No se encontró el elemento del proyecto');
                 return;
             }
             const itemDataJson = btn.getAttribute('data-item');
@@ -984,21 +1588,22 @@
                         html += '</div>';
                         // Agregar fondo de color según el estado del epic
                         const estadoEpic = epic.status || '';
-                        let estadoEpicClass = '';
                         let estadoEpicBg = '';
-                        if (estadoEpic.toLowerCase().includes('cerrado') || estadoEpic.toLowerCase().includes('closed')) {
-                            estadoEpicBg = '#e6f4ea';
-                            estadoEpicClass = 'estado-epic-cerrado';
-                        } else if (estadoEpic.toLowerCase().includes('nuevo') || estadoEpic.toLowerCase().includes('new')) {
-                            estadoEpicBg = '#f1f3f4';
-                            estadoEpicClass = 'estado-epic-nuevo';
-                        } else if (estadoEpic.toLowerCase().includes('en progreso') || estadoEpic.toLowerCase().includes('in progress')) {
-                            estadoEpicBg = '#fef7e0';
-                            estadoEpicClass = 'estado-epic-progreso';
-                        } else if (estadoEpic.toLowerCase().includes('resuelto') || estadoEpic.toLowerCase().includes('resolved')) {
-                            estadoEpicBg = '#e8f0fe';
-                            estadoEpicClass = 'estado-epic-resuelto';
+                        const estadoLower = estadoEpic.toLowerCase();
+                        
+                        // Estados cerrados/entregados: verde suave con transparencia
+                        if (estadoLower.includes('cerrado') || estadoLower.includes('closed') || 
+                            estadoLower.includes('entregado') || estadoLower.includes('resuelto') || 
+                            estadoLower.includes('resolved')) {
+                            estadoEpicBg = 'rgba(30, 142, 62, 0.1)'; // Verde suave con transparencia
+                        } 
+                        // Estados abiertos: azul suave con transparencia
+                        else if (estadoLower.includes('nuevo') || estadoLower.includes('new') || 
+                                 estadoLower.includes('en progreso') || estadoLower.includes('in progress') ||
+                                 estadoLower.includes('abierto') || estadoLower.includes('open')) {
+                            estadoEpicBg = 'rgba(26, 115, 232, 0.1)'; // Azul suave con transparencia
                         }
+                        
                         html += '<div style="font-size: 12px; color: var(--text-secondary); padding: 4px 8px; border-radius: 12px; background: ' + (estadoEpicBg || 'transparent') + '; display: inline-block;">' + (estadoEpic || '-') + '</div>';
                         html += '</div>';
                         html += '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px; color: var(--text-secondary);">';
@@ -1044,7 +1649,14 @@
                 epicsHTML = '<div style="color: #d93025; padding: 20px; text-align: center;">Error al cargar epics</div>';
             }
             
+            // Agregar enlace a Redmine debajo del título
+            const redmineLink = itemData.redmineUrl || ('https://redmine.mercap.net/projects/' + (itemData.codigo_proyecto || ''));
+            
             let contenido = '<div style="display: flex; flex-direction: column; gap: 24px;">';
+            
+            // Enlace a Redmine
+            const codigoProyecto = itemData.codigo_proyecto || '';
+            contenido += '<div style="margin-bottom: 8px;"><a href="' + redmineLink + '" target="_blank" style="color: var(--primary-color); text-decoration: none; font-size: 14px; font-weight: 400;">Redmine + ' + codigoProyecto + '</a></div>';
             
             // Dos columnas principales - columna izquierda más estrecha, derecha más ancha
             contenido += '<div style="display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 32px;">';
@@ -1114,6 +1726,195 @@
             console.error('Error al abrir modal:', error);
             alert('Error al abrir detalles del proyecto');
         }
+    }
+    
+    // Función para expandir/contraer proyectos secundarios (con carga lazy)
+    async function toggleProyectosSecundarios(id_proyecto, btn) {
+        const filasSecundarias = document.querySelectorAll('.proyecto-secundario-' + id_proyecto);
+        const isExpanded = filasSecundarias.length > 0 && filasSecundarias[0].style.display !== 'none';
+        
+        // Si está expandido, solo ocultar
+        if (isExpanded) {
+            filasSecundarias.forEach(function(fila) {
+                fila.style.display = 'none';
+            });
+            btn.textContent = '▶';
+            btn.style.transform = 'rotate(0deg)';
+            return;
+        }
+        
+        // Si no está expandido, cargar subproyectos bajo demanda
+        if (filasSecundarias.length === 0) {
+            // Mostrar indicador de carga
+            const textoOriginal = btn.textContent;
+            btn.textContent = '⏳';
+            btn.disabled = true;
+            btn.style.cursor = 'wait';
+            
+            try {
+                console.log('📦 Cargando subproyectos para proyecto:', id_proyecto);
+                const inicio = performance.now();
+                
+                const response = await fetch('/api/proyectos/' + id_proyecto + '/subproyectos', {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                const tiempo = (performance.now() - inicio).toFixed(2);
+                console.log(`✅ Subproyectos cargados en ${tiempo}ms`);
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    // Renderizar subproyectos dinámicamente
+                    const filaProyecto = btn.closest('.modern-table-row');
+                    if (filaProyecto) {
+                        // Renderizar todos los subproyectos de una vez
+                        const fragment = document.createDocumentFragment();
+                        result.data.forEach(function(subproyecto) {
+                            const fila = crearFilaSubproyecto(id_proyecto, subproyecto, filaProyecto);
+                            if (fila) {
+                                fragment.appendChild(fila);
+                            }
+                        });
+                        // Insertar todas las filas de una vez (más eficiente)
+                        filaProyecto.parentNode.insertBefore(fragment, filaProyecto.nextSibling);
+                    }
+                } else {
+                    console.log('ℹ️ No hay subproyectos para este proyecto');
+                    btn.textContent = textoOriginal;
+                    btn.disabled = false;
+                    btn.style.cursor = 'pointer';
+                    return;
+                }
+            } catch (error) {
+                console.error('❌ Error al cargar subproyectos:', error);
+                alert('Error al cargar subproyectos: ' + error.message);
+                btn.textContent = textoOriginal;
+                btn.disabled = false;
+                btn.style.cursor = 'pointer';
+                return;
+            }
+            
+            btn.disabled = false;
+            btn.style.cursor = 'pointer';
+        }
+        
+        // Mostrar las filas de subproyectos
+        const filasSecundariasActualizadas = document.querySelectorAll('.proyecto-secundario-' + id_proyecto);
+        filasSecundariasActualizadas.forEach(function(fila) {
+            fila.style.display = '';
+        });
+        
+        // Cambiar la flecha
+        btn.textContent = '▼';
+        btn.style.transform = 'rotate(0deg)';
+    }
+    
+    // Función para crear una fila de subproyecto (optimizada - retorna elemento DOM en lugar de insertar directamente)
+    function crearFilaSubproyecto(id_proyecto, subproyecto, filaProyectoPadre) {
+        // Crear la fila de subproyecto
+        const filaSubproyecto = document.createElement('div');
+        filaSubproyecto.className = 'modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row';
+        filaSubproyecto.setAttribute('data-id-proyecto', id_proyecto);
+        filaSubproyecto.setAttribute('data-id-subproyecto', subproyecto.id_subproyecto);
+        filaSubproyecto.style.display = 'none';
+        
+        // Crear celdas usando createElement (más rápido que innerHTML para múltiples elementos)
+        const celdas = [
+            { class: 'modern-table-cell', style: 'width: 40px;', content: '' },
+            { class: 'modern-table-cell item-text', content: '' },
+            { class: 'modern-table-cell item-text', style: 'padding-left: 24px; font-style: italic; color: var(--text-secondary);', content: subproyecto.nombre || '-' }
+        ];
+        
+        celdas.forEach(celda => {
+            const div = document.createElement('div');
+            div.className = celda.class;
+            if (celda.style) div.setAttribute('style', celda.style);
+            div.textContent = celda.content;
+            filaSubproyecto.appendChild(div);
+        });
+        
+        // Estado
+        const estadoSubproyecto = subproyecto.estado || '';
+        let estadoClassSub = '';
+        if (estadoSubproyecto === 'Entregado' || estadoSubproyecto === 'Cerrado') {
+            estadoClassSub = 'estado-entregado';
+        } else if (estadoSubproyecto === 'sin comenzar') {
+            estadoClassSub = 'estado-sin-comenzar';
+        } else if (estadoSubproyecto === 'en curso') {
+            estadoClassSub = 'estado-progreso';
+        } else if (estadoSubproyecto === 'Testing') {
+            estadoClassSub = 'estado-testing';
+        } else if (estadoSubproyecto === 'Rework') {
+            estadoClassSub = 'estado-rework';
+        } else if (estadoSubproyecto === 'Bloqueado') {
+            estadoClassSub = 'estado-bloqueado';
+        }
+        
+        const celdaEstado = document.createElement('div');
+        celdaEstado.className = 'modern-table-cell';
+        celdaEstado.innerHTML = crearDropdownEstado(subproyecto.id_subproyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub);
+        filaSubproyecto.appendChild(celdaEstado);
+        
+        // Overall
+        const celdaOverall = document.createElement('div');
+        celdaOverall.className = 'modern-table-cell';
+        celdaOverall.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'overall', subproyecto.overall || '', 'subproyecto');
+        filaSubproyecto.appendChild(celdaOverall);
+        
+        // Alcance
+        const celdaAlcance = document.createElement('div');
+        celdaAlcance.className = 'modern-table-cell';
+        celdaAlcance.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'alcance', subproyecto.alcance || '', 'subproyecto');
+        filaSubproyecto.appendChild(celdaAlcance);
+        
+        // Costo
+        const celdaCosto = document.createElement('div');
+        celdaCosto.className = 'modern-table-cell';
+        celdaCosto.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'costo', subproyecto.costo || '', 'subproyecto');
+        filaSubproyecto.appendChild(celdaCosto);
+        
+        // Plazos
+        const celdaPlazos = document.createElement('div');
+        celdaPlazos.className = 'modern-table-cell';
+        celdaPlazos.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'plazos', subproyecto.plazos || '', 'subproyecto');
+        filaSubproyecto.appendChild(celdaPlazos);
+        
+        // Riesgos
+        const celdaRiesgos = document.createElement('div');
+        celdaRiesgos.className = 'modern-table-cell';
+        celdaRiesgos.innerHTML = crearDropdownRiesgo(subproyecto.id_subproyecto, subproyecto.riesgos || '', 'subproyecto');
+        filaSubproyecto.appendChild(celdaRiesgos);
+        
+        // Avance
+        const avanceSubproyecto = parseInt(subproyecto.avance) || 0;
+        let avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
+        if (avanceSubproyecto <= 25) {
+            avanceGradientSub = 'linear-gradient(90deg, #a5d6a7 0%, #81c784 100%)';
+        } else if (avanceSubproyecto <= 50) {
+            avanceGradientSub = 'linear-gradient(90deg, #81c784 0%, #66bb6a 100%)';
+        } else if (avanceSubproyecto <= 75) {
+            avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #4caf50 100%)';
+        } else {
+            avanceGradientSub = 'linear-gradient(90deg, #4caf50 0%, #34a853 50%, #1e8e3e 100%)';
+        }
+        const celdaAvance = document.createElement('div');
+        celdaAvance.className = 'modern-table-cell';
+        celdaAvance.innerHTML = '<div class="progress-bar-container" data-id="' + subproyecto.id_subproyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarSubproyecto(' + subproyecto.id_subproyecto + ', \'avance\', this.value);" /></div>';
+        filaSubproyecto.appendChild(celdaAvance);
+        
+        // Ver más (vacío)
+        const celdaVerMas = document.createElement('div');
+        celdaVerMas.className = 'modern-table-cell';
+        filaSubproyecto.appendChild(celdaVerMas);
+        
+        return filaSubproyecto;
     }
     
     // Cerrar modal de detalle

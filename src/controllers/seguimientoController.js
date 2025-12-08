@@ -2,6 +2,7 @@ const MantenimientoModel = require('../models/MantenimientoModel');
 const ProyectosExternosModel = require('../models/ProyectosExternosModel');
 const ProductosEquiposModel = require('../models/ProductosEquiposModel');
 const EpicsProyectoModel = require('../models/EpicsProyectoModel');
+const SubproyectosModel = require('../models/SubproyectosModel');
 const { obtenerEpics, mapearEpic } = require('../services/redmineService');
 
 /**
@@ -130,9 +131,33 @@ async function obtenerProyectos(req, res) {
         
         console.log(`✅ Proyectos obtenidos de BD: ${proyectos.length}`);
         
+        // Obtener epics secundarios para todos los proyectos (solo para detectar si tiene subproyectos)
+        const ids_proyectos = proyectos.map(p => p.id_proyecto);
+        const epicsSecundarios = await EpicsProyectoModel.obtenerEpicsSecundariosPorProyectos(ids_proyectos);
+        
+        // Solo marcar si tiene subproyectos, pero NO cargar los subproyectos todavía (carga lazy)
+        const proyectosConInfoSubproyectos = proyectos.map(proyecto => {
+            const epicsDelProyecto = epicsSecundarios[proyecto.id_proyecto] || [];
+            // Agrupar epics por proyecto_padre para contar subproyectos únicos
+            const proyectosSecundariosUnicos = {};
+            epicsDelProyecto.forEach(epic => {
+                const proyectoPadre = epic.proyecto_padre;
+                if (proyectoPadre && !proyectosSecundariosUnicos[proyectoPadre]) {
+                    proyectosSecundariosUnicos[proyectoPadre] = true;
+                }
+            });
+            const tieneSubproyectos = Object.keys(proyectosSecundariosUnicos).length > 0;
+            
+            return {
+                ...proyecto,
+                tiene_subproyectos: tieneSubproyectos,
+                subproyectos: [] // No cargar todavía, se cargarán bajo demanda
+            };
+        });
+        
         res.json({
             success: true,
-            data: proyectos
+            data: proyectosConInfoSubproyectos
         });
     } catch (error) {
         console.error('Error al obtener proyectos:', error);
@@ -403,15 +428,127 @@ async function obtenerEpicsProyecto(req, res) {
     }
 }
 
+/**
+ * Obtener métricas del dashboard
+ */
+async function obtenerMetricasDashboard(req, res) {
+    try {
+        const metricas = await ProyectosExternosModel.obtenerMetricasDashboard();
+        
+        res.json({
+            success: true,
+            data: metricas
+        });
+    } catch (error) {
+        console.error('Error al obtener métricas del dashboard:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener métricas del dashboard'
+        });
+    }
+}
+
+/**
+ * Obtener subproyectos de un proyecto específico (carga lazy - optimizado)
+ */
+async function obtenerSubproyectos(req, res) {
+    try {
+        const { id_proyecto } = req.params;
+        const idProyectoNum = parseInt(id_proyecto);
+        
+        if (isNaN(idProyectoNum)) {
+            return res.status(400).json({
+                success: false,
+                error: 'ID de proyecto inválido'
+            });
+        }
+        
+        console.log('📦 Obteniendo subproyectos para proyecto:', idProyectoNum);
+        
+        // Primero verificar si ya existen subproyectos en la BD (más rápido)
+        let subproyectos = await SubproyectosModel.obtenerPorProyecto(idProyectoNum);
+        
+        // Si no hay subproyectos, sincronizar desde epics (solo si es necesario)
+        if (subproyectos.length === 0) {
+            console.log('📦 No hay subproyectos en BD, sincronizando desde epics...');
+            const epicsSecundarios = await EpicsProyectoModel.obtenerEpicsSecundariosPorProyectos([idProyectoNum]);
+            const epicsDelProyecto = epicsSecundarios[idProyectoNum] || [];
+            
+            if (epicsDelProyecto.length > 0) {
+                await SubproyectosModel.sincronizarDesdeEpics(idProyectoNum, epicsDelProyecto);
+                // Obtener subproyectos después de sincronizar
+                subproyectos = await SubproyectosModel.obtenerPorProyecto(idProyectoNum);
+            }
+        } else {
+            console.log('✅ Subproyectos encontrados en BD:', subproyectos.length);
+        }
+        
+        res.json({
+            success: true,
+            data: subproyectos
+        });
+    } catch (error) {
+        console.error('Error al obtener subproyectos:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Error al obtener subproyectos'
+        });
+    }
+}
+
+/**
+ * Actualizar datos editables de subproyecto
+ */
+async function actualizarSubproyecto(req, res) {
+    try {
+        const { id_subproyecto } = req.params;
+        const datos = req.body;
+        
+        console.log('📝 actualizarSubproyecto - id_subproyecto:', id_subproyecto, 'datos:', datos);
+        
+        // Validar que id_subproyecto es un número
+        const idSubproyectoNum = parseInt(id_subproyecto);
+        if (isNaN(idSubproyectoNum)) {
+            return res.status(400).json({
+                success: false,
+                error: 'ID de subproyecto inválido'
+            });
+        }
+        
+        const resultado = await SubproyectosModel.actualizar(idSubproyectoNum, datos);
+        
+        if (!resultado) {
+            return res.status(404).json({
+                success: false,
+                error: 'Subproyecto no encontrado'
+            });
+        }
+        
+        res.json({
+            success: true,
+            data: resultado
+        });
+    } catch (error) {
+        console.error('Error al actualizar subproyecto:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Error al actualizar subproyecto'
+        });
+    }
+}
+
 module.exports = {
     index,
     obtenerMantenimiento,
     obtenerProyectos,
     obtenerEpics: obtenerEpicsProyecto,
+    obtenerSubproyectos,
     actualizarMantenimiento,
     actualizarProyecto,
+    actualizarSubproyecto,
     obtenerSugerenciasMantenimiento,
     obtenerSugerenciasProyectos,
-    sincronizarEpics
+    sincronizarEpics,
+    obtenerMetricasDashboard
 };
 

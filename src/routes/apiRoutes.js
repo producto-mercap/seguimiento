@@ -9,6 +9,8 @@ const { requireAuthJWT, requireAdmin } = require('../middleware/authJWT');
 router.get('/mantenimiento', seguimientoController.obtenerMantenimiento);
 router.get('/proyectos', seguimientoController.obtenerProyectos);
 router.get('/epics/:id_proyecto', seguimientoController.obtenerEpics);
+router.get('/proyectos/:id_proyecto/subproyectos', seguimientoController.obtenerSubproyectos);
+router.get('/dashboard/metricas', seguimientoController.obtenerMetricasDashboard);
 
 // Rutas para sugerencias de búsqueda
 router.get('/mantenimiento/sugerencias', seguimientoController.obtenerSugerenciasMantenimiento);
@@ -17,15 +19,42 @@ router.get('/proyectos/sugerencias', seguimientoController.obtenerSugerenciasPro
 // Rutas para actualizar datos editables
 router.put('/mantenimiento/:id_proyecto', seguimientoController.actualizarMantenimiento);
 router.put('/proyectos/:id_proyecto', seguimientoController.actualizarProyecto);
+router.put('/subproyectos/:id_subproyecto', seguimientoController.actualizarSubproyecto);
 
 // Rutas para sincronización con Redmine
 router.post('/sincronizar/mantenimiento', async (req, res) => {
+    console.log('\n📡 =================================');
+    console.log('   REQUEST: /api/sincronizar/mantenimiento');
+    console.log('   =================================');
+    console.log('   Body recibido:', JSON.stringify(req.body, null, 2));
+    console.log('   Timestamp:', new Date().toISOString());
+    console.log('   =================================\n');
+    
     try {
         const { producto, equipo, maxTotal } = req.body;
+        console.log('   Parámetros extraídos:');
+        console.log('   - producto:', producto);
+        console.log('   - equipo:', equipo);
+        console.log('   - maxTotal:', maxTotal);
+        console.log('');
+        
         const resultado = await sincronizacionService.sincronizarMantenimiento(producto, equipo, maxTotal);
+        
+        console.log('\n✅ =================================');
+        console.log('   RESPUESTA: /api/sincronizar/mantenimiento');
+        console.log('   =================================');
+        console.log('   Success:', resultado.success);
+        console.log('   =================================\n');
+        
         res.json(resultado);
     } catch (error) {
-        console.error('Error en sincronización de mantenimiento:', error);
+        console.error('\n❌ =================================');
+        console.error('   ERROR en sincronización de mantenimiento');
+        console.error('   =================================');
+        console.error('   Mensaje:', error.message);
+        console.error('   Stack:', error.stack);
+        console.error('   =================================\n');
+        
         res.status(500).json({
             success: false,
             error: error.message
@@ -34,12 +63,38 @@ router.post('/sincronizar/mantenimiento', async (req, res) => {
 });
 
 router.post('/sincronizar/proyectos', async (req, res) => {
+    console.log('\n📡 =================================');
+    console.log('   REQUEST: /api/sincronizar/proyectos');
+    console.log('   =================================');
+    console.log('   Body recibido:', JSON.stringify(req.body, null, 2));
+    console.log('   Timestamp:', new Date().toISOString());
+    console.log('   =================================\n');
+    
     try {
         const { producto, equipo, maxTotal } = req.body;
+        console.log('   Parámetros extraídos:');
+        console.log('   - producto:', producto);
+        console.log('   - equipo:', equipo);
+        console.log('   - maxTotal:', maxTotal);
+        console.log('');
+        
         const resultado = await sincronizacionService.sincronizarProyectos(producto, equipo, maxTotal);
+        
+        console.log('\n✅ =================================');
+        console.log('   RESPUESTA: /api/sincronizar/proyectos');
+        console.log('   =================================');
+        console.log('   Success:', resultado.success);
+        console.log('   =================================\n');
+        
         res.json(resultado);
     } catch (error) {
-        console.error('Error en sincronización de proyectos:', error);
+        console.error('\n❌ =================================');
+        console.error('   ERROR en sincronización de proyectos');
+        console.error('   =================================');
+        console.error('   Mensaje:', error.message);
+        console.error('   Stack:', error.stack);
+        console.error('   =================================\n');
+        
         res.status(500).json({
             success: false,
             error: error.message
