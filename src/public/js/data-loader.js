@@ -40,7 +40,7 @@ async function mostrarDashboard() {
             'Portfolio Cloud',
             'Unitrade',
             'Trading Room',
-            'OMS',
+            'Order Management',
             'Pepper'
         ];
         
@@ -75,13 +75,13 @@ async function mostrarDashboard() {
         function obtenerColoresProducto(producto) {
             const colores = {
                 'Abbaco': { primary: '#4285F4', secondary: '#E8F0FE', gradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)' },
-                'Portfolio': { primary: '#EA4335', secondary: '#FCE8E6', gradient: 'linear-gradient(135deg, #EA4335 0%, #FBBC04 100%)' },
-                'Portfolio Cloud': { primary: '#34A853', secondary: '#E6F4EA', gradient: 'linear-gradient(135deg, #34A853 0%, #4285F4 100%)' },
-                'Unitrade': { primary: '#FBBC04', secondary: '#FEF7E0', gradient: 'linear-gradient(135deg, #FBBC04 0%, #EA4335 100%)' },
-                'Trading Room': { primary: '#9C27B0', secondary: '#F3E5F5', gradient: 'linear-gradient(135deg, #9C27B0 0%, #673AB7 100%)' },
-                'Order Management': { primary: '#00BCD4', secondary: '#E0F7FA', gradient: 'linear-gradient(135deg, #00BCD4 0%, #009688 100%)' },
-                'OMS': { primary: '#00BCD4', secondary: '#E0F7FA', gradient: 'linear-gradient(135deg, #00BCD4 0%, #009688 100%)' },
-                'Pepper': { primary: '#FF5722', secondary: '#FFEBEE', gradient: 'linear-gradient(135deg, #FF5722 0%, #FF9800 100%)' }
+                'Portfolio': { primary: '#4285F4', secondary: '#E8F0FE', gradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)' },
+                'Portfolio Cloud': { primary: '#4285F4', secondary: '#E8F0FE', gradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)' },
+                'Unitrade': { primary: '#F67F1E', secondary: '#FEF3E8', gradient: 'linear-gradient(135deg, #F67F1E 0%, #FF9800 100%)' },
+                'Trading Room': { primary: '#F67F1E', secondary: '#FEF3E8', gradient: 'linear-gradient(135deg, #F67F1E 0%, #FF9800 100%)' },
+                'Order Management': { primary: '#F67F1E', secondary: '#FEF3E8', gradient: 'linear-gradient(135deg, #F67F1E 0%, #FF9800 100%)' },
+                'OMS': { primary: '#F67F1E', secondary: '#FEF3E8', gradient: 'linear-gradient(135deg, #F67F1E 0%, #FF9800 100%)' },
+                'Pepper': { primary: '#34A853', secondary: '#E6F4EA', gradient: 'linear-gradient(135deg, #34A853 0%, #2E7D32 100%)' }
             };
             return colores[producto] || { primary: '#1A73E8', secondary: '#E8F0FE', gradient: 'linear-gradient(135deg, #1A73E8 0%, #4285F4 100%)' };
         }
@@ -98,31 +98,38 @@ async function mostrarDashboard() {
             // Para Abbaco y Pepper, solo mostrar "Proyectos en Curso"
             const mostrarClientes = producto !== 'Abbaco' && producto !== 'Pepper';
             
-            // Estilo tipo article card
-            dashboardHTML += '<div class="feed-article" style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); transition: all 0.2s; cursor: pointer; border: 1px solid transparent;" onmouseover="this.style.boxShadow=\'0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3)\'; this.style.borderColor=\'#dadce0\';" onmouseout="this.style.boxShadow=\'0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)\'; this.style.borderColor=\'transparent\';" onclick="window.location.href=\'/?producto=\' + encodeURIComponent(\'' + producto + '\')">';
+            // Estilo tipo article card con detalle decorativo
+            dashboardHTML += '<div class="feed-article" style="position: relative; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); transition: all 0.2s; cursor: pointer; border: 1px solid transparent; overflow: hidden;" onmouseover="this.style.boxShadow=\'0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3)\'; this.style.borderColor=\'#dadce0\';" onmouseout="this.style.boxShadow=\'0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)\'; this.style.borderColor=\'transparent\';" onclick="window.location.href=\'/?producto=\' + encodeURIComponent(\'' + producto + '\')">';
             
-            // Eyebrow (Producto) - estilo ANDROID (color uniforme #4285F4 para todos)
-            dashboardHTML += '<a class="uni-eyebrow" style="display: inline-block; font-size: 14px; font-weight: 500; color: #4285F4; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + productoNormalizado.toUpperCase() + '</a>';
+            // Detalle decorativo en esquina superior derecha
+            dashboardHTML += '<div style="position: absolute; top: 0; right: 0; width: 40px; height: 40px; background: ' + colores.primary + '; opacity: 0.1; border-radius: 0 12px 0 40px;"></div>';
+            dashboardHTML += '<div style="position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; background: ' + colores.primary + '; border-radius: 50%;"></div>';
+            
+            // Eyebrow (Producto) - con color del producto
+            dashboardHTML += '<a class="uni-eyebrow" style="display: inline-block; font-size: 14px; font-weight: 500; color: ' + colores.primary + '; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + productoNormalizado.toUpperCase() + '</a>';
             
             // Equipos como tags
             if (equipos.length > 0) {
                 dashboardHTML += '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">';
                 equipos.forEach(function(equipo) {
-                    dashboardHTML += '<span style="display: inline-flex; align-items: center; padding: 4px 10px; background: #f1f3f4; color: #5f6368; border-radius: 12px; font-size: 12px; font-weight: 400; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + equipo.equipo + '</span>';
+                    dashboardHTML += '<span style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgba(222, 235, 242, 1); color: #5f6368; border-radius: 12px; font-size: 12px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + equipo.equipo + '</span>';
                 });
                 dashboardHTML += '</div>';
             }
+            
+            // Línea divisora gris oscura antes de las métricas
+            dashboardHTML += '<div style="border-top: 1px solid #5f6368; margin: 8px 0 12px 0; opacity: 0.3;"></div>';
             
             // Métricas - estilo eyebrow__date
             dashboardHTML += '<div style="display: flex; flex-direction: column; gap: 8px;">';
             
             // Métrica: Total Clientes (solo si no es Abbaco ni Pepper)
             if (mostrarClientes) {
-                dashboardHTML += '<span class="eyebrow__date" style="display: inline-block; font-size: 12px; font-weight: 400; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; font-family: \'Google Sans\', \'Roboto\', sans-serif; line-height: 1.5;">CLIENTES ' + parseInt(metrica.total_clientes || 0) + '</span>';
+                dashboardHTML += '<span class="eyebrow__date" style="display: inline-block; font-size: 12px; font-weight: 500; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; font-family: \'Google Sans\', \'Roboto\', sans-serif; line-height: 1.5;">CLIENTES ' + parseInt(metrica.total_clientes || 0) + '</span>';
             }
             
             // Métrica: Proyectos en Curso
-            dashboardHTML += '<span class="eyebrow__date" style="display: inline-block; font-size: 12px; font-weight: 400; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; font-family: \'Google Sans\', \'Roboto\', sans-serif; line-height: 1.5;">PROYECTOS EN CURSO ' + parseInt(metrica.proyectos_en_curso || 0) + '</span>';
+            dashboardHTML += '<span class="eyebrow__date" style="display: inline-block; font-size: 12px; font-weight: 500; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px; font-family: \'Google Sans\', \'Roboto\', sans-serif; line-height: 1.5;">PROYECTOS EN CURSO ' + parseInt(metrica.proyectos_en_curso || 0) + '</span>';
             
             dashboardHTML += '</div>';
             dashboardHTML += '</div>';
