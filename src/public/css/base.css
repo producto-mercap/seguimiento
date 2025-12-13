@@ -22,7 +22,7 @@ button.btn-primary,
 }
 
 :root {
-    --sidebar-width: 256px;
+    --sidebar-width: 200px;
     --header-height: 64px;
     --primary-color: #316ba1;
     --hover-bg: #f1f3f4;
