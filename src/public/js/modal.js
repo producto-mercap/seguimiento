@@ -184,31 +184,39 @@ async function abrirModalDetalle(id_proyecto, mostrarAccionables = false) {
             }
         }
         
-        // Formatear fecha de última actualización
+        // Formatear fecha de última actualización (mostrar tal como viene de BD para evitar problemas de zona horaria)
         let fechaUltimaActualizacion = '';
         if (updatedAt) {
             try {
-                // Convertir a zona horaria de Buenos Aires usando Intl.DateTimeFormat
-                const fecha = new Date(updatedAt);
-                const formatter = new Intl.DateTimeFormat('es-AR', {
-                    timeZone: 'America/Argentina/Buenos_Aires',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
+                // Manejar diferentes formatos de fecha:
+                // 1. Formato ISO con Z (UTC): 2025-12-10T17:56:16.692Z
+                // 2. Formato de BD: 2025-12-10 14:56:16.692379
+                // 3. Formato de BD simple: 2025-12-10 14:56:16
                 
-                const partes = formatter.formatToParts(fecha);
-                const dia = partes.find(p => p.type === 'day').value;
-                const mes = partes.find(p => p.type === 'month').value;
-                const año = partes.find(p => p.type === 'year').value;
-                const horas = partes.find(p => p.type === 'hour').value;
-                const minutos = partes.find(p => p.type === 'minute').value;
-                const ampm = partes.find(p => p.type === 'dayPeriod').value === 'AM' ? 'a. m.' : 'p. m.';
+                let fechaStr = updatedAt;
                 
-                fechaUltimaActualizacion = `${dia}/${mes}/${año}, ${horas}:${minutos} ${ampm}`;
+                // Si viene en formato ISO (con T y Z), convertir de UTC a hora local (Argentina UTC-3)
+                if (fechaStr.includes('T') && fechaStr.includes('Z')) {
+                    // Formato ISO: 2025-12-10T17:56:16.692Z
+                    // Convertir a hora local (restar 3 horas para Argentina)
+                    const fecha = new Date(fechaStr);
+                    // Obtener componentes en hora local
+                    const año = fecha.getFullYear();
+                    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const dia = String(fecha.getDate()).padStart(2, '0');
+                    const horas = String(fecha.getHours()).padStart(2, '0');
+                    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+                    const segundos = String(fecha.getSeconds()).padStart(2, '0');
+                    fechaStr = `${año}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+                } else {
+                    // Formato de BD: 2025-12-10 14:56:16.692379 o 2025-12-10 14:56:16
+                    const match = fechaStr.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/);
+                    if (match) {
+                        fechaStr = match[1] + ' ' + match[2];
+                    }
+                }
+                
+                fechaUltimaActualizacion = fechaStr;
             } catch (e) {
                 fechaUltimaActualizacion = updatedAt;
             }
@@ -878,30 +886,40 @@ function actualizarTextoUltimaActualizacion(id_proyecto, updatedAt) {
     if (!elemento) return;
     
     try {
-        // Convertir a zona horaria de Buenos Aires usando Intl.DateTimeFormat
-        const fecha = new Date(updatedAt);
-        const formatter = new Intl.DateTimeFormat('es-AR', {
-            timeZone: 'America/Argentina/Buenos_Aires',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
+        // Manejar diferentes formatos de fecha:
+        // 1. Formato ISO con Z (UTC): 2025-12-10T17:56:16.692Z
+        // 2. Formato de BD: 2025-12-10 14:56:16.692379
+        // 3. Formato de BD simple: 2025-12-10 14:56:16
         
-        const partes = formatter.formatToParts(fecha);
-        const dia = partes.find(p => p.type === 'day').value;
-        const mes = partes.find(p => p.type === 'month').value;
-        const año = partes.find(p => p.type === 'year').value;
-        const horas = partes.find(p => p.type === 'hour').value;
-        const minutos = partes.find(p => p.type === 'minute').value;
-        const ampm = partes.find(p => p.type === 'dayPeriod').value === 'AM' ? 'a. m.' : 'p. m.';
+        let fechaFormateada = '';
         
-        const fechaFormateada = `${dia}/${mes}/${año}, ${horas}:${minutos} ${ampm}`;
+        // Si viene en formato ISO (con T y Z), convertir de UTC a hora local (Argentina UTC-3)
+        if (updatedAt.includes('T') && updatedAt.includes('Z')) {
+            // Formato ISO: 2025-12-10T17:56:16.692Z
+            // Convertir a hora local (restar 3 horas para Argentina)
+            const fecha = new Date(updatedAt);
+            // Obtener componentes en hora local
+            const año = fecha.getFullYear();
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const horas = String(fecha.getHours()).padStart(2, '0');
+            const minutos = String(fecha.getMinutes()).padStart(2, '0');
+            const segundos = String(fecha.getSeconds()).padStart(2, '0');
+            fechaFormateada = `${año}-${mes}-${dia} ${horas}:${minutos}:${segundos}`;
+        } else {
+            // Formato de BD: 2025-12-10 14:56:16.692379 o 2025-12-10 14:56:16
+            const match = updatedAt.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/);
+            if (match) {
+                fechaFormateada = match[1] + ' ' + match[2];
+            } else {
+                fechaFormateada = updatedAt;
+            }
+        }
+        
         elemento.textContent = 'Última Actualización: ' + fechaFormateada;
     } catch (e) {
         console.error('Error al formatear fecha:', e);
+        elemento.textContent = 'Última Actualización: ' + updatedAt;
     }
 }
 
