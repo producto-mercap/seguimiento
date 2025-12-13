@@ -185,11 +185,52 @@ function toggleCustomDropdown(dropdownId, button) {
         dropdown.style.display = 'none';
     } else {
         const rect = button.getBoundingClientRect();
+        
+        // Mostrar temporalmente el dropdown para calcular su altura
         dropdown.style.position = 'fixed';
-        dropdown.style.top = (rect.bottom + 4) + 'px';
+        dropdown.style.visibility = 'hidden';
+        dropdown.style.display = 'block';
+        dropdown.style.top = '0';
+        dropdown.style.left = '0';
+        dropdown.style.width = rect.width + 'px';
+        
+        const dropdownHeight = dropdown.offsetHeight || 200;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        
+        // Calcular si hay suficiente espacio debajo (mínimo 200px o la altura del dropdown)
+        const minSpaceNeeded = Math.min(dropdownHeight + 10, 250);
+        const hasSpaceBelow = spaceBelow >= minSpaceNeeded;
+        const hasSpaceAbove = spaceAbove >= minSpaceNeeded;
+        
+        // Configurar posición final
+        dropdown.style.position = 'fixed';
         dropdown.style.left = rect.left + 'px';
         dropdown.style.width = rect.width + 'px';
         dropdown.style.zIndex = '10000';
+        dropdown.style.visibility = 'visible';
+        
+        // Determinar si mostrar arriba o abajo
+        let showAbove = false;
+        if (!hasSpaceBelow && hasSpaceAbove) {
+            showAbove = true;
+            dropdown.style.top = (rect.top - dropdownHeight - 4) + 'px';
+            dropdown.style.bottom = 'auto';
+        } else {
+            // Mostrar debajo por defecto
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.bottom = 'auto';
+        }
+        
+        // Agregar max-height y overflow para permitir scroll si es necesario
+        // Usar el espacio disponible según la dirección del dropdown
+        const availableSpace = showAbove ? spaceAbove - 20 : spaceBelow - 20;
+        const maxHeight = Math.min(dropdownHeight, Math.max(availableSpace, 150), 400);
+        dropdown.style.maxHeight = maxHeight + 'px';
+        // Siempre permitir scroll si el contenido es más grande que el espacio disponible
+        dropdown.style.overflowY = 'auto';
+        dropdown.style.overflowX = 'hidden';
+        
         dropdown.style.display = 'block';
     }
 }
