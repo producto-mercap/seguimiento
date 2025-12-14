@@ -225,7 +225,13 @@ function renderizarTablaProyectos(datos, contenido) {
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_fin\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'fecha_fin' ? ' color: var(--primary-color);' : '') + '">Fecha Fin' + (ordenActual.columna === 'fecha_fin' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '</div>';
     
-    datosOrdenados.forEach(function(item) {
+    // Filtrar proyectos con estado "Cerrado" según el checkbox "Incluir cerrados"
+    const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
+    const datosFiltrados = incluirCerrados 
+        ? datosOrdenados 
+        : datosOrdenados.filter(item => item.estado !== 'Cerrado');
+    
+    datosFiltrados.forEach(function(item) {
         const redmineUrl = 'https://redmine.mercap.net/projects/' + (item.codigo_proyecto || '');
         let nombreProyecto = item.nombre_proyecto || '-';
         if (nombreProyecto.includes(' | ')) {
@@ -256,7 +262,17 @@ function renderizarTablaProyectos(datos, contenido) {
         const itemDataJson = JSON.stringify(itemData).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         
         tablaHTML += '<div class="modern-table-row" data-id-proyecto="' + item.id_proyecto + '">';
-        tablaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
+        
+        // Botón para expandir/contraer subproyectos (solo si tiene subproyectos)
+        if (tieneSecundarios && item.subproyectos && item.subproyectos.length > 0) {
+            tablaHTML += '<div class="modern-table-cell" style="width: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="toggleSubproyectos(' + item.id_proyecto + '); event.stopPropagation();" title="Expandir/Contraer subproyectos">';
+            tablaHTML += '<svg id="icon-subproyectos-' + item.id_proyecto + '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px; color: var(--text-secondary); transition: transform 0.2s;" class="icon-expand-subproyectos">';
+            tablaHTML += '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
+            tablaHTML += '</svg>';
+            tablaHTML += '</div>';
+        } else {
+            tablaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
+        }
         
         tablaHTML += '<div class="modern-table-cell item-text">' + (item.cliente || '-') + '</div>';
         tablaHTML += '<div class="modern-table-cell item-text"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + '); event.stopPropagation();" data-item="' + itemDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer;">' + nombreProyecto + '</a></div>';
@@ -310,8 +326,14 @@ function renderizarTablaProyectos(datos, contenido) {
         tablaHTML += '</div>';
         
         // Renderizar subproyectos directamente después del proyecto padre
+        // Por defecto están ocultos (clase "subproyectos-ocultos")
+        // Filtrar según el checkbox "Incluir cerrados"
         if (item.subproyectos && item.subproyectos.length > 0) {
-            item.subproyectos.forEach(function(subproyecto) {
+            const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
+            const subproyectosFiltrados = incluirCerrados 
+                ? item.subproyectos 
+                : item.subproyectos.filter(sub => sub.estado !== 'Cerrado');
+            subproyectosFiltrados.forEach(function(subproyecto) {
                 tablaHTML += crearFilaSubproyectoHTML(item.id_proyecto, subproyecto);
             });
         }
@@ -322,7 +344,7 @@ function renderizarTablaProyectos(datos, contenido) {
     
     const contadorProyectos = document.getElementById('contadorProyectos');
     if (contadorProyectos) {
-        contadorProyectos.textContent = 'Total proyectos: ' + datosOrdenados.length;
+        contadorProyectos.textContent = 'Total proyectos: ' + datosFiltrados.length;
     }
     
     // Ocultar scroll horizontal si no es necesario
@@ -333,10 +355,32 @@ function renderizarTablaProyectos(datos, contenido) {
 
 // Función para crear una fila de subproyecto (ahora renderiza directamente como HTML)
 function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
+    const redmineUrl = 'https://redmine.mercap.net/projects/' + (subproyecto.codigo_proyecto || '');
     let nombreSubproyecto = subproyecto.nombre_proyecto || '-';
     if (nombreSubproyecto.includes(' | ')) {
         nombreSubproyecto = nombreSubproyecto.split(' | ').slice(1).join(' | ');
     }
+    
+    const subproyectoData = {
+        id_proyecto: subproyecto.id_proyecto,
+        nombre_proyecto: subproyecto.nombre_proyecto || '',
+        codigo_proyecto: subproyecto.codigo_proyecto || '',
+        horas_estimadas: parseFloat(subproyecto.horas_estimadas) || 0,
+        horas_realizadas: parseFloat(subproyecto.horas_realizadas) || 0,
+        fecha_inicio_epics: subproyecto.fecha_inicio_epics || subproyecto.fecha_inicio || '',
+        fecha_fin_epics: subproyecto.fecha_fin_epics || subproyecto.fecha_fin || '',
+        fecha_inicio: subproyecto.fecha_inicio || '',
+        fecha_fin: subproyecto.fecha_fin || '',
+        win: subproyecto.win || '',
+        tiene_epics: subproyecto.tiene_epics || false,
+        estado: subproyecto.estado || '',
+        accionables: subproyecto.accionables || '',
+        fecha_accionable: subproyecto.fecha_accionable || '',
+        asignado_accionable: subproyecto.asignado_accionable || '',
+        updated_at: subproyecto.updated_at || '',
+        redmineUrl: redmineUrl
+    };
+    const subproyectoDataJson = JSON.stringify(subproyectoData).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     
     const estadoSubproyecto = subproyecto.estado || '';
     let estadoClassSub = '';
@@ -367,10 +411,10 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     }
     
     let filaHTML = '';
-    filaHTML += '<div class="modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row" data-id-proyecto="' + id_proyecto + '" data-id-subproyecto="' + subproyecto.id_proyecto + '">';
+    filaHTML += '<div class="modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row subproyectos-ocultos" data-id-proyecto="' + id_proyecto + '" data-id-subproyecto="' + subproyecto.id_proyecto + '" style="display: none;">';
     filaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
     filaHTML += '<div class="modern-table-cell item-text"></div>';
-    filaHTML += '<div class="modern-table-cell item-text" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px;">' + nombreSubproyecto + '</div>';
+    filaHTML += '<div class="modern-table-cell item-text" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + subproyecto.id_proyecto + '); event.stopPropagation();" data-item="' + subproyectoDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer;">' + nombreSubproyecto + '</a></div>';
     filaHTML += '<div class="modern-table-cell item-text" style="font-size: 12px; color: var(--text-secondary);">' + abreviarCategoria(subproyecto.categoria) + '</div>';
     filaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(subproyecto.id_proyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub) + '</div>';
     filaHTML += '<div class="modern-table-cell"><div class="progress-bar-container" data-id="' + subproyecto.id_proyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'avance\', this.value);" /></div></div>';
@@ -405,6 +449,63 @@ function ajustarScrollHorizontal() {
         }
     });
 }
+
+// Función para expandir/contraer subproyectos (disponible globalmente)
+window.toggleSubproyectos = function(idProyectoPadre) {
+    const subproyectosRows = document.querySelectorAll('.proyecto-secundario-' + idProyectoPadre + '.subproyecto-row');
+    const icon = document.getElementById('icon-subproyectos-' + idProyectoPadre);
+    
+    if (!subproyectosRows || subproyectosRows.length === 0) {
+        console.log('No se encontraron subproyectos para el proyecto:', idProyectoPadre);
+        return;
+    }
+    
+    // Verificar si están visibles: verificar tanto el estilo inline como el computed
+    const primerSubproyecto = subproyectosRows[0];
+    const estiloInline = primerSubproyecto.style.display;
+    const computedStyle = window.getComputedStyle(primerSubproyecto);
+    const estaVisible = estiloInline !== 'none' && computedStyle.display !== 'none';
+    
+    console.log('Toggle subproyectos para proyecto:', idProyectoPadre, 'Visible:', estaVisible, 'Rows encontrados:', subproyectosRows.length);
+    
+    // Toggle de visibilidad
+    subproyectosRows.forEach(function(row) {
+        if (estaVisible) {
+            // Ocultar
+            row.style.display = 'none';
+            row.classList.add('subproyectos-ocultos');
+        } else {
+            // Mostrar: remover clase y establecer display
+            row.classList.remove('subproyectos-ocultos');
+            // Remover el estilo inline de display para que use el CSS
+            row.style.removeProperty('display');
+            // Forzar el display grid con !important usando setProperty
+            row.style.setProperty('display', 'grid', 'important');
+        }
+    });
+    
+    // Verificar después de un pequeño delay para asegurar que el DOM se actualizó
+    setTimeout(() => {
+        const primerSubproyecto = subproyectosRows[0];
+        if (primerSubproyecto) {
+            const computedDisplay = window.getComputedStyle(primerSubproyecto).display;
+            const computedGrid = window.getComputedStyle(primerSubproyecto).gridTemplateColumns;
+            console.log('Después de toggle - Display:', computedDisplay, 'Grid:', computedGrid);
+            console.log('Elemento visible:', primerSubproyecto.offsetHeight > 0);
+        }
+    }, 10);
+    
+    // Actualizar el ícono
+    if (icon) {
+        if (estaVisible) {
+            // Contraer: flecha hacia la derecha (estado inicial)
+            icon.innerHTML = '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
+        } else {
+            // Expandir: flecha hacia abajo
+            icon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+        }
+    }
+};
 
 // Ajustar scroll cuando se redimensiona la ventana
 if (typeof window !== 'undefined') {

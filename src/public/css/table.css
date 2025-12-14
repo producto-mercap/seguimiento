@@ -157,10 +157,30 @@
 }
 
 /* Estilos para filas de subproyectos */
+/* Estilos para el ícono de expandir/contraer subproyectos */
+.icon-expand-subproyectos {
+    transition: transform 0.2s ease;
+}
+
+.icon-expand-subproyectos:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Subproyectos ocultos por defecto */
+.subproyectos-ocultos {
+    display: none;
+}
+
 .modern-table-row.subproyecto-row {
+    display: grid !important;
     background-color: rgba(227, 242, 253, 0.3) !important;
     min-height: 40px;
     padding: 8px 0;
+}
+
+/* Asegurar que los subproyectos tengan el mismo grid que las filas principales */
+.modern-table.proyectos .modern-table-row.subproyecto-row {
+    grid-template-columns: 30px 120px 400px 85px 105px 85px 55px 55px 50px 50px 55px 80px 75px;
 }
 
 .modern-table-row.subproyecto-row .modern-table-cell {

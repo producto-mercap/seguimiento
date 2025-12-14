@@ -98,8 +98,14 @@ async function mostrarDashboard() {
             // Para Abbaco y Pepper, solo mostrar "Proyectos en Curso"
             const mostrarClientes = producto !== 'Abbaco' && producto !== 'Pepper';
             
+            // Determinar URL de redirección: si hay equipos, usar el primero; si no, solo producto
+            const primerEquipo = equipos.length > 0 ? equipos[0] : null;
+            const urlRedireccion = primerEquipo 
+                ? '/?producto=' + encodeURIComponent(producto) + '&equipo=' + encodeURIComponent(primerEquipo.id_equipo_redmine)
+                : '/?producto=' + encodeURIComponent(producto);
+            
             // Estilo tipo article card con detalle decorativo
-            dashboardHTML += '<div class="feed-article" style="position: relative; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); transition: all 0.2s; cursor: pointer; border: 1px solid transparent; overflow: hidden;" onmouseover="this.style.boxShadow=\'0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3)\'; this.style.borderColor=\'#dadce0\';" onmouseout="this.style.boxShadow=\'0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)\'; this.style.borderColor=\'transparent\';" onclick="window.location.href=\'/?producto=\' + encodeURIComponent(\'' + producto + '\')">';
+            dashboardHTML += '<div class="feed-article" style="position: relative; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); transition: all 0.2s; cursor: pointer; border: 1px solid transparent; overflow: hidden;" onmouseover="this.style.boxShadow=\'0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3)\'; this.style.borderColor=\'#dadce0\';" onmouseout="this.style.boxShadow=\'0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)\'; this.style.borderColor=\'transparent\';" onclick="window.location.href=\'' + urlRedireccion + '\'">';
             
             // Detalle decorativo en esquina superior derecha
             dashboardHTML += '<div style="position: absolute; top: 0; right: 0; width: 40px; height: 40px; background: ' + colores.primary + '; opacity: 0.1; border-radius: 0 12px 0 40px;"></div>';
@@ -108,11 +114,12 @@ async function mostrarDashboard() {
             // Eyebrow (Producto) - con color del producto
             dashboardHTML += '<a class="uni-eyebrow" style="display: inline-block; font-size: 14px; font-weight: 500; color: ' + colores.primary + '; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + productoNormalizado.toUpperCase() + '</a>';
             
-            // Equipos como tags
+            // Equipos como tags (clickeables para redirigir a ese equipo específico)
             if (equipos.length > 0) {
                 dashboardHTML += '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">';
                 equipos.forEach(function(equipo) {
-                    dashboardHTML += '<span style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgba(222, 235, 242, 1); color: #5f6368; border-radius: 12px; font-size: 12px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif;">' + equipo.equipo + '</span>';
+                    const urlEquipo = '/?producto=' + encodeURIComponent(producto) + '&equipo=' + encodeURIComponent(equipo.id_equipo_redmine);
+                    dashboardHTML += '<span onclick="event.stopPropagation(); window.location.href=\'' + urlEquipo + '\'" style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgba(222, 235, 242, 1); color: #5f6368; border-radius: 12px; font-size: 12px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background=\'rgba(26, 115, 232, 0.1)\'; this.style.color=\'#1a73e8\';" onmouseout="this.style.background=\'rgba(222, 235, 242, 1)\'; this.style.color=\'#5f6368\';">' + equipo.equipo + '</span>';
                 });
                 dashboardHTML += '</div>';
             }
@@ -223,6 +230,12 @@ async function cargarDatos() {
             // Si hay categoría definida, agregarla como parámetro
             if (typeof categoriaActual !== 'undefined' && categoriaActual) {
                 endpoint += '&categoria=' + encodeURIComponent(categoriaActual);
+            }
+            
+            // Agregar parámetro incluirCerrados
+            const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
+            if (incluirCerrados) {
+                endpoint += '&incluirCerrados=true';
             }
         }
 

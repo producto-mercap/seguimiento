@@ -184,13 +184,15 @@ async function obtenerProyectos(req, res) {
         const orden = req.query.orden || 'cliente';
         // Si no se especifica dirección y la columna es 'cliente', usar 'desc' por defecto
         const direccionDefault = (orden === 'cliente' && !req.query.direccion) ? 'desc' : 'asc';
+        const incluirCerrados = req.query.incluirCerrados === 'true' || req.query.incluirCerrados === true;
         const filtros = {
             producto: producto,
             equipo: equipo,
             categoria: categoria,
             busqueda: req.query.busqueda || null,
             orden: orden,
-            direccion: req.query.direccion || direccionDefault
+            direccion: req.query.direccion || direccionDefault,
+            incluirCerrados: incluirCerrados
         };
         
         // Si no hay categoría específica, excluir mantenimiento y on-site (se muestran en la solapa mantenimiento)
@@ -217,18 +219,22 @@ async function obtenerProyectos(req, res) {
         const ids_proyectos = proyectos.map(p => p.id_proyecto);
         const subproyectos = await ProyectosExternosModel.obtenerSubproyectos(ids_proyectos);
         
-        // Agrupar subproyectos por proyecto padre
+        // Agrupar subproyectos por proyecto padre (usar comparación como string para evitar problemas de tipos)
         const subproyectosPorPadre = {};
         subproyectos.forEach(sub => {
-            if (!subproyectosPorPadre[sub.proyecto_padre]) {
-                subproyectosPorPadre[sub.proyecto_padre] = [];
+            const proyectoPadreId = String(sub.proyecto_padre || '');
+            if (proyectoPadreId && !subproyectosPorPadre[proyectoPadreId]) {
+                subproyectosPorPadre[proyectoPadreId] = [];
             }
-            subproyectosPorPadre[sub.proyecto_padre].push(sub);
+            if (proyectoPadreId) {
+                subproyectosPorPadre[proyectoPadreId].push(sub);
+            }
         });
         
         // Agregar subproyectos a cada proyecto padre
         const proyectosConSubproyectos = proyectos.map(proyecto => {
-            const subproyectosDelProyecto = subproyectosPorPadre[proyecto.id_proyecto] || [];
+            const proyectoIdStr = String(proyecto.id_proyecto);
+            const subproyectosDelProyecto = subproyectosPorPadre[proyectoIdStr] || [];
             return {
                 ...proyecto,
                 tiene_subproyectos: subproyectosDelProyecto.length > 0,

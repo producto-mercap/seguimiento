@@ -42,37 +42,56 @@ class ProyectosExternosModel {
      */
     static async obtenerTodos(filtros = {}) {
         try {
-            let query = `
-                SELECT * FROM v_proyectos_externos_completo
-                WHERE 1=1
-            `;
             const params = [];
             let paramCount = 1;
+            
+            // Construir la query base
+            // Mostrar como proyecto principal si:
+            // 1. No tiene proyecto_padre O
+            // 2. Su proyecto_padre NO existe en la BD O
+            // 3. Tiene subproyectos (aunque tenga proyecto_padre)
+            // Usar subconsulta con cast seguro para evitar problemas de tipos
+            let query = `
+                SELECT p.* FROM v_proyectos_externos_completo p
+                WHERE (
+                    p.proyecto_padre IS NULL 
+                    OR p.proyecto_padre::text = ''
+                    OR NOT EXISTS (
+                        SELECT 1 FROM redmine_proyectos_externos 
+                        WHERE id_proyecto::text = p.proyecto_padre::text
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM v_proyectos_externos_completo sub
+                        WHERE sub.proyecto_padre::text = p.id_proyecto::text
+                        AND (sub.estado IS NULL OR sub.estado != 'Cerrado')
+                    )
+                )
+            `;
 
             // Filtro por producto
             if (filtros.producto) {
-                query += ` AND producto = $${paramCount}`;
+                query += ` AND p.producto = $${paramCount}`;
                 params.push(filtros.producto);
                 paramCount++;
             }
 
             // Filtro por cliente
             if (filtros.cliente) {
-                query += ` AND cliente = $${paramCount}`;
+                query += ` AND p.cliente = $${paramCount}`;
                 params.push(filtros.cliente);
                 paramCount++;
             }
 
             // Filtro por equipo (solo si se especifica y no es '*')
             if (filtros.equipo && filtros.equipo !== '*' && filtros.equipo !== 'null') {
-                query += ` AND equipo = $${paramCount}`;
+                query += ` AND p.equipo = $${paramCount}`;
                 params.push(filtros.equipo);
                 paramCount++;
             }
 
             // Filtro por categoría
             if (filtros.categoria) {
-                query += ` AND categoria = $${paramCount}`;
+                query += ` AND p.categoria = $${paramCount}`;
                 params.push(filtros.categoria);
                 paramCount++;
             }
@@ -80,22 +99,22 @@ class ProyectosExternosModel {
             // Excluir categorías específicas (para la solapa "Proyectos" que agrupa todas las categorías excepto mantenimiento)
             if (filtros.excluirCategorias && Array.isArray(filtros.excluirCategorias) && filtros.excluirCategorias.length > 0) {
                 const placeholders = filtros.excluirCategorias.map((_, i) => `$${paramCount + i}`).join(', ');
-                query += ` AND categoria NOT IN (${placeholders})`;
+                query += ` AND p.categoria NOT IN (${placeholders})`;
                 params.push(...filtros.excluirCategorias);
                 paramCount += filtros.excluirCategorias.length;
             }
-
-            // Excluir proyectos heredados (linea_servicio = 'Hereda') de la consulta principal
-            // EXCEPTO si no tienen proyecto_padre (se muestran como proyectos comunes)
-            // Los subproyectos con proyecto_padre se obtienen por separado
-            query += ` AND (linea_servicio IS NULL OR linea_servicio != 'Hereda' OR (linea_servicio = 'Hereda' AND proyecto_padre IS NULL))`;
+            
+            // Excluir proyectos con estado "Cerrado" (solo si no se solicita incluir cerrados)
+            if (!filtros.incluirCerrados) {
+                query += ` AND (p.estado IS NULL OR p.estado != 'Cerrado')`;
+            }
             
             // Filtro por búsqueda
             if (filtros.busqueda) {
                 query += ` AND (
-                    nombre_proyecto ILIKE $${paramCount} OR 
-                    cliente ILIKE $${paramCount} OR 
-                    linea_servicio ILIKE $${paramCount}
+                    p.nombre_proyecto ILIKE $${paramCount} OR 
+                    p.cliente ILIKE $${paramCount} OR 
+                    p.linea_servicio ILIKE $${paramCount}
                 )`;
                 params.push(`%${filtros.busqueda}%`);
                 paramCount++;
@@ -105,7 +124,7 @@ class ProyectosExternosModel {
             const ordenValido = ['nombre_proyecto', 'cliente', 'equipo', 'producto', 'fecha_creacion', 'fecha_inicio', 'fecha_fin'];
             const orden = ordenValido.includes(filtros.orden) ? filtros.orden : 'nombre_proyecto';
             const direccion = filtros.direccion === 'asc' ? 'ASC' : 'DESC';
-            query += ` ORDER BY ${orden} ${direccion} NULLS LAST`;
+            query += ` ORDER BY p.${orden} ${direccion} NULLS LAST`;
 
             const result = await pool.query(query, params);
             return result.rows;
@@ -309,7 +328,7 @@ class ProyectosExternosModel {
     }
 
     /**
-     * Obtener subproyectos (proyectos con linea_servicio = 'Hereda') para proyectos padres específicos
+     * Obtener subproyectos (agrupados por proyecto_padre, sin importar linea_servicio)
      * @param {Array<number>} ids_proyectos_padre - Array de IDs de proyectos padre
      * @returns {Promise<Array>} - Array de subproyectos
      */
@@ -319,15 +338,18 @@ class ProyectosExternosModel {
                 return [];
             }
             
-            const placeholders = ids_proyectos_padre.map((_, i) => `$${i + 1}`).join(', ');
+            // Convertir IDs a texto para comparación segura
+            const idsComoTexto = ids_proyectos_padre.map(id => String(id));
+            const placeholders = idsComoTexto.map((_, i) => `$${i + 1}`).join(', ');
+            // Nota: Los subproyectos se filtran en el frontend según el checkbox "Incluir cerrados"
+            // El backend devuelve todos los subproyectos, y el frontend los filtra
             const query = `
                 SELECT * FROM v_proyectos_externos_completo
-                WHERE linea_servicio = 'Hereda'
-                AND proyecto_padre IN (${placeholders})
+                WHERE proyecto_padre::text IN (${placeholders})
                 ORDER BY proyecto_padre, nombre_proyecto
             `;
             
-            const result = await pool.query(query, ids_proyectos_padre);
+            const result = await pool.query(query, idsComoTexto);
             return result.rows;
         } catch (error) {
             console.error('Error al obtener subproyectos:', error);
