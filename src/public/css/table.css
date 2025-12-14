@@ -172,14 +172,18 @@
 }
 
 .modern-table-row.subproyecto-row {
-    display: grid !important;
     background-color: rgba(227, 242, 253, 0.3) !important;
     min-height: 40px;
     padding: 8px 0;
 }
 
+/* Cuando no está oculto, debe usar grid */
+.modern-table-row.subproyecto-row:not(.subproyectos-ocultos) {
+    display: grid !important;
+}
+
 /* Asegurar que los subproyectos tengan el mismo grid que las filas principales */
-.modern-table.proyectos .modern-table-row.subproyecto-row {
+.modern-table.proyectos .modern-table-row.subproyecto-row:not(.subproyectos-ocultos) {
     grid-template-columns: 30px 120px 400px 85px 105px 85px 55px 55px 50px 50px 55px 80px 75px;
 }
 

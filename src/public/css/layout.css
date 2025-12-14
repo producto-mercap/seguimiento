@@ -46,6 +46,29 @@
     overflow-x: hidden;
     z-index: 100;
     transition: width 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ícono representativo cuando el sidebar está contraído */
+.sidebar-icon-collapsed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* Ocultar ícono cuando el sidebar está expandido */
+.sidebar:hover .sidebar-icon-collapsed {
+    display: none;
+}
+
+/* Mostrar ícono cuando el sidebar está contraído */
+.sidebar:not(:hover) .sidebar-icon-collapsed {
+    display: flex;
 }
 
 /* Sidebar expandido al hacer hover */

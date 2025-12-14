@@ -466,45 +466,47 @@ window.toggleSubproyectos = function(idProyectoPadre) {
     const computedStyle = window.getComputedStyle(primerSubproyecto);
     const estaVisible = estiloInline !== 'none' && computedStyle.display !== 'none';
     
-    console.log('Toggle subproyectos para proyecto:', idProyectoPadre, 'Visible:', estaVisible, 'Rows encontrados:', subproyectosRows.length);
+    console.log('Toggle subproyectos para proyecto:', idProyectoPadre, 'Visible:', estaVisible, 'Rows encontrados:', subproyectosRows.length, 'Icon encontrado:', !!icon);
+    
+    // Actualizar el ícono PRIMERO
+    if (icon) {
+        if (estaVisible) {
+            // Contraer: flecha hacia la derecha (estado inicial)
+            icon.innerHTML = '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
+            console.log('Ícono actualizado a: contraído (flecha derecha)');
+        } else {
+            // Expandir: flecha hacia abajo
+            icon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+            console.log('Ícono actualizado a: expandido (flecha abajo)');
+        }
+    } else {
+        console.error('No se encontró el ícono para el proyecto:', idProyectoPadre, 'ID buscado: icon-subproyectos-' + idProyectoPadre);
+    }
     
     // Toggle de visibilidad
     subproyectosRows.forEach(function(row) {
         if (estaVisible) {
-            // Ocultar
-            row.style.display = 'none';
+            // Ocultar: usar setProperty con important para asegurar que se oculte
+            row.style.setProperty('display', 'none', 'important');
             row.classList.add('subproyectos-ocultos');
         } else {
             // Mostrar: remover clase y establecer display
             row.classList.remove('subproyectos-ocultos');
-            // Remover el estilo inline de display para que use el CSS
-            row.style.removeProperty('display');
             // Forzar el display grid con !important usando setProperty
             row.style.setProperty('display', 'grid', 'important');
         }
     });
     
-    // Verificar después de un pequeño delay para asegurar que el DOM se actualizó
+    // Verificar después de un pequeño delay
     setTimeout(() => {
         const primerSubproyecto = subproyectosRows[0];
         if (primerSubproyecto) {
             const computedDisplay = window.getComputedStyle(primerSubproyecto).display;
-            const computedGrid = window.getComputedStyle(primerSubproyecto).gridTemplateColumns;
-            console.log('Después de toggle - Display:', computedDisplay, 'Grid:', computedGrid);
-            console.log('Elemento visible:', primerSubproyecto.offsetHeight > 0);
+            console.log('Después de toggle - Display computado:', computedDisplay);
+            console.log('Elemento visible (offsetHeight):', primerSubproyecto.offsetHeight);
+            console.log('Estilo inline display:', primerSubproyecto.style.display);
         }
-    }, 10);
-    
-    // Actualizar el ícono
-    if (icon) {
-        if (estaVisible) {
-            // Contraer: flecha hacia la derecha (estado inicial)
-            icon.innerHTML = '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
-        } else {
-            // Expandir: flecha hacia abajo
-            icon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
-        }
-    }
+    }, 50);
 };
 
 // Ajustar scroll cuando se redimensiona la ventana
