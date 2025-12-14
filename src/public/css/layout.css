@@ -34,8 +34,8 @@
    Sidebar (Panel Izquierdo)
    ================================ */
 .sidebar {
-    width: var(--sidebar-width);
-    min-width: var(--sidebar-width);
+    width: 64px; /* Contraído por defecto */
+    min-width: 64px;
     background: white;
     border-right: 1px solid var(--border-color);
     height: calc(100vh - 56px);
@@ -43,11 +43,80 @@
     top: 56px;
     left: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 100;
+    transition: width 0.3s ease;
+}
+
+/* Sidebar expandido al hacer hover */
+.sidebar:hover {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-nav {
     padding: 8px 0;
+    white-space: nowrap;
+}
+
+/* Ocultar texto cuando el sidebar está contraído */
+.sidebar:not(:hover) .nav-item span {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease, width 0.2s ease;
+}
+
+/* Mostrar texto cuando el sidebar está expandido */
+.sidebar:hover .nav-item span {
+    opacity: 1;
+    width: auto;
+    transition: opacity 0.2s ease 0.1s, width 0.2s ease 0.1s;
+}
+
+/* Ocultar equipos cuando está contraído */
+.sidebar:not(:hover) .producto-equipos {
+    display: none !important;
+}
+
+/* Ocultar flechas cuando está contraído */
+.sidebar:not(:hover) .nav-item svg.nav-icon:last-child {
+    display: none;
+}
+
+/* Asegurar que los iconos siempre sean visibles */
+.sidebar .nav-item {
+    position: relative;
+}
+
+/* Centrar iconos cuando está contraído */
+.sidebar:not(:hover) .nav-item {
+    justify-content: center;
+    padding: 12px 8px;
+}
+
+/* Mostrar tooltip cuando está contraído */
+.sidebar:not(:hover) .nav-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    margin-left: 8px;
+    padding: 8px 12px;
+    background: var(--text-primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar:not(:hover) .nav-item:hover::after {
+    opacity: 1;
 }
 
 .nav-item {
@@ -89,10 +158,15 @@
    ================================ */
 .main-content {
     flex: 1;
-    margin-left: var(--sidebar-width);
+    margin-left: 64px; /* Ancho del sidebar contraído */
     min-height: calc(100vh - 56px);
     background: #f8f9fa;
+    transition: margin-left 0.3s ease;
+    width: calc(100% - 64px);
+    max-width: calc(100% - 64px);
 }
+
+/* El ajuste del margen se maneja con JavaScript para mejor compatibilidad */
 
 .content-area {
     padding: 24px;

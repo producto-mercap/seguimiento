@@ -215,6 +215,7 @@ function renderizarTablaProyectos(datos, contenido) {
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'proyecto\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'proyecto' ? ' color: var(--primary-color);' : '') + '">Proyecto' + (ordenActual.columna === 'proyecto' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'categoria\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'categoria' ? ' color: var(--primary-color);' : '') + '">Categoría' + (ordenActual.columna === 'categoria' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'estado\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'estado' ? ' color: var(--primary-color);' : '') + '">Estado' + (ordenActual.columna === 'estado' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
+    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'avance\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'avance' ? ' color: var(--primary-color);' : '') + '">Avance' + (ordenActual.columna === 'avance' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'overall\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'overall' ? ' color: var(--primary-color);' : '') + '">Overall' + (ordenActual.columna === 'overall' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'alcance\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'alcance' ? ' color: var(--primary-color);' : '') + '">Alcance' + (ordenActual.columna === 'alcance' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'costo\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'costo' ? ' color: var(--primary-color);' : '') + '">Costo' + (ordenActual.columna === 'costo' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
@@ -222,7 +223,6 @@ function renderizarTablaProyectos(datos, contenido) {
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'riesgos\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'riesgos' ? ' color: var(--primary-color);' : '') + '">Riesgos' + (ordenActual.columna === 'riesgos' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_inicio\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'fecha_inicio' ? ' color: var(--primary-color);' : '') + '">Fecha Inicio' + (ordenActual.columna === 'fecha_inicio' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_fin\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'fecha_fin' ? ' color: var(--primary-color);' : '') + '">Fecha Fin' + (ordenActual.columna === 'fecha_fin' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
-    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'avance\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'avance' ? ' color: var(--primary-color);' : '') + '">Avance' + (ordenActual.columna === 'avance' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '</div>';
     
     datosOrdenados.forEach(function(item) {
@@ -284,6 +284,19 @@ function renderizarTablaProyectos(datos, contenido) {
         }
         tablaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(item.id_proyecto, estadoValue, estadoClass) + '</div>';
         
+        const avanceValue = parseInt(item.avance) || 0;
+        let avanceGradient = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
+        if (avanceValue <= 25) {
+            avanceGradient = 'linear-gradient(90deg, #a5d6a7 0%, #81c784 100%)';
+        } else if (avanceValue <= 50) {
+            avanceGradient = 'linear-gradient(90deg, #81c784 0%, #66bb6a 100%)';
+        } else if (avanceValue <= 75) {
+            avanceGradient = 'linear-gradient(90deg, #66bb6a 0%, #4caf50 100%)';
+        } else {
+            avanceGradient = 'linear-gradient(90deg, #4caf50 0%, #34a853 50%, #1e8e3e 100%)';
+        }
+        tablaHTML += '<div class="modern-table-cell"><div class="progress-bar-container" data-id="' + item.id_proyecto + '"><div class="progress-bar" style="width: ' + avanceValue + '%; background: ' + avanceGradient + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceValue + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarProyecto(' + item.id_proyecto + ', \'avance\', this.value);" /></div></div>';
+        
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'overall', item.overall || '', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'alcance', item.alcance || '', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'costo', item.costo || '', '') + '</div>';
@@ -298,19 +311,6 @@ function renderizarTablaProyectos(datos, contenido) {
         
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaInicioCorta + '</div>';
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinCorta + '</div>';
-        
-        const avanceValue = parseInt(item.avance) || 0;
-        let avanceGradient = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
-        if (avanceValue <= 25) {
-            avanceGradient = 'linear-gradient(90deg, #a5d6a7 0%, #81c784 100%)';
-        } else if (avanceValue <= 50) {
-            avanceGradient = 'linear-gradient(90deg, #81c784 0%, #66bb6a 100%)';
-        } else if (avanceValue <= 75) {
-            avanceGradient = 'linear-gradient(90deg, #66bb6a 0%, #4caf50 100%)';
-        } else {
-            avanceGradient = 'linear-gradient(90deg, #4caf50 0%, #34a853 50%, #1e8e3e 100%)';
-        }
-        tablaHTML += '<div class="modern-table-cell"><div class="progress-bar-container" data-id="' + item.id_proyecto + '"><div class="progress-bar" style="width: ' + avanceValue + '%; background: ' + avanceGradient + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceValue + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarProyecto(' + item.id_proyecto + ', \'avance\', this.value);" /></div></div>';
         
         tablaHTML += '</div>';
     });
@@ -451,6 +451,22 @@ function crearFilaSubproyecto(id_proyecto, subproyecto, filaProyectoPadre) {
     celdaEstado.innerHTML = crearDropdownEstado(subproyecto.id_subproyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub);
     filaSubproyecto.appendChild(celdaEstado);
     
+    const avanceSubproyecto = parseInt(subproyecto.avance) || 0;
+    let avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
+    if (avanceSubproyecto <= 25) {
+        avanceGradientSub = 'linear-gradient(90deg, #a5d6a7 0%, #81c784 100%)';
+    } else if (avanceSubproyecto <= 50) {
+        avanceGradientSub = 'linear-gradient(90deg, #81c784 0%, #66bb6a 100%)';
+    } else if (avanceSubproyecto <= 75) {
+        avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #4caf50 100%)';
+    } else {
+        avanceGradientSub = 'linear-gradient(90deg, #4caf50 0%, #34a853 50%, #1e8e3e 100%)';
+    }
+    const celdaAvance = document.createElement('div');
+    celdaAvance.className = 'modern-table-cell';
+    celdaAvance.innerHTML = '<div class="progress-bar-container" data-id="' + subproyecto.id_subproyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarSubproyecto(' + subproyecto.id_subproyecto + ', \'avance\', this.value);" /></div>';
+    filaSubproyecto.appendChild(celdaAvance);
+    
     const celdaOverall = document.createElement('div');
     celdaOverall.className = 'modern-table-cell';
     celdaOverall.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'overall', subproyecto.overall || '', 'subproyecto');
@@ -488,22 +504,6 @@ function crearFilaSubproyecto(id_proyecto, subproyecto, filaProyectoPadre) {
     celdaFechaFin.style.cssText = 'font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);';
     celdaFechaFin.textContent = '-';
     filaSubproyecto.appendChild(celdaFechaFin);
-    
-    const avanceSubproyecto = parseInt(subproyecto.avance) || 0;
-    let avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
-    if (avanceSubproyecto <= 25) {
-        avanceGradientSub = 'linear-gradient(90deg, #a5d6a7 0%, #81c784 100%)';
-    } else if (avanceSubproyecto <= 50) {
-        avanceGradientSub = 'linear-gradient(90deg, #81c784 0%, #66bb6a 100%)';
-    } else if (avanceSubproyecto <= 75) {
-        avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #4caf50 100%)';
-    } else {
-        avanceGradientSub = 'linear-gradient(90deg, #4caf50 0%, #34a853 50%, #1e8e3e 100%)';
-    }
-    const celdaAvance = document.createElement('div');
-    celdaAvance.className = 'modern-table-cell';
-    celdaAvance.innerHTML = '<div class="progress-bar-container" data-id="' + subproyecto.id_subproyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarSubproyecto(' + subproyecto.id_subproyecto + ', \'avance\', this.value);" /></div>';
-    filaSubproyecto.appendChild(celdaAvance);
     
     return filaSubproyecto;
 }
