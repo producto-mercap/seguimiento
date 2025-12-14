@@ -85,6 +85,11 @@ class ProyectosExternosModel {
                 paramCount += filtros.excluirCategorias.length;
             }
 
+            // Excluir proyectos heredados (linea_servicio = 'Hereda') de la consulta principal
+            // EXCEPTO si no tienen proyecto_padre (se muestran como proyectos comunes)
+            // Los subproyectos con proyecto_padre se obtienen por separado
+            query += ` AND (linea_servicio IS NULL OR linea_servicio != 'Hereda' OR (linea_servicio = 'Hereda' AND proyecto_padre IS NULL))`;
+            
             // Filtro por búsqueda
             if (filtros.busqueda) {
                 query += ` AND (
@@ -299,6 +304,33 @@ class ProyectosExternosModel {
             return result.rows.map(row => row.equipo);
         } catch (error) {
             console.error('Error al obtener equipos:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtener subproyectos (proyectos con linea_servicio = 'Hereda') para proyectos padres específicos
+     * @param {Array<number>} ids_proyectos_padre - Array de IDs de proyectos padre
+     * @returns {Promise<Array>} - Array de subproyectos
+     */
+    static async obtenerSubproyectos(ids_proyectos_padre) {
+        try {
+            if (!ids_proyectos_padre || ids_proyectos_padre.length === 0) {
+                return [];
+            }
+            
+            const placeholders = ids_proyectos_padre.map((_, i) => `$${i + 1}`).join(', ');
+            const query = `
+                SELECT * FROM v_proyectos_externos_completo
+                WHERE linea_servicio = 'Hereda'
+                AND proyecto_padre IN (${placeholders})
+                ORDER BY proyecto_padre, nombre_proyecto
+            `;
+            
+            const result = await pool.query(query, ids_proyectos_padre);
+            return result.rows;
+        } catch (error) {
+            console.error('Error al obtener subproyectos:', error);
             throw error;
         }
     }

@@ -384,7 +384,8 @@ function seleccionarDropdownOptionSubproyecto(dropdownId, campo, idSubproyecto, 
     dropdown.style.display = 'none';
     
     if (campo === 'overall' || campo === 'alcance' || campo === 'costo' || campo === 'plazos') {
-        actualizarSubproyecto(idSubproyecto, campo, valor);
+        // Los subproyectos ahora son proyectos normales, usar actualizarProyecto
+        actualizarProyecto(idSubproyecto, campo, valor);
         button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
         button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
         if (valor === 'verde') button.style.background = '#e6f4ea';
@@ -414,8 +415,8 @@ function seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, 
     
     dropdown.style.display = 'none';
     
-    console.log('🔵 Llamando a actualizarSubproyecto con id_subproyecto:', idSubproyecto);
-    actualizarSubproyecto(idSubproyecto, 'estado', valor);
+    // Los subproyectos ahora son proyectos normales, usar actualizarProyecto
+    actualizarProyecto(idSubproyecto, 'estado', valor);
     
     const estados = {
         '': '-',
@@ -446,7 +447,8 @@ function seleccionarDropdownRiesgoSubproyecto(dropdownId, idSubproyecto, valor, 
     
     dropdown.style.display = 'none';
     
-    actualizarSubproyecto(idSubproyecto, 'riesgos', valor);
+    // Los subproyectos ahora son proyectos normales, usar actualizarProyecto
+    actualizarProyecto(idSubproyecto, 'riesgos', valor);
     actualizarRiesgoColor(button);
     
     button.textContent = valor === 'ok' ? '✓' : valor === 'red flag' ? '🚩' : '-';

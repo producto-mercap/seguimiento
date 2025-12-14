@@ -208,37 +208,37 @@ async function obtenerProyectos(req, res) {
             excluirCategorias: filtros.excluirCategorias
         });
         
+        // Obtener proyectos principales (linea_servicio != 'Hereda' o NULL)
         const proyectos = await ProyectosExternosModel.obtenerTodos(filtros);
         
         console.log(`✅ Proyectos obtenidos de BD: ${proyectos.length}`);
         
-        // Obtener epics secundarios para todos los proyectos (solo para detectar si tiene subproyectos)
+        // Obtener subproyectos (proyectos con linea_servicio = 'Hereda' y proyecto_padre en los proyectos principales)
         const ids_proyectos = proyectos.map(p => p.id_proyecto);
-        const epicsSecundarios = await EpicsProyectoModel.obtenerEpicsSecundariosPorProyectos(ids_proyectos);
+        const subproyectos = await ProyectosExternosModel.obtenerSubproyectos(ids_proyectos);
         
-        // Solo marcar si tiene subproyectos, pero NO cargar los subproyectos todavía (carga lazy)
-        const proyectosConInfoSubproyectos = proyectos.map(proyecto => {
-            const epicsDelProyecto = epicsSecundarios[proyecto.id_proyecto] || [];
-            // Agrupar epics por proyecto_padre para contar subproyectos únicos
-            const proyectosSecundariosUnicos = {};
-            epicsDelProyecto.forEach(epic => {
-                const proyectoPadre = epic.proyecto_padre;
-                if (proyectoPadre && !proyectosSecundariosUnicos[proyectoPadre]) {
-                    proyectosSecundariosUnicos[proyectoPadre] = true;
-                }
-            });
-            const tieneSubproyectos = Object.keys(proyectosSecundariosUnicos).length > 0;
-            
+        // Agrupar subproyectos por proyecto padre
+        const subproyectosPorPadre = {};
+        subproyectos.forEach(sub => {
+            if (!subproyectosPorPadre[sub.proyecto_padre]) {
+                subproyectosPorPadre[sub.proyecto_padre] = [];
+            }
+            subproyectosPorPadre[sub.proyecto_padre].push(sub);
+        });
+        
+        // Agregar subproyectos a cada proyecto padre
+        const proyectosConSubproyectos = proyectos.map(proyecto => {
+            const subproyectosDelProyecto = subproyectosPorPadre[proyecto.id_proyecto] || [];
             return {
                 ...proyecto,
-                tiene_subproyectos: tieneSubproyectos,
-                subproyectos: [] // No cargar todavía, se cargarán bajo demanda
+                tiene_subproyectos: subproyectosDelProyecto.length > 0,
+                subproyectos: subproyectosDelProyecto
             };
         });
         
         res.json({
             success: true,
-            data: proyectosConInfoSubproyectos
+            data: proyectosConSubproyectos
         });
     } catch (error) {
         console.error('Error al obtener proyectos:', error);
@@ -680,50 +680,7 @@ async function obtenerMetricasDashboard(req, res) {
 /**
  * Obtener subproyectos de un proyecto específico (carga lazy - optimizado)
  */
-async function obtenerSubproyectos(req, res) {
-    try {
-        const { id_proyecto } = req.params;
-        const idProyectoNum = parseInt(id_proyecto);
-        
-        if (isNaN(idProyectoNum)) {
-            return res.status(400).json({
-                success: false,
-                error: 'ID de proyecto inválido'
-            });
-        }
-        
-        console.log('📦 Obteniendo subproyectos para proyecto:', idProyectoNum);
-        
-        // Primero verificar si ya existen subproyectos en la BD (más rápido)
-        let subproyectos = await SubproyectosModel.obtenerPorProyecto(idProyectoNum);
-        
-        // Si no hay subproyectos, sincronizar desde epics (solo si es necesario)
-        if (subproyectos.length === 0) {
-            console.log('📦 No hay subproyectos en BD, sincronizando desde epics...');
-            const epicsSecundarios = await EpicsProyectoModel.obtenerEpicsSecundariosPorProyectos([idProyectoNum]);
-            const epicsDelProyecto = epicsSecundarios[idProyectoNum] || [];
-            
-            if (epicsDelProyecto.length > 0) {
-                await SubproyectosModel.sincronizarDesdeEpics(idProyectoNum, epicsDelProyecto);
-                // Obtener subproyectos después de sincronizar
-                subproyectos = await SubproyectosModel.obtenerPorProyecto(idProyectoNum);
-            }
-        } else {
-            console.log('✅ Subproyectos encontrados en BD:', subproyectos.length);
-        }
-        
-        res.json({
-            success: true,
-            data: subproyectos
-        });
-    } catch (error) {
-        console.error('Error al obtener subproyectos:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Error al obtener subproyectos'
-        });
-    }
-}
+// Función obtenerSubproyectos eliminada - ahora los subproyectos se obtienen directamente en obtenerProyectos
 
 /**
  * Actualizar datos editables de subproyecto
@@ -933,7 +890,6 @@ module.exports = {
     obtenerMantenimiento,
     obtenerProyectos,
     obtenerEpics: obtenerEpicsProyecto,
-    obtenerSubproyectos,
     actualizarMantenimiento,
     actualizarProyecto,
     actualizarAccionables,

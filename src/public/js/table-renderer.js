@@ -256,12 +256,7 @@ function renderizarTablaProyectos(datos, contenido) {
         const itemDataJson = JSON.stringify(itemData).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         
         tablaHTML += '<div class="modern-table-row" data-id-proyecto="' + item.id_proyecto + '">';
-        
-        if (tieneSecundarios) {
-            tablaHTML += '<div class="modern-table-cell" style="width: 30px; padding: 0; text-align: center;"><button class="expand-btn" onclick="toggleProyectosSecundarios(' + item.id_proyecto + ', this)" style="background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-secondary); font-size: 12px; transition: transform 0.2s;" title="Expandir/Contraer proyectos secundarios">▶</button></div>';
-        } else {
-            tablaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
-        }
+        tablaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
         
         tablaHTML += '<div class="modern-table-cell item-text">' + (item.cliente || '-') + '</div>';
         tablaHTML += '<div class="modern-table-cell item-text"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + '); event.stopPropagation();" data-item="' + itemDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer;">' + nombreProyecto + '</a></div>';
@@ -313,6 +308,13 @@ function renderizarTablaProyectos(datos, contenido) {
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinCorta + '</div>';
         
         tablaHTML += '</div>';
+        
+        // Renderizar subproyectos directamente después del proyecto padre
+        if (item.subproyectos && item.subproyectos.length > 0) {
+            item.subproyectos.forEach(function(subproyecto) {
+                tablaHTML += crearFilaSubproyectoHTML(item.id_proyecto, subproyecto);
+            });
+        }
     });
     
     tablaHTML += '</div></div>';
@@ -329,106 +331,12 @@ function renderizarTablaProyectos(datos, contenido) {
     }, 100);
 }
 
-// Función para expandir/contraer proyectos secundarios (con carga lazy)
-async function toggleProyectosSecundarios(id_proyecto, btn) {
-    const filasSecundarias = document.querySelectorAll('.proyecto-secundario-' + id_proyecto);
-    const isExpanded = filasSecundarias.length > 0 && filasSecundarias[0].style.display !== 'none';
-    
-    if (isExpanded) {
-        filasSecundarias.forEach(function(fila) {
-            fila.style.display = 'none';
-        });
-        btn.textContent = '▶';
-        btn.style.transform = 'rotate(0deg)';
-        return;
+// Función para crear una fila de subproyecto (ahora renderiza directamente como HTML)
+function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
+    let nombreSubproyecto = subproyecto.nombre_proyecto || '-';
+    if (nombreSubproyecto.includes(' | ')) {
+        nombreSubproyecto = nombreSubproyecto.split(' | ').slice(1).join(' | ');
     }
-    
-    if (filasSecundarias.length === 0) {
-        const textoOriginal = btn.textContent;
-        btn.textContent = '⏳';
-        btn.disabled = true;
-        btn.style.cursor = 'wait';
-        
-        try {
-            console.log('📦 Cargando subproyectos para proyecto:', id_proyecto);
-            const inicio = performance.now();
-            
-            const response = await fetch('/api/proyectos/' + id_proyecto + '/subproyectos', {
-                credentials: 'include',
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            const tiempo = (performance.now() - inicio).toFixed(2);
-            console.log(`✅ Subproyectos cargados en ${tiempo}ms`);
-            
-            if (result.success && result.data && result.data.length > 0) {
-                const filaProyecto = btn.closest('.modern-table-row');
-                if (filaProyecto) {
-                    const fragment = document.createDocumentFragment();
-                    result.data.forEach(function(subproyecto) {
-                        const fila = crearFilaSubproyecto(id_proyecto, subproyecto, filaProyecto);
-                        if (fila) {
-                            fragment.appendChild(fila);
-                        }
-                    });
-                    filaProyecto.parentNode.insertBefore(fragment, filaProyecto.nextSibling);
-                }
-            } else {
-                console.log('ℹ️ No hay subproyectos para este proyecto');
-                btn.textContent = textoOriginal;
-                btn.disabled = false;
-                btn.style.cursor = 'pointer';
-                return;
-            }
-        } catch (error) {
-            console.error('❌ Error al cargar subproyectos:', error);
-            alert('Error al cargar subproyectos: ' + error.message);
-            btn.textContent = textoOriginal;
-            btn.disabled = false;
-            btn.style.cursor = 'pointer';
-            return;
-        }
-        
-        btn.disabled = false;
-        btn.style.cursor = 'pointer';
-    }
-    
-    const filasSecundariasActualizadas = document.querySelectorAll('.proyecto-secundario-' + id_proyecto);
-    filasSecundariasActualizadas.forEach(function(fila) {
-        fila.style.display = '';
-    });
-    
-    btn.textContent = '▼';
-    btn.style.transform = 'rotate(0deg)';
-}
-
-// Función para crear una fila de subproyecto
-function crearFilaSubproyecto(id_proyecto, subproyecto, filaProyectoPadre) {
-    const filaSubproyecto = document.createElement('div');
-    filaSubproyecto.className = 'modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row';
-    filaSubproyecto.setAttribute('data-id-proyecto', id_proyecto);
-    filaSubproyecto.setAttribute('data-id-subproyecto', subproyecto.id_subproyecto);
-    filaSubproyecto.style.display = 'none';
-    
-    const celdas = [
-        { class: 'modern-table-cell', style: 'width: 30px;', content: '' },
-        { class: 'modern-table-cell item-text', content: '' },
-        { class: 'modern-table-cell item-text', style: 'padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px;', content: subproyecto.nombre || '-' },
-        { class: 'modern-table-cell item-text', style: 'font-size: 12px; color: var(--text-secondary);', content: '-' }
-    ];
-    
-    celdas.forEach(celda => {
-        const div = document.createElement('div');
-        div.className = celda.class;
-        if (celda.style) div.setAttribute('style', celda.style);
-        div.textContent = celda.content;
-        filaSubproyecto.appendChild(div);
-    });
     
     const estadoSubproyecto = subproyecto.estado || '';
     let estadoClassSub = '';
@@ -446,11 +354,6 @@ function crearFilaSubproyecto(id_proyecto, subproyecto, filaProyectoPadre) {
         estadoClassSub = 'estado-bloqueado';
     }
     
-    const celdaEstado = document.createElement('div');
-    celdaEstado.className = 'modern-table-cell';
-    celdaEstado.innerHTML = crearDropdownEstado(subproyecto.id_subproyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub);
-    filaSubproyecto.appendChild(celdaEstado);
-    
     const avanceSubproyecto = parseInt(subproyecto.avance) || 0;
     let avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
     if (avanceSubproyecto <= 25) {
@@ -462,50 +365,25 @@ function crearFilaSubproyecto(id_proyecto, subproyecto, filaProyectoPadre) {
     } else {
         avanceGradientSub = 'linear-gradient(90deg, #4caf50 0%, #34a853 50%, #1e8e3e 100%)';
     }
-    const celdaAvance = document.createElement('div');
-    celdaAvance.className = 'modern-table-cell';
-    celdaAvance.innerHTML = '<div class="progress-bar-container" data-id="' + subproyecto.id_subproyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarSubproyecto(' + subproyecto.id_subproyecto + ', \'avance\', this.value);" /></div>';
-    filaSubproyecto.appendChild(celdaAvance);
     
-    const celdaOverall = document.createElement('div');
-    celdaOverall.className = 'modern-table-cell';
-    celdaOverall.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'overall', subproyecto.overall || '', 'subproyecto');
-    filaSubproyecto.appendChild(celdaOverall);
+    let filaHTML = '';
+    filaHTML += '<div class="modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row" data-id-proyecto="' + id_proyecto + '" data-id-subproyecto="' + subproyecto.id_proyecto + '">';
+    filaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
+    filaHTML += '<div class="modern-table-cell item-text"></div>';
+    filaHTML += '<div class="modern-table-cell item-text" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px;">' + nombreSubproyecto + '</div>';
+    filaHTML += '<div class="modern-table-cell item-text" style="font-size: 12px; color: var(--text-secondary);">' + abreviarCategoria(subproyecto.categoria) + '</div>';
+    filaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(subproyecto.id_proyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub) + '</div>';
+    filaHTML += '<div class="modern-table-cell"><div class="progress-bar-container" data-id="' + subproyecto.id_proyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'avance\', this.value);" /></div></div>';
+    filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'overall', subproyecto.overall || '', 'subproyecto') + '</div>';
+    filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'alcance', subproyecto.alcance || '', 'subproyecto') + '</div>';
+    filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'costo', subproyecto.costo || '', 'subproyecto') + '</div>';
+    filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'plazos', subproyecto.plazos || '', 'subproyecto') + '</div>';
+    filaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(subproyecto.id_proyecto, subproyecto.riesgos || '', 'subproyecto') + '</div>';
+    filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">-</div>';
+    filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">-</div>';
+    filaHTML += '</div>';
     
-    const celdaAlcance = document.createElement('div');
-    celdaAlcance.className = 'modern-table-cell';
-    celdaAlcance.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'alcance', subproyecto.alcance || '', 'subproyecto');
-    filaSubproyecto.appendChild(celdaAlcance);
-    
-    const celdaCosto = document.createElement('div');
-    celdaCosto.className = 'modern-table-cell';
-    celdaCosto.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'costo', subproyecto.costo || '', 'subproyecto');
-    filaSubproyecto.appendChild(celdaCosto);
-    
-    const celdaPlazos = document.createElement('div');
-    celdaPlazos.className = 'modern-table-cell';
-    celdaPlazos.innerHTML = crearDropdownOverall(subproyecto.id_subproyecto, 'plazos', subproyecto.plazos || '', 'subproyecto');
-    filaSubproyecto.appendChild(celdaPlazos);
-    
-    const celdaRiesgos = document.createElement('div');
-    celdaRiesgos.className = 'modern-table-cell';
-    celdaRiesgos.innerHTML = crearDropdownRiesgo(subproyecto.id_subproyecto, subproyecto.riesgos || '', 'subproyecto');
-    filaSubproyecto.appendChild(celdaRiesgos);
-    
-    // Celdas de fecha vacías para subproyectos (mantener alineación del grid)
-    const celdaFechaInicio = document.createElement('div');
-    celdaFechaInicio.className = 'modern-table-cell';
-    celdaFechaInicio.style.cssText = 'font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);';
-    celdaFechaInicio.textContent = '-';
-    filaSubproyecto.appendChild(celdaFechaInicio);
-    
-    const celdaFechaFin = document.createElement('div');
-    celdaFechaFin.className = 'modern-table-cell';
-    celdaFechaFin.style.cssText = 'font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);';
-    celdaFechaFin.textContent = '-';
-    filaSubproyecto.appendChild(celdaFechaFin);
-    
-    return filaSubproyecto;
+    return filaHTML;
 }
 
 // Función para ajustar el scroll horizontal: ocultar barra cuando no es necesaria

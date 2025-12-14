@@ -10,7 +10,7 @@ router.get('/mantenimiento', seguimientoController.obtenerMantenimiento);
 router.get('/proyectos', seguimientoController.obtenerProyectos);
 router.get('/proyectos-internos', seguimientoController.obtenerProyectosInternos);
 router.get('/epics/:id_proyecto', seguimientoController.obtenerEpics);
-router.get('/proyectos/:id_proyecto/subproyectos', seguimientoController.obtenerSubproyectos);
+// Endpoint de subproyectos eliminado - ahora se obtienen directamente en obtenerProyectos
 router.get('/dashboard/metricas', seguimientoController.obtenerMetricasDashboard);
 
 // Rutas para sugerencias de búsqueda

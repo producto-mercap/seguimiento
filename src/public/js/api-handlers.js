@@ -132,31 +132,11 @@ async function actualizarProyecto(id_proyecto, campo, valor) {
     }
 }
 
-async function actualizarSubproyecto(id_subproyecto, campo, valor) {
-    try {
-        const endpoint = '/api/subproyectos/' + id_subproyecto;
-        const datos = { [campo]: valor };
-        console.log('Actualizando subproyecto:', { id_subproyecto, campo, valor });
-        
-        const response = await fetch(endpoint, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(datos)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log('✅ Subproyecto actualizado correctamente:', result.data);
-        } else {
-            console.error('❌ Error al actualizar subproyecto:', result.error);
-            alert('Error al actualizar: ' + (result.error || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('❌ Error al actualizar subproyecto:', error);
-        alert('Error al actualizar: ' + error.message);
-    }
+// Función actualizarSubproyecto eliminada - ahora los subproyectos se actualizan usando actualizarProyecto
+// (los subproyectos son proyectos normales con linea_servicio = 'Hereda')
+async function actualizarSubproyecto(id_proyecto, campo, valor) {
+    // Usar actualizarProyecto ya que los subproyectos ahora son proyectos normales
+    await actualizarProyecto(id_proyecto, campo, valor);
 }
 
 async function actualizarProyectoInterno(id_proyecto, campo, valor) {

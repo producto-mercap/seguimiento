@@ -265,18 +265,30 @@ async function sincronizarProyectos(producto = null, equipo = null, maxTotal = n
             }
         }
         
-        // 1. Obtener proyectos de Redmine (sin filtrar por categoría, luego filtrar en código)
-        // Nota: Redmine no permite filtrar por "categoría != Mantenimiento", así que obtenemos todos y filtramos
-        console.log('📥 Paso 1: Obteniendo proyectos de Redmine...');
-        const proyectosMapeados = await redmineService.obtenerProyectosMapeados({
+        // 1. Obtener proyectos de Redmine con línea de servicio "Si" (proyectos principales)
+        console.log('📥 Paso 1: Obteniendo proyectos principales de Redmine (cf_28=Si)...');
+        const proyectosPrincipales = await redmineService.obtenerProyectosMapeados({
             producto,
             equipo,
             codigo_proyecto_padre: codigoProyectoPadre,
-            // No pasamos categoría aquí, la filtramos después
+            linea_servicio: 'Si',
             maxTotal
         });
         
-        if (proyectosMapeados.length === 0) {
+        // 2. Obtener proyectos de Redmine con línea de servicio "Hereda" (subproyectos)
+        console.log('📥 Paso 2: Obteniendo proyectos heredados de Redmine (cf_28=Hereda)...');
+        const proyectosHeredados = await redmineService.obtenerProyectosMapeados({
+            producto,
+            equipo,
+            codigo_proyecto_padre: codigoProyectoPadre,
+            linea_servicio: 'Hereda',
+            maxTotal
+        });
+        
+        // Combinar ambos arrays
+        const todosLosProyectos = [...proyectosPrincipales, ...proyectosHeredados];
+        
+        if (todosLosProyectos.length === 0) {
             console.log('⚠️ No se encontraron proyectos para sincronizar');
             return {
                 success: true,
@@ -287,10 +299,11 @@ async function sincronizarProyectos(producto = null, equipo = null, maxTotal = n
             };
         }
         
-        console.log(`✅ ${proyectosMapeados.length} proyectos obtenidos de Redmine\n`);
+        console.log(`✅ ${proyectosPrincipales.length} proyectos principales obtenidos de Redmine`);
+        console.log(`✅ ${proyectosHeredados.length} proyectos heredados obtenidos de Redmine\n`);
         
-        // 2. Filtrar proyectos que NO sean de categoría "Mantenimiento" ni "Licencias"
-        const proyectosFiltrados = proyectosMapeados.filter(p => 
+        // 3. Filtrar proyectos que NO sean de categoría "Mantenimiento" ni "Licencias"
+        const proyectosFiltrados = todosLosProyectos.filter(p => 
             p.categoria !== 'Mantenimiento' && 
             p.categoria !== 'Licencias' && 
             p.categoria !== null && 

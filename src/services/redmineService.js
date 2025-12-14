@@ -219,8 +219,9 @@ async function obtenerProyectos(options = {}) {
         params.set('cf_29', options.categoria);
     }
     
-    // SIEMPRE filtrar por línea de servicio "Si" (cf_28)
-    params.set('cf_28', 'Si');
+    // Filtrar por línea de servicio (cf_28): "Si" o "Hereda"
+    const lineaServicio = options.linea_servicio || 'Si';
+    params.set('cf_28', lineaServicio);
     
     const baseUrl = REDMINE_URL.replace(/\/+$/, '');
     const url = `${baseUrl}/projects.json?${params.toString()}`;
@@ -306,7 +307,8 @@ async function obtenerProyectosMapeados(options = {}) {
     let offset = 0;
     let hasMore = true;
     
-    console.log('📥 Obteniendo proyectos de Redmine...');
+    const lineaServicio = options.linea_servicio || 'Si';
+    console.log(`📥 Obteniendo proyectos de Redmine (línea de servicio: ${lineaServicio})...`);
     if (maxTotalSolicitado) {
         console.log(`   ⚠️ Modo prueba: limitado a ${maxTotalSolicitado} proyectos`);
     }
@@ -320,6 +322,7 @@ async function obtenerProyectosMapeados(options = {}) {
             equipo: options.equipo,
             categoria: options.categoria,
             codigo_proyecto_padre: options.codigo_proyecto_padre,
+            linea_servicio: lineaServicio,
             limit: limitActual,
             offset
         });
