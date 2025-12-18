@@ -12,7 +12,7 @@
     width: max-content; /* Permitir que expanda según contenido */
     min-width: 100%;
     padding: 0;
-    margin: 0;
+    margin: 0 16px 0 16px; /* Separar visualmente de la sidebar y del borde derecho */
 }
 
 /* Para proyectos, ajustar el ancho */

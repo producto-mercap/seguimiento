@@ -316,8 +316,31 @@ function renderizarTablaProyectos(datos, contenido) {
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(item.id_proyecto, item.riesgos || '', '') + '</div>';
         
         // Formatear fechas para mostrar en formato corto (dd/mm)
-        const fechaInicio = item.fecha_inicio || '';
-        const fechaFin = item.fecha_fin || '';
+        // Usar fechas de epics (planificadas) cuando existan, para ser consistentes con el modal.
+        // Para proyectos padre sin fecha propia, usar el rango de sus subproyectos.
+        let fechaInicio = item.fecha_inicio_epics || item.fecha_inicio || '';
+        let fechaFin = item.fecha_fin_epics || item.fecha_fin || '';
+
+        // Si es proyecto padre y no tiene fechas propias, tomar de subproyectos
+        if ((!fechaInicio || !fechaFin) && item.tiene_subproyectos && Array.isArray(item.subproyectos) && item.subproyectos.length > 0) {
+            // Para subproyectos, también considerar fechas de epics si existen
+            const fechasInicioSub = item.subproyectos
+                .map(sp => sp.fecha_inicio_epics || sp.fecha_inicio)
+                .filter(f => !!f)
+                .sort(); // asc → mínima primera
+            const fechasFinSub = item.subproyectos
+                .map(sp => sp.fecha_fin_epics || sp.fecha_fin)
+                .filter(f => !!f)
+                .sort()
+                .reverse(); // desc → máxima primera
+
+            if (!fechaInicio && fechasInicioSub.length > 0) {
+                fechaInicio = fechasInicioSub[0];
+            }
+            if (!fechaFin && fechasFinSub.length > 0) {
+                fechaFin = fechasFinSub[0];
+            }
+        }
         const fechaInicioCorta = fechaInicio ? formatearFechaCorta(fechaInicio) : '-';
         const fechaFinCorta = fechaFin ? formatearFechaCorta(fechaFin) : '-';
         
@@ -424,8 +447,15 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'costo', subproyecto.costo || '', 'subproyecto') + '</div>';
     filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'plazos', subproyecto.plazos || '', 'subproyecto') + '</div>';
     filaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(subproyecto.id_proyecto, subproyecto.riesgos || '', 'subproyecto') + '</div>';
-    filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">-</div>';
-    filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">-</div>';
+
+    // Fechas de subproyecto: usar epics si existen, sino fechas propias
+    const fechaInicioSub = subproyecto.fecha_inicio_epics || subproyecto.fecha_inicio || '';
+    const fechaFinSub = subproyecto.fecha_fin_epics || subproyecto.fecha_fin || '';
+    const fechaInicioSubCorta = fechaInicioSub ? formatearFechaCorta(fechaInicioSub) : '-';
+    const fechaFinSubCorta = fechaFinSub ? formatearFechaCorta(fechaFinSub) : '-';
+
+    filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaInicioSubCorta + '</div>';
+    filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinSubCorta + '</div>';
     filaHTML += '</div>';
     
     return filaHTML;

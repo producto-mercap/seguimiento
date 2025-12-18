@@ -213,8 +213,8 @@
    Contenedor Seguimiento (título, tabs y filtros)
    ================================ */
 .seguimiento-container {
-    max-width: 1100px;
-    margin: 0 auto;
+    max-width: 1250px; /* Ancho mayor para que botón y label se desplacen más a la derecha */
+    margin: 0 16px; /* Alineado con el margen de la tabla */
 }
 
 .seguimiento-header {
@@ -250,9 +250,9 @@
 }
 
 .seguimiento-buscador {
-    flex: 1;
-    max-width: 550px;
-    margin-left: 4px;
+    flex: 0 1 520px; /* puede crecer/encogerse un poco */
+    max-width: 520px;
+    margin: 0 auto; /* centra entre filtros (izq) y label (der) */
 }
 
 .seguimiento-buscador .google-search-box {

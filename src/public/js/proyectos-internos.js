@@ -295,8 +295,29 @@ function renderizarTablaProyectosInternos(datos) {
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(item.id_proyecto, item.riesgos || '', '') + '</div>';
         
         // Formatear fechas para mostrar en formato corto (dd/mm)
-        const fechaInicio = item.fecha_inicio || '';
-        const fechaFin = item.fecha_fin || '';
+        // Usar fechas de epics (planificadas) cuando existan, para ser consistentes con el modal.
+        // Para proyectos padre sin fecha propia, usar el rango de sus subproyectos.
+        let fechaInicio = item.fecha_inicio_epics || item.fecha_inicio || '';
+        let fechaFin = item.fecha_fin_epics || item.fecha_fin || '';
+
+        if ((!fechaInicio || !fechaFin) && item.tiene_subproyectos && Array.isArray(item.subproyectos) && item.subproyectos.length > 0) {
+            const fechasInicioSub = item.subproyectos
+                .map(sp => sp.fecha_inicio_epics || sp.fecha_inicio)
+                .filter(f => !!f)
+                .sort();
+            const fechasFinSub = item.subproyectos
+                .map(sp => sp.fecha_fin_epics || sp.fecha_fin)
+                .filter(f => !!f)
+                .sort()
+                .reverse();
+
+            if (!fechaInicio && fechasInicioSub.length > 0) {
+                fechaInicio = fechasInicioSub[0];
+            }
+            if (!fechaFin && fechasFinSub.length > 0) {
+                fechaFin = fechasFinSub[0];
+            }
+        }
         const fechaInicioCorta = fechaInicio ? formatearFechaCorta(fechaInicio) : '-';
         const fechaFinCorta = fechaFin ? formatearFechaCorta(fechaFin) : '-';
         

@@ -427,12 +427,14 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
         let tieneDatosInicio = false;
         let tieneDatosFin = false;
         
+        // Mostrar fechas planificadas siempre que exista al menos una fecha válida,
+        // aunque haya epics sin planificación.
         if (esProyectoPadre) {
             tieneDatosInicio = fechaInicioPlanificada !== null && fechaInicioPlanificada !== undefined && String(fechaInicioPlanificada).trim() !== '';
-            tieneDatosFin = fechaFinPlanificada !== null && fechaFinPlanificada !== undefined && String(fechaFinPlanificada).trim() !== '';
+            tieneDatosFin    = fechaFinPlanificada   !== null && fechaFinPlanificada   !== undefined && String(fechaFinPlanificada).trim()   !== '';
         } else {
-            tieneDatosInicio = tieneEpics && fechaInicioPlanificada !== null && fechaInicioPlanificada !== undefined && String(fechaInicioPlanificada).trim() !== '';
-            tieneDatosFin = tieneEpics && fechaFinPlanificada !== null && fechaFinPlanificada !== undefined && String(fechaFinPlanificada).trim() !== '';
+            tieneDatosInicio = fechaInicioPlanificada !== null && fechaInicioPlanificada !== undefined && String(fechaInicioPlanificada).trim() !== '';
+            tieneDatosFin    = fechaFinPlanificada   !== null && fechaFinPlanificada   !== undefined && String(fechaFinPlanificada).trim()   !== '';
         }
         
         console.log('Verificación de fechas proyecto padre:', {
