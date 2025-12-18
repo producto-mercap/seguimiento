@@ -308,12 +308,12 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
                     
                     html += '<div style="font-size: 12px; color: var(--text-secondary); padding: 4px 8px; border-radius: 12px; background: ' + (estadoEpicBg || 'transparent') + '; display: inline-block;">' + (estadoEpic || '-') + '</div>';
                     html += '</div>';
-                    html += '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; font-size: 13px; color: var(--text-secondary);">';
+                    html += '<div style="display: grid; grid-template-columns: auto auto minmax(120px, auto) minmax(130px, auto) minmax(110px, auto); gap: 12px; font-size: 13px; color: var(--text-secondary);">';
                     html += '<div>Est.: ' + (parseFloat(epic.total_estimated_hours) || 0).toFixed(1) + 'h</div>';
                     html += '<div>Real.: ' + (parseFloat(epic.total_spent_hours) || 0).toFixed(1) + 'h</div>';
-                    html += '<div>Inicio: ' + (epic.cf_21 ? formatearFecha(epic.cf_21) : '-') + '</div>';
-                    html += '<div>Fin Plan.: ' + (epic.cf_22 ? formatearFecha(epic.cf_22) : '-') + '</div>';
-                    html += '<div>Fin Real: ' + (epic.cf_15 ? formatearFecha(epic.cf_15) : '-') + '</div>';
+                    html += '<div style="white-space: nowrap;">Inicio: ' + (epic.cf_21 ? formatearFecha(epic.cf_21) : '-') + '</div>';
+                    html += '<div style="white-space: nowrap;">Fin Plan.: ' + (epic.cf_22 ? formatearFecha(epic.cf_22) : '-') + '</div>';
+                    html += '<div style="white-space: nowrap;">Fin Real: ' + (epic.cf_15 ? formatearFecha(epic.cf_15) : '-') + '</div>';
                     html += '</div>';
                     html += '</div>';
                     return html;
@@ -412,7 +412,7 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
         const codigoProyecto = itemData.codigo_proyecto || '';
         contenido += '<div style="margin-bottom: 8px;"><a href="' + redmineLink + '" target="_blank" style="color: var(--primary-color); text-decoration: none; font-size: 14px; font-weight: 400;">Redmine ' + codigoProyecto + '</a></div>';
         
-        contenido += '<div style="display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 32px;">';
+        contenido += '<div style="display: grid; grid-template-columns: 0.7fr 1.5fr; gap: 32px;">';
         
         contenido += '<div style="display: flex; flex-direction: column; gap: 20px;">';
         contenido += '<h3 style="font-size: 18px; font-weight: 500; color: var(--text-primary); margin-bottom: 16px;">Información del Proyecto</h3>';
@@ -465,8 +465,9 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
         const mostrarFechaFinReal = estadoProyecto === 'entregado' || estadoProyecto === 'cerrado';
         
         if (mostrarFechaFinReal) {
+            const tieneDatosFinReal = fechaFinReal !== null && fechaFinReal !== undefined && String(fechaFinReal).trim() !== '';
             contenido += '<div><label style="display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px;">Fecha Fin Real</label>';
-            if (!tieneDatos || !fechaFinReal) {
+            if (!tieneDatosFinReal) {
                 contenido += '<div style="width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; font-family: \'Google Sans\', \'Roboto\', sans-serif; background: #f8f9fa; color: var(--text-secondary);">-</div></div>';
             } else {
                 contenido += '<input type="date" class="modern-input date-input" value="' + formatearFecha(fechaFinReal) + '" readonly style="width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; font-family: \'Google Sans\', \'Roboto\', sans-serif; background: #f8f9fa; cursor: not-allowed;"></div>';

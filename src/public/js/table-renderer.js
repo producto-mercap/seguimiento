@@ -83,7 +83,7 @@ function renderizarTabla(datos) {
 }
 
 function renderizarTablaMantenimiento(datos, contenido) {
-    let tablaHTML = '<div class="modern-table-wrapper"><div class="modern-table mantenimiento"><div class="modern-table-header" style="position: relative;">';
+    let tablaHTML = '<div class="modern-table-wrapper mantenimiento-wrapper"><div class="modern-table mantenimiento"><div class="modern-table-header" style="position: relative;">';
     tablaHTML += '<div class="modern-table-cell header-cell">Cliente</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" style="text-align: center; justify-content: center;">Límite Horas</div>';
     tablaHTML += '<div class="modern-table-cell header-cell">Overall</div>';
@@ -113,7 +113,7 @@ function renderizarTablaMantenimiento(datos, contenido) {
         
         tablaHTML += '<div class="modern-table-row">';
         tablaHTML += '<div class="modern-table-cell item-text" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">';
-        tablaHTML += '<div style="line-height: 1.4;">' + (item.cliente || '-') + '</div>';
+        tablaHTML += '<div style="line-height: 1.4; font-size: 15px;">' + (item.cliente || '-') + '</div>';
         if (nombreProyectoTruncado) {
             tablaHTML += '<div style="font-size: 11px; color: var(--text-secondary); line-height: 1.3;">' + nombreProyectoTruncado + '</div>';
         }

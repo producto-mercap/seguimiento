@@ -43,6 +43,7 @@
                             class="nav-item nav-item-equipo <%= equipoActual === equipo.id_equipo_redmine ? 'active' : '' %>"
                             data-tooltip="<%= equipo.equipo %>"
                             style="padding-left: 48px;"
+                            onclick="contraerSidebarAlSeleccionarEquipo();"
                         >
                             <span><%= equipo.equipo %></span>
                         </a>
@@ -123,6 +124,18 @@
             equiposDiv.style.display = 'none';
             // Cambiar a flecha hacia la derecha cuando está contraído
             icon.innerHTML = '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
+        }
+    }
+    
+    function contraerSidebarAlSeleccionarEquipo() {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (sidebar && mainContent) {
+            sidebar.classList.add('contraido');
+            mainContent.style.marginLeft = '64px';
+            mainContent.style.width = 'calc(100% - 64px)';
+            mainContent.style.maxWidth = 'calc(100% - 64px)';
         }
     }
 </script>
