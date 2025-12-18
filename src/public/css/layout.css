@@ -74,6 +74,35 @@
     box-shadow: none;
 }
 
+/* Sidebar contraído pero expandido temporalmente al hacer hover */
+.sidebar.contraido:hover {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mostrar texto cuando el sidebar contraído está en hover */
+.sidebar.contraido:hover .nav-item span {
+    opacity: 1;
+    width: auto;
+}
+
+/* Mostrar flechas cuando el sidebar contraído está en hover */
+.sidebar.contraido:hover .nav-item svg.nav-icon:last-child {
+    display: block;
+}
+
+/* Volver a padding y alineación normales al hacer hover en sidebar contraído */
+.sidebar.contraido:hover .nav-item {
+    justify-content: flex-start;
+    padding: 12px 16px;
+}
+
+/* Ocultar tooltips cuando el sidebar está expandido por hover */
+.sidebar.contraido:hover .nav-item::after {
+    opacity: 0;
+}
+
 .sidebar-nav {
     padding: 8px 0;
     white-space: nowrap;
@@ -94,15 +123,8 @@
     transition: opacity 0.2s ease, width 0.2s ease;
 }
 
-/* Mostrar equipos cuando está expandido (por defecto) */
-.sidebar .producto-equipos {
-    display: block;
-}
-
-/* Ocultar equipos cuando está contraído */
-.sidebar.contraido .producto-equipos {
-    display: none !important;
-}
+/* Mostrar/ocultar equipos se controla por JS (inline style display:block/none).
+   No forzar estados desde CSS para permitir que funcionen los toggles incluso en modo contraído. */
 
 /* Mostrar flechas cuando está expandido (por defecto) */
 .sidebar .nav-item svg.nav-icon:last-child {

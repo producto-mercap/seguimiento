@@ -3,15 +3,15 @@
  * Seguimiento de Proyectos
  */
 
-/* Contenedor de tabla - scroll horizontal acotado al ancho disponible */
+/* Contenedor de tabla - se ajusta al ancho real de la tabla (hasta Fecha Fin) */
 .modern-table-wrapper {
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow);
-    overflow-x: auto;  /* Permite scroll horizontal pero el contenedor tiene fin */
-    overflow-y: visible;
-    width: 100%;
-    max-width: 100%;
+    overflow: visible;          /* El scroll horizontal lo maneja el contenedor padre si hace falta */
+    display: inline-block;      /* El ancho del contenedor se ajusta al contenido (hasta la última columna) */
+    width: auto;
+    max-width: calc(100% - 32px); /* Respeta márgenes laterales */
     padding: 0;
     margin: 0 16px 0 16px; /* Separar visualmente de la sidebar y del borde derecho */
 }
@@ -78,10 +78,10 @@
     text-align: center;
 }
 
-/* Mantenimiento: 7 columnas - WIN llena el espacio restante */
+/* Mantenimiento: 7 columnas - WIN con ancho muy amplio al final */
 .modern-table.mantenimiento .modern-table-header,
 .modern-table.mantenimiento .modern-table-row {
-    grid-template-columns: 350px 90px 70px 70px 70px 70px 1fr;
+    grid-template-columns: 320px 90px 70px 70px 70px 70px 520px; /* última columna = WIN mucho más ancha */
     padding-left: 12px;
     padding-right: 12px;
     gap: 0 8px; /* row-gap: 0, column-gap: 8px - unificado con proyectos */
@@ -100,7 +100,8 @@
 /* Proyectos: 13 columnas (con Categoria, Fecha Inicio y Fecha Fin) - Avance después de Estado */
 .modern-table.proyectos .modern-table-header,
 .modern-table.proyectos .modern-table-row {
-    grid-template-columns: 30px 120px 400px 85px 105px 85px 55px 55px 50px 50px 55px 80px 75px;
+    /* Última columna (WIN) mucho más ancha */
+    grid-template-columns: 30px 120px 400px 85px 105px 85px 55px 55px 50px 50px 55px 80px 140px;
     padding-left: 12px;
     padding-right: 12px;
     gap: 0 8px; /* row-gap: 0, column-gap: 8px */
@@ -111,7 +112,8 @@
 /* Proyectos Internos: 12 columnas (sin Categoria) - Avance después de Estado */
 .modern-table.proyectos-internos .modern-table-header,
 .modern-table.proyectos-internos .modern-table-row {
-    grid-template-columns: 30px 120px 400px 105px 85px 55px 55px 50px 50px 55px 80px 75px;
+    /* Última columna (WIN) mucho más ancha */
+    grid-template-columns: 30px 120px 400px 105px 85px 55px 55px 50px 50px 55px 80px 140px;
     padding-left: 12px;
     padding-right: 12px;
     gap: 0 8px; /* row-gap: 0, column-gap: 8px */

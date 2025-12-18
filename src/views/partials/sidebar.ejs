@@ -82,20 +82,32 @@
             }
         <% }); %>
         
-        // Inicializar sidebar expandido por defecto
+        // Inicializar sidebar:
+        // - Página inicial (sin producto/equipo): expandido por defecto.
+        // - Cuando hay producto/equipo seleccionados: contraído para aprovechar ancho de tablas.
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
         
         if (sidebar && mainContent) {
             const sidebarWidth = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim() || '190px';
             
-            // Asegurar que el sidebar esté expandido al cargar
-            sidebar.classList.remove('contraido');
+            // Usar valores del servidor (EJS) para saber si hay producto/equipo seleccionados
+            const tieneProducto = '<%= productoActual || '' %>' !== '';
+            const tieneEquipo = '<%= typeof equipoActual !== "undefined" ? (equipoActual || "") : "" %>' !== '';
             
-            // Asegurar que el contenido principal tenga el margen correcto
-            mainContent.style.marginLeft = sidebarWidth;
-            mainContent.style.width = 'calc(100% - ' + sidebarWidth + ')';
-            mainContent.style.maxWidth = 'calc(100% - ' + sidebarWidth + ')';
+            if (tieneProducto && tieneEquipo) {
+                // Vista de un producto/equipo concreto -> contraer sidebar
+                sidebar.classList.add('contraido');
+                mainContent.style.marginLeft = '64px';
+                mainContent.style.width = 'calc(100% - 64px)';
+                mainContent.style.maxWidth = 'calc(100% - 64px)';
+            } else {
+                // Vista general -> sidebar expandido
+                sidebar.classList.remove('contraido');
+                mainContent.style.marginLeft = sidebarWidth;
+                mainContent.style.width = 'calc(100% - ' + sidebarWidth + ')';
+                mainContent.style.maxWidth = 'calc(100% - ' + sidebarWidth + ')';
+            }
         }
     });
     
