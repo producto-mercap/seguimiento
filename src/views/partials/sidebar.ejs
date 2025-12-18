@@ -82,24 +82,20 @@
             }
         <% }); %>
         
-        // Manejar hover del sidebar para ajustar el contenido principal
+        // Inicializar sidebar expandido por defecto
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
         
         if (sidebar && mainContent) {
             const sidebarWidth = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim() || '190px';
             
-            sidebar.addEventListener('mouseenter', function() {
-                mainContent.style.marginLeft = sidebarWidth;
-                mainContent.style.width = 'calc(100% - ' + sidebarWidth + ')';
-                mainContent.style.maxWidth = 'calc(100% - ' + sidebarWidth + ')';
-            });
+            // Asegurar que el sidebar esté expandido al cargar
+            sidebar.classList.remove('contraido');
             
-            sidebar.addEventListener('mouseleave', function() {
-                mainContent.style.marginLeft = '64px';
-                mainContent.style.width = 'calc(100% - 64px)';
-                mainContent.style.maxWidth = 'calc(100% - 64px)';
-            });
+            // Asegurar que el contenido principal tenga el margen correcto
+            mainContent.style.marginLeft = sidebarWidth;
+            mainContent.style.width = 'calc(100% - ' + sidebarWidth + ')';
+            mainContent.style.maxWidth = 'calc(100% - ' + sidebarWidth + ')';
         }
     });
     

@@ -34,8 +34,8 @@
    Sidebar (Panel Izquierdo)
    ================================ */
 .sidebar {
-    width: 64px; /* Contraído por defecto */
-    min-width: 64px;
+    width: var(--sidebar-width); /* Expandido por defecto */
+    min-width: var(--sidebar-width);
     background: white;
     border-right: 1px solid var(--border-color);
     height: calc(100vh - 56px);
@@ -48,11 +48,12 @@
     transition: width 0.3s ease;
     display: flex;
     flex-direction: column;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Ícono representativo cuando el sidebar está contraído */
 .sidebar-icon-collapsed {
-    display: flex;
+    display: none; /* Oculto por defecto cuando está expandido */
     align-items: center;
     justify-content: center;
     padding: 16px 8px;
@@ -61,21 +62,16 @@
     flex-shrink: 0;
 }
 
-/* Ocultar ícono cuando el sidebar está expandido */
-.sidebar:hover .sidebar-icon-collapsed {
-    display: none;
-}
-
-/* Mostrar ícono cuando el sidebar está contraído */
-.sidebar:not(:hover) .sidebar-icon-collapsed {
+/* Mostrar ícono cuando el sidebar está contraído (hover out) */
+.sidebar.contraido .sidebar-icon-collapsed {
     display: flex;
 }
 
-/* Sidebar expandido al hacer hover */
-.sidebar:hover {
-    width: var(--sidebar-width);
-    min-width: var(--sidebar-width);
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+/* Sidebar contraído al salir del hover (si se implementa toggle) */
+.sidebar.contraido {
+    width: 64px;
+    min-width: 64px;
+    box-shadow: none;
 }
 
 .sidebar-nav {
@@ -83,28 +79,38 @@
     white-space: nowrap;
 }
 
+/* Mostrar texto cuando el sidebar está expandido (por defecto) */
+.sidebar .nav-item span {
+    opacity: 1;
+    width: auto;
+    transition: opacity 0.2s ease, width 0.2s ease;
+}
+
 /* Ocultar texto cuando el sidebar está contraído */
-.sidebar:not(:hover) .nav-item span {
+.sidebar.contraido .nav-item span {
     opacity: 0;
     width: 0;
     overflow: hidden;
     transition: opacity 0.2s ease, width 0.2s ease;
 }
 
-/* Mostrar texto cuando el sidebar está expandido */
-.sidebar:hover .nav-item span {
-    opacity: 1;
-    width: auto;
-    transition: opacity 0.2s ease 0.1s, width 0.2s ease 0.1s;
+/* Mostrar equipos cuando está expandido (por defecto) */
+.sidebar .producto-equipos {
+    display: block;
 }
 
 /* Ocultar equipos cuando está contraído */
-.sidebar:not(:hover) .producto-equipos {
+.sidebar.contraido .producto-equipos {
     display: none !important;
 }
 
+/* Mostrar flechas cuando está expandido (por defecto) */
+.sidebar .nav-item svg.nav-icon:last-child {
+    display: block;
+}
+
 /* Ocultar flechas cuando está contraído */
-.sidebar:not(:hover) .nav-item svg.nav-icon:last-child {
+.sidebar.contraido .nav-item svg.nav-icon:last-child {
     display: none;
 }
 
@@ -113,14 +119,20 @@
     position: relative;
 }
 
+/* Padding normal cuando está expandido */
+.sidebar .nav-item {
+    justify-content: flex-start;
+    padding: 12px 16px;
+}
+
 /* Centrar iconos cuando está contraído */
-.sidebar:not(:hover) .nav-item {
+.sidebar.contraido .nav-item {
     justify-content: center;
     padding: 12px 8px;
 }
 
 /* Mostrar tooltip cuando está contraído */
-.sidebar:not(:hover) .nav-item::after {
+.sidebar.contraido .nav-item::after {
     content: attr(data-tooltip);
     position: absolute;
     left: 100%;
@@ -138,7 +150,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.sidebar:not(:hover) .nav-item:hover::after {
+.sidebar.contraido .nav-item:hover::after {
     opacity: 1;
 }
 
@@ -181,12 +193,12 @@
    ================================ */
 .main-content {
     flex: 1;
-    margin-left: 64px; /* Ancho del sidebar contraído */
+    margin-left: var(--sidebar-width); /* Ancho del sidebar expandido */
     min-height: calc(100vh - 56px);
     background: #f8f9fa;
     transition: margin-left 0.3s ease;
-    width: calc(100% - 64px);
-    max-width: calc(100% - 64px);
+    width: calc(100% - var(--sidebar-width));
+    max-width: calc(100% - var(--sidebar-width));
 }
 
 /* El ajuste del margen se maneja con JavaScript para mejor compatibilidad */

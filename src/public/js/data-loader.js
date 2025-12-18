@@ -104,8 +104,8 @@ async function mostrarDashboard() {
                 ? '/?producto=' + encodeURIComponent(producto) + '&equipo=' + encodeURIComponent(primerEquipo.id_equipo_redmine)
                 : '/?producto=' + encodeURIComponent(producto);
             
-            // Estilo tipo article card con detalle decorativo
-            dashboardHTML += '<div class="feed-article" style="position: relative; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); transition: all 0.2s; cursor: pointer; border: 1px solid transparent; overflow: hidden;" onmouseover="this.style.boxShadow=\'0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3)\'; this.style.borderColor=\'#dadce0\';" onmouseout="this.style.boxShadow=\'0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)\'; this.style.borderColor=\'transparent\';" onclick="window.location.href=\'' + urlRedireccion + '\'">';
+            // Estilo tipo article card con detalle decorativo (sin click en la tarjeta completa)
+            dashboardHTML += '<div class="feed-article" style="position: relative; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); transition: all 0.2s; cursor: default; border: 1px solid transparent; overflow: hidden;" onmouseover="this.style.boxShadow=\'0 2px 6px 2px rgba(60,64,67,.15), 0 1px 2px 0 rgba(60,64,67,.3)\'; this.style.borderColor=\'#dadce0\';" onmouseout="this.style.boxShadow=\'0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)\'; this.style.borderColor=\'transparent\';">';
             
             // Detalle decorativo en esquina superior derecha
             dashboardHTML += '<div style="position: absolute; top: 0; right: 0; width: 40px; height: 40px; background: ' + colores.primary + '; opacity: 0.1; border-radius: 0 12px 0 40px;"></div>';
