@@ -3,14 +3,15 @@
  * Seguimiento de Proyectos
  */
 
-/* Contenedor de tabla - sin scroll propio, usa el del navegador */
+/* Contenedor de tabla - scroll horizontal acotado al ancho disponible */
 .modern-table-wrapper {
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow);
-    overflow: visible; /* Sin scroll propio, usa el del navegador */
-    width: max-content; /* Permitir que expanda según contenido */
-    min-width: 100%;
+    overflow-x: auto;  /* Permite scroll horizontal pero el contenedor tiene fin */
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
     padding: 0;
     margin: 0 16px 0 16px; /* Separar visualmente de la sidebar y del borde derecho */
 }
@@ -19,7 +20,7 @@
 .modern-table-wrapper .modern-table.proyectos {
     margin-right: 0;
     padding-right: 0;
-    width: 100%;
+    width: max-content;     /* La tabla puede ser más ancha que el contenedor */
     min-width: max-content;
 }
 

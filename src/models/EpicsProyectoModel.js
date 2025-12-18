@@ -2,7 +2,7 @@ const { pool } = require('../config/database');
 
 class EpicsProyectoModel {
     /**
-     * Obtener todos los epics de un proyecto (busca por proyecto_padre)
+     * Obtener todos los epics de un proyecto (busca por id_proyecto)
      * @param {number} id_proyecto - ID del proyecto
      * @returns {Promise<Array>} - Array de epics
      */
@@ -11,7 +11,7 @@ class EpicsProyectoModel {
             const query = `
                 SELECT *
                 FROM epics_proyecto
-                WHERE proyecto_padre = $1
+                WHERE id_proyecto = $1
                 ORDER BY epic_id ASC
             `;
             const result = await pool.query(query, [id_proyecto]);
@@ -23,9 +23,9 @@ class EpicsProyectoModel {
     }
 
     /**
-     * Obtener totales de horas por proyecto (busca por proyecto_padre)
+     * Obtener totales de horas por proyecto (busca epics que pertenecen al proyecto)
      * @param {number} id_proyecto - ID del proyecto
-     * @returns {Promise<Object>} - Totales de horas
+     * @returns {Promise<Object>} - Totales de horas y fechas
      */
     static async obtenerTotalesPorProyecto(id_proyecto) {
         try {
@@ -35,9 +35,9 @@ class EpicsProyectoModel {
                     COALESCE(SUM(total_estimated_hours), 0) as horas_estimadas,
                     COALESCE(SUM(total_spent_hours), 0) as horas_realizadas,
                     MIN(cf_21) as fecha_inicio_minima,
-                    MAX(cf_15) as fecha_fin_maxima
+                    MAX(cf_22) as fecha_fin_maxima
                 FROM epics_proyecto
-                WHERE proyecto_padre = $1
+                WHERE id_proyecto = $1
             `;
             const result = await pool.query(query, [id_proyecto]);
             return result.rows[0] || {
@@ -188,7 +188,7 @@ class EpicsProyectoModel {
     }
 
     /**
-     * Verificar si un proyecto tiene epics (busca por proyecto_padre)
+     * Verificar si un proyecto tiene epics (busca por id_proyecto)
      * @param {number} id_proyecto - ID del proyecto
      * @returns {Promise<boolean>} - true si tiene epics
      */
@@ -197,7 +197,7 @@ class EpicsProyectoModel {
             const query = `
                 SELECT COUNT(*) as count
                 FROM epics_proyecto
-                WHERE proyecto_padre = $1
+                WHERE id_proyecto = $1
             `;
             const result = await pool.query(query, [id_proyecto]);
             return parseInt(result.rows[0].count) > 0;

@@ -250,20 +250,85 @@ async function obtenerProyectos(req, res) {
             }
         });
         
-        // Agregar subproyectos a cada proyecto padre
-        const proyectosConSubproyectos = proyectos.map(proyecto => {
-            const proyectoIdStr = String(proyecto.id_proyecto);
+        // Calcular rangos de fechas por epics para todos los proyectos (padres y subproyectos)
+        const todosLosIds = new Set();
+        proyectos.forEach(p => {
+            if (p.id_proyecto) todosLosIds.add(p.id_proyecto);
+        });
+        subproyectos.forEach(sp => {
+            if (sp.id_proyecto) todosLosIds.add(sp.id_proyecto);
+        });
+        
+        const totalesPorProyecto = {};
+        await Promise.all(
+            Array.from(todosLosIds).map(async (id) => {
+                try {
+                    const totales = await EpicsProyectoModel.obtenerTotalesPorProyecto(id);
+                    if (totales && (totales.fecha_inicio_minima || totales.fecha_fin_maxima)) {
+                        totalesPorProyecto[id] = totales;
+                    }
+                } catch (e) {
+                    console.error('Error al obtener totales de epics para proyecto', id, e);
+                }
+            })
+        );
+        
+        // Agregar subproyectos y fechas agregadas (inicio mínimo / fin máximo) a cada proyecto padre
+        const proyectosConSubproyectosYFechas = proyectos.map(proyecto => {
+            const proyectoId = proyecto.id_proyecto;
+            const proyectoIdStr = String(proyectoId);
             const subproyectosDelProyecto = subproyectosPorPadre[proyectoIdStr] || [];
+            
+            // Candidatos de fechas para calcular rango global
+            const candidatosInicio = [];
+            const candidatosFin = [];
+            
+            const totalesPadre = totalesPorProyecto[proyectoId];
+            if (totalesPadre) {
+                if (totalesPadre.fecha_inicio_minima) candidatosInicio.push(totalesPadre.fecha_inicio_minima);
+                if (totalesPadre.fecha_fin_maxima) candidatosFin.push(totalesPadre.fecha_fin_maxima);
+            }
+            if (proyecto.fecha_inicio) candidatosInicio.push(proyecto.fecha_inicio);
+            if (proyecto.fecha_fin) candidatosFin.push(proyecto.fecha_fin);
+            
+            // Enriquecer subproyectos con fechas de epics y acumular en candidatos
+            const subproyectosEnriquecidos = subproyectosDelProyecto.map(sub => {
+                const totalesSub = totalesPorProyecto[sub.id_proyecto] || {};
+                const inicioSub = totalesSub.fecha_inicio_minima || sub.fecha_inicio || null;
+                const finSub = totalesSub.fecha_fin_maxima || sub.fecha_fin || null;
+                
+                if (inicioSub) candidatosInicio.push(inicioSub);
+                if (finSub) candidatosFin.push(finSub);
+                
+                return {
+                    ...sub,
+                    fecha_inicio: inicioSub || sub.fecha_inicio,
+                    fecha_fin: finSub || sub.fecha_fin
+                };
+            });
+            
+            // Calcular inicio mínimo y fin máximo global
+            let fechaInicioGlobal = proyecto.fecha_inicio || null;
+            let fechaFinGlobal = proyecto.fecha_fin || null;
+            if (candidatosInicio.length > 0) {
+                fechaInicioGlobal = candidatosInicio.slice().sort()[0];
+            }
+            if (candidatosFin.length > 0) {
+                fechaFinGlobal = candidatosFin.slice().sort().reverse()[0];
+            }
+            
             return {
                 ...proyecto,
-                tiene_subproyectos: subproyectosDelProyecto.length > 0,
-                subproyectos: subproyectosDelProyecto
+                fecha_inicio: fechaInicioGlobal,
+                fecha_fin: fechaFinGlobal,
+                tiene_subproyectos: subproyectosEnriquecidos.length > 0,
+                subproyectos: subproyectosEnriquecidos
             };
         });
         
         res.json({
             success: true,
-            data: proyectosConSubproyectos
+            data: proyectosConSubproyectosYFechas
         });
     } catch (error) {
         console.error('Error al obtener proyectos:', error);

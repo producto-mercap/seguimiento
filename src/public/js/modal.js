@@ -308,10 +308,11 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
                     
                     html += '<div style="font-size: 12px; color: var(--text-secondary); padding: 4px 8px; border-radius: 12px; background: ' + (estadoEpicBg || 'transparent') + '; display: inline-block;">' + (estadoEpic || '-') + '</div>';
                     html += '</div>';
-                    html += '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px; color: var(--text-secondary);">';
+                    html += '<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; font-size: 13px; color: var(--text-secondary);">';
                     html += '<div>Est.: ' + (parseFloat(epic.total_estimated_hours) || 0).toFixed(1) + 'h</div>';
                     html += '<div>Real.: ' + (parseFloat(epic.total_spent_hours) || 0).toFixed(1) + 'h</div>';
                     html += '<div>Inicio: ' + (epic.cf_21 ? formatearFecha(epic.cf_21) : '-') + '</div>';
+                    html += '<div>Fin Plan.: ' + (epic.cf_22 ? formatearFecha(epic.cf_22) : '-') + '</div>';
                     html += '<div>Fin Real: ' + (epic.cf_15 ? formatearFecha(epic.cf_15) : '-') + '</div>';
                     html += '</div>';
                     html += '</div>';
