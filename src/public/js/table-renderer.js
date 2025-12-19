@@ -28,6 +28,48 @@ function abreviarCategoria(categoria) {
     return categoria;
 }
 
+// Función para abreviar nombres de clientes si exceden 20 caracteres
+function abreviarCliente(cliente) {
+    if (!cliente || cliente === '-') return cliente || '-';
+    
+    // Si el nombre tiene 20 caracteres o menos, devolverlo sin cambios
+    if (cliente.length <= 20) {
+        return cliente;
+    }
+    
+    // Dividir el nombre en palabras
+    const palabras = cliente.split(' ').filter(p => p.trim() !== '');
+    
+    // Si hay menos de 2 palabras, no abreviar
+    if (palabras.length < 2) {
+        return cliente;
+    }
+    
+    // Abreviar la primera palabra: mostrar solo la primera letra seguida de punto
+    const primeraPalabra = palabras[0];
+    const primeraLetra = primeraPalabra.charAt(0);
+    const primeraAbreviada = primeraLetra + '.';
+    
+    // Construir el resultado con la primera palabra abreviada y el resto sin cambios
+    const palabrasAbreviadas = [primeraAbreviada, ...palabras.slice(1)];
+    let resultado = palabrasAbreviadas.join(' ');
+    
+    // Si después de abreviar la primera palabra sigue siendo muy largo, abreviar también palabras intermedias
+    if (resultado.length > 20 && palabras.length > 2) {
+        const palabrasFinales = resultado.split(' ');
+        const abreviadas = palabrasFinales.map((palabra, index) => {
+            // Abreviar palabras intermedias (no la primera ni la última) que tengan más de 4 caracteres
+            if (index > 0 && index < palabrasFinales.length - 1 && palabra.length > 4 && !palabra.includes('.')) {
+                return palabra.substring(0, 4) + '.';
+            }
+            return palabra;
+        });
+        resultado = abreviadas.join(' ');
+    }
+    
+    return resultado;
+}
+
 // Función para formatear fecha a YYYY-MM-DD
 function formatearFecha(fecha) {
     if (!fecha) return '';
@@ -132,6 +174,10 @@ function renderizarTablaMantenimiento(datos, contenido) {
 }
 
 function renderizarTablaProyectos(datos, contenido) {
+    // Asegurar que el contenedor sea responsive para proyectos
+    if (contenido) {
+        contenido.classList.add('proyectos-container');
+    }
     // Ordenar datos antes de renderizar
     let datosOrdenados = [...datos];
     datosOrdenados.sort((a, b) => {
@@ -171,10 +217,6 @@ function renderizarTablaProyectos(datos, contenido) {
             const ordenPlazos = { 'verde': 1, 'amarillo': 2, 'rojo': 3, '': 4 };
             valorA = ordenPlazos[a.plazos] || 4;
             valorB = ordenPlazos[b.plazos] || 4;
-        } else if (ordenActual.columna === 'riesgos') {
-            const ordenRiesgos = { 'ok': 1, 'red flag': 2, '': 3 };
-            valorA = ordenRiesgos[a.riesgos] || 3;
-            valorB = ordenRiesgos[b.riesgos] || 3;
         } else if (ordenActual.columna === 'avance') {
             valorA = parseInt(a.avance) || 0;
             valorB = parseInt(b.avance) || 0;
@@ -206,7 +248,7 @@ function renderizarTablaProyectos(datos, contenido) {
         return 0;
     });
     
-    let tablaHTML = '<div class="modern-table-wrapper"><div class="modern-table proyectos"><div class="modern-table-header">';
+    let tablaHTML = '<div class="modern-table-wrapper proyectos-wrapper"><div class="modern-table proyectos"><div class="modern-table-header">';
     const flechaAsc = '▲';
     const flechaDesc = '▼';
     
@@ -220,8 +262,8 @@ function renderizarTablaProyectos(datos, contenido) {
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'alcance\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'alcance' ? ' color: var(--primary-color);' : '') + '">Alcance' + (ordenActual.columna === 'alcance' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'costo\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'costo' ? ' color: var(--primary-color);' : '') + '">Costo' + (ordenActual.columna === 'costo' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'plazos\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'plazos' ? ' color: var(--primary-color);' : '') + '">Plazos' + (ordenActual.columna === 'plazos' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
-    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'riesgos\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'riesgos' ? ' color: var(--primary-color);' : '') + '">Riesgos' + (ordenActual.columna === 'riesgos' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
-    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_inicio\')" style="cursor: pointer; user-select: none; text-align: center;' + (ordenActual.columna === 'fecha_inicio' ? ' color: var(--primary-color);' : '') + '">Fecha Inicio' + (ordenActual.columna === 'fecha_inicio' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
+    tablaHTML += '<div class="modern-table-cell header-cell" style="text-align: center; justify-content: center;">Accionables</div>';
+    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_inicio\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'fecha_inicio' ? ' color: var(--primary-color);' : '') + '">Fecha Inicio' + (ordenActual.columna === 'fecha_inicio' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_fin\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'fecha_fin' ? ' color: var(--primary-color);' : '') + '">Fecha Fin' + (ordenActual.columna === 'fecha_fin' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '</div>';
     
@@ -275,8 +317,8 @@ function renderizarTablaProyectos(datos, contenido) {
             tablaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
         }
         
-        tablaHTML += '<div class="modern-table-cell item-text">' + (item.cliente || '-') + '</div>';
-        tablaHTML += '<div class="modern-table-cell item-text"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + '); event.stopPropagation();" data-item="' + itemDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer;">' + nombreProyecto + '</a></div>';
+        tablaHTML += '<div class="modern-table-cell item-text">' + abreviarCliente(item.cliente || '-') + '</div>';
+        tablaHTML += '<div class="modern-table-cell item-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + '); event.stopPropagation();" data-item="' + itemDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">' + nombreProyecto + '</a></div>';
         tablaHTML += '<div class="modern-table-cell item-text">' + abreviarCategoria(item.categoria) + '</div>';
         
         const estadoValue = item.estado || '';
@@ -313,7 +355,12 @@ function renderizarTablaProyectos(datos, contenido) {
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'alcance', item.alcance || '', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'costo', item.costo || '', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'plazos', item.plazos || '', '') + '</div>';
-        tablaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(item.id_proyecto, item.riesgos || '', '') + '</div>';
+        // Columna Accionables - mostrar "Ver" si tiene accionables
+        if (item.tiene_accionables) {
+            tablaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + ', true); event.stopPropagation();" style="color: var(--primary-color); text-decoration: none; cursor: pointer; font-size: 13px; font-weight: 500;">Ver</a></div>';
+        } else {
+            tablaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center; color: var(--text-secondary);">-</div>';
+        }
         
         // Formatear fechas para mostrar en formato corto (dd/mm).
         // Regla: tomar SIEMPRE la fecha de inicio mínima y la fecha fin máxima
@@ -440,7 +487,7 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     filaHTML += '<div class="modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row subproyectos-ocultos" data-id-proyecto="' + id_proyecto + '" data-id-subproyecto="' + subproyecto.id_proyecto + '" style="display: none;">';
     filaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
     filaHTML += '<div class="modern-table-cell item-text"></div>';
-    filaHTML += '<div class="modern-table-cell item-text" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + subproyecto.id_proyecto + '); event.stopPropagation();" data-item="' + subproyectoDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer;">' + nombreSubproyecto + '</a></div>';
+    filaHTML += '<div class="modern-table-cell item-text" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + subproyecto.id_proyecto + '); event.stopPropagation();" data-item="' + subproyectoDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">' + nombreSubproyecto + '</a></div>';
     filaHTML += '<div class="modern-table-cell item-text" style="font-size: 12px; color: var(--text-secondary);">' + abreviarCategoria(subproyecto.categoria) + '</div>';
     filaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(subproyecto.id_proyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub) + '</div>';
     filaHTML += '<div class="modern-table-cell"><div class="progress-bar-container" data-id="' + subproyecto.id_proyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'avance\', this.value);" /></div></div>';
@@ -448,7 +495,12 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'alcance', subproyecto.alcance || '', 'subproyecto') + '</div>';
     filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'costo', subproyecto.costo || '', 'subproyecto') + '</div>';
     filaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(subproyecto.id_proyecto, 'plazos', subproyecto.plazos || '', 'subproyecto') + '</div>';
-    filaHTML += '<div class="modern-table-cell">' + crearDropdownRiesgo(subproyecto.id_proyecto, subproyecto.riesgos || '', 'subproyecto') + '</div>';
+    // Columna Accionables para subproyectos - mostrar "Ver" si tiene accionables
+    if (subproyecto.tiene_accionables) {
+        filaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + subproyecto.id_proyecto + ', true); event.stopPropagation();" style="color: var(--primary-color); text-decoration: none; cursor: pointer; font-size: 13px; font-weight: 500;">Ver</a></div>';
+    } else {
+        filaHTML += '<div class="modern-table-cell" style="text-align: center; justify-content: center; color: var(--text-secondary);">-</div>';
+    }
 
     // Fechas de subproyecto: usar epics si existen, sino fechas propias
     const fechaInicioSub = subproyecto.fecha_inicio_epics || subproyecto.fecha_inicio || '';

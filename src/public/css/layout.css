@@ -229,16 +229,20 @@
     min-height: calc(100vh - 56px);
     background: white; /* Fondo blanco en lugar de #f8f9fa */
     transition: margin-left 0.3s ease;
-    min-width: max-content; /* Permitir que el contenido expanda */
-    overflow-x: visible; /* No restringir el scroll horizontal */
+    min-width: 0; /* Permitir que se reduzca para proyectos responsive */
+    overflow-x: visible; /* Permitir ver el borde derecho de la tabla */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* El ajuste del margen se maneja con JavaScript para mejor compatibilidad */
 
 .content-area {
     padding: 24px;
-    min-width: max-content; /* Permitir que el contenido expanda */
-    overflow-x: visible; /* No restringir el scroll horizontal */
+    min-width: 0; /* Permitir que se reduzca para proyectos responsive */
+    overflow-x: visible; /* Permitir ver el borde derecho de la tabla */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* ================================

@@ -273,6 +273,16 @@ async function obtenerProyectos(req, res) {
             })
         );
         
+        // Obtener información de qué proyectos tienen accionables
+        const todosLosIdsProyectos = [...ids_proyectos];
+        subproyectos.forEach(sub => {
+            if (sub.id_proyecto && !todosLosIdsProyectos.includes(sub.id_proyecto)) {
+                todosLosIdsProyectos.push(sub.id_proyecto);
+            }
+        });
+        
+        const proyectosConAccionablesMap = await AccionablesProyectoModel.verificarProyectosConAccionables(todosLosIdsProyectos);
+        
         // Agregar subproyectos y fechas agregadas (inicio mínimo / fin máximo) a cada proyecto padre
         const proyectosConSubproyectosYFechas = proyectos.map(proyecto => {
             const proyectoId = proyecto.id_proyecto;
@@ -317,12 +327,19 @@ async function obtenerProyectos(req, res) {
                 fechaFinGlobal = candidatosFin.slice().sort().reverse()[0];
             }
             
+            // Agregar tiene_accionables a cada subproyecto
+            const subproyectosConAccionables = subproyectosEnriquecidos.map(sub => ({
+                ...sub,
+                tiene_accionables: proyectosConAccionablesMap[sub.id_proyecto] || false
+            }));
+            
             return {
                 ...proyecto,
                 fecha_inicio: fechaInicioGlobal,
                 fecha_fin: fechaFinGlobal,
-                tiene_subproyectos: subproyectosEnriquecidos.length > 0,
-                subproyectos: subproyectosEnriquecidos
+                tiene_subproyectos: subproyectosConAccionables.length > 0,
+                subproyectos: subproyectosConAccionables,
+                tiene_accionables: proyectosConAccionablesMap[proyectoId] || false
             };
         });
         
@@ -335,6 +352,57 @@ async function obtenerProyectos(req, res) {
         res.status(500).json({
             success: false,
             error: 'Error al obtener datos de proyectos'
+        });
+    }
+}
+
+/**
+ * Obtener un proyecto por ID
+ */
+async function obtenerProyectoPorId(req, res) {
+    try {
+        const { id_proyecto } = req.params;
+        const idProyectoNum = parseInt(id_proyecto);
+        
+        if (!idProyectoNum || isNaN(idProyectoNum)) {
+            return res.status(400).json({
+                success: false,
+                error: 'ID de proyecto inválido'
+            });
+        }
+        
+        // Intentar obtener como proyecto externo primero
+        const proyecto = await ProyectosExternosModel.obtenerPorId(idProyectoNum);
+        
+        if (proyecto) {
+            // Verificar si tiene accionables
+            const proyectosConAccionablesMap = await AccionablesProyectoModel.verificarProyectosConAccionables([idProyectoNum]);
+            proyecto.tiene_accionables = proyectosConAccionablesMap[idProyectoNum] || false;
+            
+            return res.json({
+                success: true,
+                data: proyecto
+            });
+        }
+        
+        // Si no se encuentra como proyecto externo, intentar como mantenimiento
+        const mantenimiento = await MantenimientoModel.obtenerPorId(idProyectoNum);
+        if (mantenimiento) {
+            return res.json({
+                success: true,
+                data: mantenimiento
+            });
+        }
+        
+        return res.status(404).json({
+            success: false,
+            error: 'Proyecto no encontrado'
+        });
+    } catch (error) {
+        console.error('Error al obtener proyecto por ID:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener proyecto'
         });
     }
 }
@@ -491,12 +559,13 @@ async function obtenerAccionablesProyecto(req, res) {
 async function crearAccionable(req, res) {
     try {
         const { id_proyecto } = req.params;
-        const { fecha_accionable, asignado_accionable, accionable } = req.body;
+        const { fecha_accionable, asignado_accionable, accionable, estado } = req.body;
         
         const nuevoAccionable = await AccionablesProyectoModel.crear(id_proyecto, {
             fecha_accionable: fecha_accionable || null,
             asignado_accionable: asignado_accionable || null,
-            accionable: accionable || null
+            accionable: accionable || null,
+            estado: estado || null
         });
         
         res.json({
@@ -516,7 +585,7 @@ async function crearAccionable(req, res) {
 async function actualizarAccionable(req, res) {
     try {
         const { id } = req.params;
-        const { fecha_accionable, asignado_accionable, accionable } = req.body;
+        const { fecha_accionable, asignado_accionable, accionable, estado } = req.body;
         
         const datosActualizar = {};
         if ('fecha_accionable' in req.body) {
@@ -527,6 +596,9 @@ async function actualizarAccionable(req, res) {
         }
         if ('accionable' in req.body) {
             datosActualizar.accionable = accionable || null;
+        }
+        if ('estado' in req.body) {
+            datosActualizar.estado = estado || null;
         }
         
         const accionableActualizado = await AccionablesProyectoModel.actualizar(id, datosActualizar);
@@ -1005,6 +1077,7 @@ module.exports = {
     index,
     obtenerMantenimiento,
     obtenerProyectos,
+    obtenerProyectoPorId,
     obtenerEpics: obtenerEpicsProyecto,
     actualizarMantenimiento,
     actualizarProyecto,

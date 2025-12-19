@@ -808,8 +808,9 @@ function renderizarAccionables(id_proyecto, accionables) {
         const fechaValor = accionable.fecha_accionable ? convertirFechaADDMAAAA(accionable.fecha_accionable) : fechaHoy;
         const asignadoValor = (accionable.asignado_accionable || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         const accionableValor = (accionable.accionable || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const estadoValor = accionable.estado || '';
         
-        html += crearHTMLAccionable(accionable.id, id_proyecto, fechaValor, asignadoValor, accionableValor);
+        html += crearHTMLAccionable(accionable.id, id_proyecto, fechaValor, asignadoValor, accionableValor, estadoValor);
     });
     
     container.innerHTML = html;
@@ -821,7 +822,7 @@ function renderizarAccionables(id_proyecto, accionables) {
 }
 
 // Función auxiliar para crear HTML de un accionable
-function crearHTMLAccionable(id_accionable, id_proyecto, fechaValor, asignadoValor, accionableValor) {
+function crearHTMLAccionable(id_accionable, id_proyecto, fechaValor, asignadoValor, accionableValor, estadoValor) {
     const idInput = id_accionable ? id_accionable : 'nuevo_' + Date.now();
     const fechaInputId = 'fechaAccionable_' + idInput;
     const asignadoInputId = 'asignadoAccionable_' + idInput;
@@ -829,7 +830,7 @@ function crearHTMLAccionable(id_accionable, id_proyecto, fechaValor, asignadoVal
     const guardarBtnId = 'guardarAccionableBtn_' + idInput;
     const itemId = 'accionableItem_' + idInput;
     
-    let html = '<div id="' + itemId + '" style="display: grid; grid-template-columns: 140px 1px 180px 1px 1fr 1px 40px; gap: 0; align-items: stretch; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: rgba(26, 115, 232, 0.08);">';
+    let html = '<div id="' + itemId + '" style="display: grid; grid-template-columns: 140px 1px 180px 1px 1fr 1px 120px 1px 40px; gap: 0; align-items: stretch; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: rgba(26, 115, 232, 0.08);">';
     
     // Campo Fecha
     html += '<div class="date-input-wrapper" style="position: relative; display: flex; align-items: center;">';
@@ -861,6 +862,18 @@ function crearHTMLAccionable(id_accionable, id_proyecto, fechaValor, asignadoVal
     html += '</div>';
     
     // Separador 3
+    html += '<div style="background: var(--border-color); width: 1px;"></div>';
+    
+    // Campo Estado (solo si tiene ID, no para nuevos)
+    if (id_accionable) {
+        html += '<div style="display: flex; align-items: center; justify-content: center; padding: 8px;">';
+        html += crearDropdownEstadoAccionable(id_accionable, estadoValor || '');
+        html += '</div>';
+    } else {
+        html += '<div style="display: flex; align-items: center; justify-content: center; padding: 8px;"></div>';
+    }
+    
+    // Separador 4
     html += '<div style="background: var(--border-color); width: 1px;"></div>';
     
     // Botón eliminar (solo si tiene ID, no para nuevos)
@@ -901,6 +914,10 @@ async function agregarNuevoAccionable(id_proyecto) {
         if (result.success) {
             // Recargar la lista de accionables
             await cargarAccionablesProyecto(id_proyecto);
+            // Refrescar la tabla principal para actualizar el "Ver"
+            if (typeof cargarDatos === 'function') {
+                cargarDatos();
+            }
         } else {
             alert('Error al crear accionable: ' + (result.error || 'Error desconocido'));
         }
@@ -1001,6 +1018,10 @@ async function guardarAccionableNuevo(idInput, id_proyecto) {
         if (result.success) {
             // Recargar la lista de accionables
             await cargarAccionablesProyecto(id_proyecto);
+            // Refrescar la tabla principal para actualizar el "Ver"
+            if (typeof cargarDatos === 'function') {
+                cargarDatos();
+            }
         } else {
             alert('Error al guardar accionable: ' + (result.error || 'Error desconocido'));
         }
@@ -1051,6 +1072,10 @@ async function guardarAccionableIndividual(id_accionable) {
             if (btnGuardar) {
                 btnGuardar.style.display = 'none';
             }
+            // Refrescar la tabla principal para actualizar el "Ver"
+            if (typeof cargarDatos === 'function') {
+                cargarDatos();
+            }
         } else {
             alert('Error al guardar accionable: ' + (result.error || 'Error desconocido'));
         }
@@ -1075,6 +1100,10 @@ async function eliminarAccionable(id_accionable, id_proyecto) {
                 if (result.success) {
                     // Recargar la lista de accionables
                     await cargarAccionablesProyecto(id_proyecto);
+                    // Refrescar la tabla principal para actualizar el "Ver"
+                    if (typeof cargarDatos === 'function') {
+                        cargarDatos();
+                    }
                 } else {
                     alert('Error al eliminar accionable: ' + (result.error || 'Error desconocido'));
                 }

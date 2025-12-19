@@ -15,6 +15,7 @@ class AccionablesProyectoModel {
                     fecha_accionable,
                     asignado_accionable,
                     accionable,
+                    estado,
                     created_at,
                     updated_at
                 FROM accionables_proyectos
@@ -44,10 +45,11 @@ class AccionablesProyectoModel {
                     fecha_accionable,
                     asignado_accionable,
                     accionable,
+                    estado,
                     created_at,
                     updated_at
                 )
-                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 RETURNING *
             `;
             
@@ -55,7 +57,8 @@ class AccionablesProyectoModel {
                 id_proyecto,
                 datos.fecha_accionable || null,
                 datos.asignado_accionable || null,
-                datos.accionable || null
+                datos.accionable || null,
+                datos.estado || null
             ]);
             
             return result.rows[0];
@@ -90,6 +93,11 @@ class AccionablesProyectoModel {
             if ('accionable' in datos) {
                 campos.push(`accionable = $${paramCount}`);
                 valores.push(datos.accionable || null);
+                paramCount++;
+            }
+            if ('estado' in datos) {
+                campos.push(`estado = $${paramCount}`);
+                valores.push(datos.estado || null);
                 paramCount++;
             }
 
@@ -152,6 +160,43 @@ class AccionablesProyectoModel {
             return result.rows.length > 0;
         } catch (error) {
             console.error('Error al eliminar accionable:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Verificar qué proyectos tienen accionables (para mostrar "Ver" en la tabla)
+     * @param {Array<number>} ids_proyectos - Array de IDs de proyectos
+     * @returns {Promise<Object>} - Objeto con id_proyecto como clave y boolean como valor
+     */
+    static async verificarProyectosConAccionables(ids_proyectos) {
+        try {
+            if (!ids_proyectos || ids_proyectos.length === 0) {
+                return {};
+            }
+
+            const placeholders = ids_proyectos.map((_, i) => `$${i + 1}`).join(', ');
+            const query = `
+                SELECT DISTINCT id_proyecto
+                FROM accionables_proyectos
+                WHERE id_proyecto IN (${placeholders})
+            `;
+            
+            const result = await pool.query(query, ids_proyectos);
+            
+            // Crear objeto con todos los IDs como false, luego marcar los que tienen accionables
+            const proyectosConAccionables = {};
+            ids_proyectos.forEach(id => {
+                proyectosConAccionables[id] = false;
+            });
+            
+            result.rows.forEach(row => {
+                proyectosConAccionables[row.id_proyecto] = true;
+            });
+            
+            return proyectosConAccionables;
+        } catch (error) {
+            console.error('Error al verificar proyectos con accionables:', error);
             throw error;
         }
     }

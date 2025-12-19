@@ -7,6 +7,7 @@ const { requireAuthJWT, requireAdmin } = require('../middleware/authJWT');
 
 // Rutas para obtener datos
 router.get('/mantenimiento', seguimientoController.obtenerMantenimiento);
+router.get('/proyectos/:id_proyecto', seguimientoController.obtenerProyectoPorId); // Debe ir antes de /proyectos para que Express lo capture correctamente
 router.get('/proyectos', seguimientoController.obtenerProyectos);
 router.get('/proyectos-internos', seguimientoController.obtenerProyectosInternos);
 router.get('/epics/:id_proyecto', seguimientoController.obtenerEpics);

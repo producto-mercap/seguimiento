@@ -168,6 +168,67 @@ function crearDropdownRiesgo(idProyecto, valorActual, clasesAdicionales) {
     return html;
 }
 
+function crearDropdownEstadoAccionable(id_accionable, valorActual) {
+    const dropdownId = 'dropdown-estado-accionable-' + id_accionable;
+    const opciones = [
+        { valor: '', texto: '-', label: '-' },
+        { valor: 'Pendiente', texto: 'Pendiente', label: 'Pendiente' },
+        { valor: 'En curso', texto: 'En curso', label: 'En curso' },
+        { valor: 'Bloqueado', texto: 'Bloqueado', label: 'Bloqueado' },
+        { valor: 'Realizado', texto: 'Realizado', label: 'Realizado' }
+    ];
+    const textoMostrado = valorActual ? opciones.find(o => o.valor === valorActual)?.label || '-' : '-';
+    let estadoClass = '';
+    if (valorActual === 'Realizado') {
+        estadoClass = 'estado-entregado';
+    } else if (valorActual === 'Pendiente') {
+        estadoClass = 'estado-sin-comenzar';
+    } else if (valorActual === 'En curso') {
+        estadoClass = 'estado-progreso';
+    } else if (valorActual === 'Bloqueado') {
+        estadoClass = 'estado-bloqueado';
+    }
+    
+    let html = '<div style="position: relative; display: inline-block;">';
+    html += '<button class="modern-select estado-select ' + estadoClass + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: center; border: none; padding: 4px 8px; border-radius: 14px; cursor: pointer; font-size: 11px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; min-width: 80px; height: 28px; white-space: nowrap;">' + textoMostrado + '</button>';
+    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 120px;">';
+    opciones.forEach(opcion => {
+        const isSelected = opcion.valor === valorActual;
+        html += '<div onclick="seleccionarDropdownEstadoAccionable(\'' + dropdownId + '\', ' + id_accionable + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 13px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.label + '</div>';
+    });
+    html += '</div></div>';
+    return html;
+}
+
+window.seleccionarDropdownEstadoAccionable = function seleccionarDropdownEstadoAccionable(dropdownId, id_accionable, valor, elemento) {
+    const dropdown = document.getElementById(dropdownId);
+    const button = dropdown.previousElementSibling;
+    
+    const opciones = Array.from(dropdown.children);
+    opciones.forEach(op => {
+        op.style.background = 'white';
+        op.style.color = 'var(--text-primary)';
+    });
+    elemento.style.background = '#e8f0fe';
+    elemento.style.color = 'var(--primary-color)';
+    
+    dropdown.style.display = 'none';
+    
+    // Actualizar estado del accionable
+    actualizarEstadoAccionable(id_accionable, valor);
+    
+    const estados = {
+        '': '-',
+        'Pendiente': 'Pendiente',
+        'En curso': 'En curso',
+        'Bloqueado': 'Bloqueado',
+        'Realizado': 'Realizado'
+    };
+    button.textContent = estados[valor] || '-';
+    
+    actualizarEstadoColor(button, valor);
+};
+
 // Funciones para manejar los dropdowns personalizados
 function toggleCustomDropdown(dropdownId, button) {
     const dropdown = document.getElementById(dropdownId);

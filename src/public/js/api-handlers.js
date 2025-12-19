@@ -15,7 +15,9 @@ function actualizarEstadoColor(element, value) {
             'Entregado': 'Entregado',
             'Cerrado': 'Cerrado',
             'Rework': 'Rework',
-            'Bloqueado': 'Bloqueado'
+            'Bloqueado': 'Bloqueado',
+            'Pendiente': 'Pendiente',
+            'Realizado': 'Realizado'
         };
         value = estadosMap[value] || value;
     }
@@ -24,11 +26,11 @@ function actualizarEstadoColor(element, value) {
     element.style.removeProperty('background');
     element.style.removeProperty('background-color');
     
-    if (value === 'Entregado' || value === 'Cerrado') {
+    if (value === 'Entregado' || value === 'Cerrado' || value === 'Realizado') {
         element.classList.add('estado-entregado');
-    } else if (value === 'sin comenzar') {
+    } else if (value === 'sin comenzar' || value === 'Pendiente') {
         element.classList.add('estado-sin-comenzar');
-    } else if (value === 'en curso') {
+    } else if (value === 'en curso' || value === 'En curso') {
         element.classList.add('estado-progreso');
     } else if (value === 'Testing') {
         element.classList.add('estado-testing');
@@ -163,6 +165,37 @@ async function actualizarProyectoInterno(id_proyecto, campo, valor) {
     } catch (error) {
         console.error('❌ Error al actualizar proyecto interno:', error);
         alert('Error al actualizar: ' + error.message);
+    }
+}
+
+// Función para actualizar estado de un accionable
+async function actualizarEstadoAccionable(id_accionable, estado) {
+    try {
+        const endpoint = '/api/accionables/' + id_accionable;
+        const datos = { estado: estado };
+        
+        const response = await fetch(endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(datos)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Estado de accionable actualizado correctamente');
+            // Refrescar la tabla principal para actualizar el "Ver"
+            if (typeof cargarDatos === 'function') {
+                cargarDatos();
+            }
+        } else {
+            console.error('❌ Error al actualizar estado de accionable:', result.error);
+            alert('Error al actualizar estado: ' + (result.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('❌ Error al actualizar estado de accionable:', error);
+        alert('Error al actualizar estado: ' + error.message);
     }
 }
 

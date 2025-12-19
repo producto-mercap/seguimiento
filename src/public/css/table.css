@@ -14,6 +14,22 @@
     max-width: calc(100% - 32px); /* Respeta márgenes laterales */
     padding: 0;
     margin: 0 16px 0 16px; /* Separar visualmente de la sidebar y del borde derecho */
+    border: 1px solid var(--border-color); /* Agregar borde completo (izquierdo y derecho) */
+}
+
+/* Para proyectos, hacer el wrapper responsive */
+.modern-table-wrapper.proyectos-wrapper {
+    display: block;
+    width: calc(100% - 32px); /* Restar márgenes laterales (16px * 2) */
+    max-width: calc(100% - 32px); /* Asegurar que no exceda el contenedor */
+    overflow: hidden; /* Ocultar todo overflow para que el borde sea visible */
+    box-sizing: border-box;
+    min-width: 0; /* Permitir que se reduzca */
+    margin-left: 16px; /* Margen izquierdo */
+    margin-right: 16px; /* Margen derecho */
+    border: 1px solid var(--border-color); /* Borde completo igual al izquierdo */
+    border-radius: 12px; /* Mantener esquinas redondeadas */
+    position: relative; /* Para asegurar que el borde sea visible */
 }
 
 /* Centrar la tabla de mantenimiento en la página */
@@ -25,18 +41,26 @@
     max-width: calc(100% - 32px);
 }
 
-/* Para proyectos, ajustar el ancho */
-.modern-table-wrapper .modern-table.proyectos {
-    margin-right: 0;
-    padding-right: 0;
-    width: max-content;     /* La tabla puede ser más ancha que el contenedor */
-    min-width: max-content;
+/* Para proyectos, ajustar el ancho - permitir que sea responsive */
+.modern-table-wrapper.proyectos-wrapper .modern-table.proyectos {
+    margin: 0;
+    padding: 0;
+    width: 100%;     /* Permitir que la tabla se ajuste al contenedor */
+    min-width: 0;   /* Permitir que el grid sea flexible */
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden; /* Asegurar que no se extienda más allá */
 }
 
 .modern-table {
     display: flex;
     flex-direction: column;
     min-width: max-content;
+}
+
+/* Para proyectos, permitir que sea responsive */
+.modern-table.proyectos {
+    min-width: 0;
 }
 
 .modern-table-header {
@@ -49,18 +73,29 @@
     color: var(--text-secondary);
     border-bottom: none;
     white-space: nowrap;
+    min-width: 0; /* Permitir que se reduzca */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Para todas las tablas, el header debe ocupar todo el ancho */
 .modern-table.mantenimiento .modern-table-header,
 .modern-table.proyectos .modern-table-header {
-    min-width: 100%;
+    width: 100%;
+    min-width: 0; /* Permitir que se reduzca */
     box-sizing: border-box;
 }
 
 .modern-table-header .modern-table-cell {
     justify-content: flex-start;
     text-align: left;
+}
+
+/* Permitir que los headers con text-align: center se centren correctamente */
+.modern-table-header .modern-table-cell[style*="text-align: center"],
+.modern-table-header .modern-table-cell[style*="justify-content: center"] {
+    justify-content: center !important;
+    text-align: center !important;
 }
 
 .modern-table-cell.header-cell {
@@ -115,16 +150,32 @@
     margin-left: 8px;
 }
 
-/* Proyectos: 13 columnas (con Categoria, Fecha Inicio y Fecha Fin) - Avance después de Estado */
+/* Proyectos: 14 columnas (con Categoria, Accionables, Fecha Inicio y Fecha Fin) - Avance después de Estado */
 .modern-table.proyectos .modern-table-header,
 .modern-table.proyectos .modern-table-row {
-    /* Última columna (WIN) mucho más ancha */
-    grid-template-columns: 30px 160px 400px 95px 105px 85px 55px 55px 50px 50px 55px 80px 80px;
+    /* Columna Proyecto es responsive usando minmax (mínimo 80px, máximo flexible con 1fr) - reducido para aprovechar más espacio */
+    /* Suma de columnas fijas: 30 + 150 + 90 + 100 + 80 + 50 + 50 + 45 + 45 + 50 + 120 + 75 + 75 = 1010px (reducido) */
+    /* Gaps: 13 gaps de 8px = 104px, Padding: 24px total = 24px, Total fijo: ~1138px */
+    /* Usar 1fr para que sea responsive pero con mínimo de 80px para aprovechar más espacio */
+    grid-template-columns: 30px 150px minmax(80px, 1fr) 90px 100px 80px 50px 50px 45px 45px 50px 120px 75px 75px;
     padding-left: 12px;
     padding-right: 12px;
-    gap: 0 8px; /* row-gap: 0, column-gap: 8px */
-    min-width: 100%;
-    width: max-content;
+    gap: 0 8px; /* row-gap: 0, column-gap: 8px = 13 gaps de 8px = 104px */
+    width: 100%;
+    min-width: 0; /* Permitir que el grid sea flexible */
+    max-width: 100%; /* No permitir que se expanda más allá del contenedor */
+    box-sizing: border-box;
+    overflow: hidden; /* Asegurar que el contenido no se extienda más allá */
+}
+
+/* Forzar que la tercera columna (Proyecto) respete el ancho del grid y se reduzca */
+.modern-table.proyectos .modern-table-header > .modern-table-cell:nth-child(3),
+.modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) {
+    grid-column: 3;
+    max-width: 100%;
+    overflow: hidden !important;
+    width: 100%;
+    min-width: 0 !important;
 }
 
 /* Proyectos Internos: 12 columnas (sin Categoria) - Avance después de Estado */
@@ -139,10 +190,45 @@
     width: max-content;
 }
 
-/* Asegurar que la tabla ocupe el 100% del contenedor */
+/* Asegurar que la tabla ocupe el 100% del contenedor y permita columnas flexibles */
 .modern-table.proyectos {
     width: 100%;
-    min-width: max-content;
+    min-width: 0; /* Permitir que el grid sea flexible */
+    max-width: 100%; /* No permitir que se expanda más allá del contenedor */
+    box-sizing: border-box;
+    overflow: hidden; /* Asegurar que no se extienda más allá */
+}
+
+/* Hacer que la columna Proyecto sea responsive - se ajusta automáticamente con minmax en grid-template-columns */
+.modern-table.proyectos .modern-table-header > .modern-table-cell:nth-child(3),
+.modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) {
+    min-width: 80px; /* Mínimo reducido para aprovechar más espacio */
+    max-width: 100%; /* Máximo flexible - se ajusta al espacio disponible */
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Asegurar que los enlaces dentro de la columna Proyecto también se corten */
+.modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) a {
+    display: block;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Remover el borde derecho de la última columna ya que el wrapper tiene el borde completo */
+.modern-table.proyectos .modern-table-header > .modern-table-cell:last-child,
+.modern-table.proyectos .modern-table-row > .modern-table-cell:last-child {
+    padding-right: 12px; /* Mantener padding consistente */
 }
 
 /* Texto de cliente más bold */
@@ -179,7 +265,7 @@
 
 /* Asegurar que los subproyectos tengan el mismo grid que las filas principales */
 .modern-table.proyectos .modern-table-row.subproyecto-row:not(.subproyectos-ocultos) {
-    grid-template-columns: 30px 160px 400px 95px 105px 85px 55px 55px 50px 50px 55px 80px 80px;
+    grid-template-columns: 30px 150px minmax(80px, 1fr) 90px 100px 80px 50px 50px 45px 45px 50px 120px 75px 75px;
 }
 
 .modern-table-row.subproyecto-row .modern-table-cell {
@@ -208,6 +294,9 @@
     transition: all 0.2s;
     align-items: center;
     white-space: nowrap;
+    min-width: 0; /* Permitir que se reduzca */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Alinear valores en celdas a la izquierda */
@@ -241,11 +330,14 @@
 .modern-table-cell.item-text {
     color: var(--text-secondary);
     font-size: 13px;
-    overflow: hidden;
+    overflow: hidden !important;
     text-overflow: ellipsis;
     white-space: nowrap;
     word-wrap: break-word;
     max-width: 100%;
+    min-width: 0; /* Permitir que se contraiga */
+    box-sizing: border-box;
+    position: relative;
 }
 
 .modern-table-cell.item-text a {
@@ -256,6 +348,9 @@
     white-space: nowrap;
     display: block;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .modern-table-cell.item-text a:hover {
@@ -267,6 +362,16 @@
     background: transparent;
     overflow: visible; /* Sin scroll propio */
     min-width: max-content; /* Permitir que expanda */
+}
+
+/* Para proyectos, hacer el table-container responsive */
+.table-container.proyectos-container {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+    display: block !important;
 }
 
 .table {
