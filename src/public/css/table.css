@@ -118,11 +118,11 @@
     box-sizing: border-box;
 }
 
-/* Para proyectos, el header debe tener el mismo ancho mínimo que las filas */
+/* Para proyectos, el header se expande igual que las filas */
 /* Header STICKY: queda fijo al scrollear verticalmente dentro del wrapper */
 .modern-table.proyectos .modern-table-header {
-    width: 100%;
-    min-width: 1650px; /* Mismo ancho mínimo que las filas */
+    width: 100%; /* Se expande al 100% igual que las filas */
+    min-width: 1764px; /* Mismo ancho mínimo que las filas (con Proyecto mínimo 300px) */
     box-sizing: border-box;
     position: sticky;
     top: 0;
@@ -224,20 +224,20 @@
     max-width: 380px !important;
 }
 
-/* Asegurar que la tabla se expanda al viewport y elimine espacios */
+/* Tabla se expande al 100% del viewport, con min-width para activar scroll */
 .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos {
-    width: 100%; /* Expandir al 100% del wrapper - 1fr absorbe espacio extra */
-    min-width: 1650px; /* Ancho mínimo fijo para consistencia */
+    width: 100%; /* Se expande al 100% - Proyecto absorbe el espacio extra */
+    min-width: 1764px; /* Ancho mínimo (con Proyecto mínimo 300px) */
     padding-right: 0 !important;
     margin-right: 0 !important;
 }
 
-/* Proyectos: 15 columnas - TODAS CON ANCHO FIJO excepto Proyecto que tiene min-width */
+/* Proyectos: 15 columnas - Proyecto RESPONSIVE (min 300px, se expande), WIN FIJO 380px */
 /* 
  * Orden de columnas (índice 0-based):
  * 0: Vacío (30px)
  * 1: Cliente (150px)
- * 2: Proyecto (minmax(160px, 1fr)) - Min 160px, se expande si hay espacio
+ * 2: Proyecto (minmax(300px, 1fr)) - RESPONSIVE: mínimo 300px, se expande en pantallas grandes
  * 3: Categoría (90px)
  * 4: Estado (100px)
  * 5: Avance (80px)
@@ -245,36 +245,40 @@
  * 7: Alcance (50px)
  * 8: Costo (45px)
  * 9: Plazos (45px)
- * 10: Accionables (70px) - NO MODIFICAR sin consultar
+ * 10: Accionables (70px)
  * 11: Fecha Inicio (100px)
  * 12: Fecha Fin (75px)
- * 13: WIN (380px) - FIJO, última columna
+ * 13: WIN (380px) - FIJO, última columna - SIN gap al final
  * 
- * Total fijo: 30+150+160(min)+90+100+80+50+50+45+45+70+100+75+75+380 = 1500px
+ * Total mínimo: 30+150+300(min)+90+100+80+50+50+45+45+70+100+75+75+380 = 1640px
  * Gaps: 14 gaps x 8px = 112px
  * Padding izquierdo: 12px
- * TOTAL MÍNIMO: ~1624px
+ * TOTAL MÍNIMO: ~1764px
+ * 
+ * Comportamiento:
+ * - Pantallas > 1764px: Proyecto se expande para llenar el espacio
+ * - Pantallas < 1764px: Aparece scroll horizontal
  */
 .modern-table.proyectos .modern-table-header,
 .modern-table.proyectos .modern-table-row {
-    /* Proyecto usa minmax(160px, 1fr) - mínimo 160px, se expande si hay espacio */
-    /* WIN tiene ancho FIJO de 380px - NO responsive */
-    grid-template-columns: 30px 150px minmax(160px, 1fr) 90px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
+    /* Proyecto usa minmax(300px, 1fr) - RESPONSIVE, consistente para TODAS las filas */
+    /* WIN tiene ancho FIJO de 380px - NO responsive, SIN gap al final */
+    grid-template-columns: 30px 150px minmax(300px, 1fr) 90px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
     padding-left: 12px;
     padding-right: 0; /* SIN padding derecho - WIN termina en el borde */
     gap: 0 8px; /* row-gap: 0, column-gap: 8px */
-    width: 100%; /* Ocupar todo el ancho de la tabla - 1fr absorbe espacio */
-    min-width: 1650px; /* Ancho mínimo fijo para consistencia */
+    width: 100%; /* Se expande al 100% - Proyecto absorbe espacio extra */
+    min-width: 1764px; /* Ancho mínimo para activar scroll */
     box-sizing: border-box;
     overflow: visible;
 }
 
-/* Columna Proyecto (índice 3) - min 160px, se expande si hay espacio */
+/* Columna Proyecto (índice 3) - RESPONSIVE: mínimo 300px, se expande */
 .modern-table.proyectos .modern-table-header > .modern-table-cell:nth-child(3),
 .modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) {
     grid-column: 3;
-    min-width: 160px; /* Mínimo 160px */
-    max-width: 100%;
+    min-width: 300px; /* Mínimo 300px */
+    /* max-width: NO se define para permitir expansión con 1fr */
     overflow: hidden !important;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -314,20 +318,19 @@
     width: max-content;
 }
 
-/* Asegurar que la tabla tenga ancho mínimo fijo para consistencia */
+/* Tabla se expande al 100%, con min-width para activar scroll */
 .modern-table.proyectos {
-    width: max-content;
-    min-width: 1650px; /* Ancho mínimo fijo */
+    width: 100%; /* Se expande al 100% - Proyecto absorbe espacio extra */
+    min-width: 1764px; /* Ancho mínimo (con Proyecto mínimo 300px) */
     box-sizing: border-box;
     overflow: visible;
 }
 
-/* Columna Proyecto - min 160px, con text-overflow */
+/* Columna Proyecto - RESPONSIVE: mínimo 300px, se expande en pantallas grandes */
 .modern-table.proyectos .modern-table-header > .modern-table-cell:nth-child(3),
 .modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) {
-    min-width: 160px; /* Mínimo 160px (el doble del anterior) */
-    max-width: 100%; /* Máximo flexible - se ajusta al espacio disponible */
-    width: 100%;
+    min-width: 300px; /* Mínimo 300px */
+    /* NO max-width ni width fijo - permite expansión con 1fr */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -390,8 +393,10 @@
 /* Asegurar que los subproyectos tengan el mismo grid que las filas principales */
 /* IMPORTANTE: Mantener el mismo orden y anchos que el grid principal */
 .modern-table.proyectos .modern-table-row.subproyecto-row:not(.subproyectos-ocultos) {
-    grid-template-columns: 30px 150px minmax(160px, 1fr) 90px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
-    min-width: 1650px; /* Mismo ancho mínimo que las filas principales */
+    /* Mismo grid que las filas principales - Proyecto RESPONSIVE con minmax(300px, 1fr) */
+    grid-template-columns: 30px 150px minmax(300px, 1fr) 90px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
+    min-width: 1764px; /* Mismo ancho mínimo que las filas principales */
+    width: 100%; /* Se expande igual que las filas principales */
 }
 
 .modern-table-row.subproyecto-row .modern-table-cell {
