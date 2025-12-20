@@ -239,6 +239,8 @@
     /* Permitir que se reduzca para proyectos responsive */
     overflow-x: visible;
     /* Permitir ver el borde derecho de la tabla */
+    overflow-y: hidden;
+    /* Sin scrollbar vertical */
     width: 100%;
     box-sizing: border-box;
     display: flex;
@@ -257,14 +259,16 @@
     /* Permitir que se reduzca para proyectos responsive */
     overflow-x: visible;
     /* Permitir ver el borde derecho de la tabla */
-    overflow-y: auto;
-    /* Scroll vertical si es necesario */
+    overflow-y: hidden;
+    /* Sin scrollbar vertical - contenedor fijo */
     width: 100%;
     box-sizing: border-box;
     height: auto;
     /* Altura automática en lugar de flex: 1 */
     display: block;
     /* Cambiar de flex a block para evitar expansión excesiva */
+    position: relative;
+    /* Posición relativa para mantener fijo */
 }
 
 /* ================================
@@ -277,6 +281,18 @@
     margin: 0;
     /* Sin márgenes laterales */
     box-sizing: border-box;
+    overflow-y: hidden;
+    /* Sin scrollbar vertical */
+    overflow-x: hidden;
+    /* Sin scrollbar horizontal */
+    height: fit-content;
+    /* Altura según contenido, sin ajustes adicionales */
+    flex-shrink: 0;
+    /* No permitir que se reduzca en contenedores flex */
+    flex-grow: 0;
+    /* No permitir que crezca en contenedores flex */
+    display: block;
+    /* Display block para evitar ajustes flex */
 }
 
 .seguimiento-header {
