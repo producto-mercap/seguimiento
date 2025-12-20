@@ -18,7 +18,7 @@
     align-items: center;
     padding: 0 16px;
     z-index: 1000;
-    box-shadow: 0 1px 2px 0 rgba(60,64,67,.1);
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .1);
 }
 
 /* ================================
@@ -34,7 +34,8 @@
    Sidebar (Panel Izquierdo)
    ================================ */
 .sidebar {
-    width: var(--sidebar-width); /* Expandido por defecto */
+    width: var(--sidebar-width);
+    /* Expandido por defecto */
     min-width: var(--sidebar-width);
     background: white;
     border-right: 1px solid var(--border-color);
@@ -53,7 +54,8 @@
 
 /* Ícono representativo cuando el sidebar está contraído */
 .sidebar-icon-collapsed {
-    display: none; /* Oculto por defecto cuando está expandido */
+    display: none;
+    /* Oculto por defecto cuando está expandido */
     align-items: center;
     justify-content: center;
     padding: 16px 8px;
@@ -225,38 +227,62 @@
    ================================ */
 .main-content {
     flex: 1;
-    margin-left: var(--sidebar-width); /* Ancho del sidebar expandido */
+    margin-left: var(--sidebar-width);
+    /* Ancho del sidebar expandido */
     min-height: calc(100vh - 56px);
-    background: white; /* Fondo blanco en lugar de #f8f9fa */
+    height: calc(100vh - 56px);
+    /* Altura fija para aprovechar todo el espacio */
+    background: white;
+    /* Fondo blanco en lugar de #f8f9fa */
     transition: margin-left 0.3s ease;
-    min-width: 0; /* Permitir que se reduzca para proyectos responsive */
-    overflow-x: visible; /* Permitir ver el borde derecho de la tabla */
+    min-width: 0;
+    /* Permitir que se reduzca para proyectos responsive */
+    overflow-x: visible;
+    /* Permitir ver el borde derecho de la tabla */
     width: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    /* Para que content-area ocupe todo el espacio */
+    padding: 0 8px 24px 8px;
+    /* Padding lateral (8px) y bottom (24px) para todos los hijos */
 }
 
 /* El ajuste del margen se maneja con JavaScript para mejor compatibilidad */
 
 .content-area {
-    padding: 24px;
-    min-width: 0; /* Permitir que se reduzca para proyectos responsive */
-    overflow-x: visible; /* Permitir ver el borde derecho de la tabla */
+    padding: 24px 0 0 0;
+    /* Solo padding superior - el lateral está en main-content */
+    min-width: 0;
+    /* Permitir que se reduzca para proyectos responsive */
+    overflow-x: visible;
+    /* Permitir ver el borde derecho de la tabla */
+    overflow-y: visible;
+    /* Sin scroll vertical - altura fija */
     width: 100%;
     box-sizing: border-box;
+    flex: 1;
+    /* Ocupar todo el espacio disponible en main-content */
+    display: flex;
+    flex-direction: column;
+    /* Para que los hijos ocupen el espacio vertical */
 }
 
 /* ================================
    Contenedor Seguimiento (título, tabs y filtros)
    ================================ */
 .seguimiento-container {
-    width: calc(100% - 32px); /* Mismo ancho que la tabla (100% - 32px de márgenes) */
-    max-width: calc(100% - 32px);
-    margin: 0 16px; /* Alineado con el margen de la tabla */
+    width: 100%;
+    /* Ancho completo sin márgenes */
+    max-width: 100%;
+    margin: 0;
+    /* Sin márgenes laterales */
     box-sizing: border-box;
 }
 
 .seguimiento-header {
-    padding: 16px 0;
+    padding: 12px 0 8px 0;
+    /* Reducido padding vertical para aprovechar más espacio */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -264,15 +290,18 @@
 
 .seguimiento-tabs {
     padding: 0;
-    margin: 0 0 16px 0;
+    margin: 0 0 8px 0;
+    /* Reducido de 16px a 8px para aprovechar más espacio */
     display: flex;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
 }
 
 .seguimiento-filtros {
-    padding: 16px 0;
-    margin-bottom: 16px;
+    padding: 8px 0;
+    /* Reducido de 16px a 8px */
+    margin-bottom: 4px;
+    /* Reducido de 8px a 4px para aprovechar más espacio */
     display: flex;
     align-items: center;
     gap: 12px;
@@ -285,8 +314,10 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    flex-wrap: nowrap; /* No permitir que se envuelva a una nueva línea */
-    flex: 0 1 auto; /* No expandir, solo ocupar el espacio necesario */
+    flex-wrap: nowrap;
+    /* No permitir que se envuelva a una nueva línea */
+    flex: 0 1 auto;
+    /* No expandir, solo ocupar el espacio necesario */
     min-width: 0;
 }
 
@@ -305,10 +336,13 @@
 }
 
 .seguimiento-buscador {
-    flex: 0 1 700px; /* Aumentar el ancho del buscador */
+    flex: 0 1 700px;
+    /* Aumentar el ancho del buscador */
     max-width: 700px;
-    min-width: 450px; /* Ancho mínimo para que sea usable */
-    flex-shrink: 1; /* Permitir que se encoja si es necesario */
+    min-width: 450px;
+    /* Ancho mínimo para que sea usable */
+    flex-shrink: 1;
+    /* Permitir que se encoja si es necesario */
 }
 
 .seguimiento-buscador .google-search-box {
@@ -321,7 +355,8 @@
     gap: 8px;
     flex-shrink: 0;
     white-space: nowrap;
-    margin-left: auto; /* Empujar completamente a la derecha */
+    margin-left: auto;
+    /* Empujar completamente a la derecha */
 }
 
 /* ================================

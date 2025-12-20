@@ -13,10 +13,12 @@
     display: inline-block;
     /* El ancho del contenedor se ajusta al contenido (hasta la última columna) */
     width: auto;
-    max-width: calc(100% - 32px);
+    max-width: 100%;
+    /* Ancho completo sin márgenes */
     /* Respeta márgenes laterales */
     padding: 0;
-    margin: 0 16px 0 16px;
+    margin: 0;
+    /* Sin márgenes laterales */
     /* Separar visualmente de la sidebar y del borde derecho */
     border: 1px solid var(--border-color);
     /* Agregar borde completo (izquierdo y derecho) */
@@ -25,20 +27,28 @@
 /* Contenedor principal para tabla de proyectos */
 .proyectos-table-container {
     position: relative;
-    width: calc(100% - 32px);
-    margin-left: 16px;
-    margin-right: 16px;
-    margin-bottom: 60px;
-    /* Espacio para la scrollbar fija */
+    width: 100%;
+    /* Ancho completo sin márgenes */
+    margin-left: 0;
+    /* Sin margen izquierdo */
+    margin-right: 0;
+    /* Sin margen derecho */
+    margin-bottom: 0;
+    /* Sin margen inferior - la scrollbar fija no necesita espacio extra */
 }
 
 /* Wrapper de la tabla - contenedor estructural INVISIBLE (sin estilos visuales) */
 .proyectos-scroll-wrapper {
-    background: transparent; /* Sin fondo */
-    border-radius: 0; /* Sin bordes redondeados */
-    box-shadow: none; /* Sin sombra */
-    border: none; /* Sin borde */
-    overflow-y: visible; /* SIN scroll vertical - usa el del contenedor padre #contenido */
+    background: transparent;
+    /* Sin fondo */
+    border-radius: 0;
+    /* Sin bordes redondeados */
+    box-shadow: none;
+    /* Sin sombra */
+    border: none;
+    /* Sin borde */
+    overflow-y: visible;
+    /* SIN scroll vertical - usa el del contenedor padre #contenido */
     overflow-x: hidden;
 }
 
@@ -61,10 +71,14 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 24px; /* Más alto para mejor visibilidad */
-    background: transparent; /* SIN fondo blanco */
-    border-top: none; /* Sin borde superior */
-    box-shadow: none; /* Sin sombra */
+    height: 24px;
+    /* Más alto para mejor visibilidad */
+    background: transparent;
+    /* SIN fondo blanco */
+    border-top: none;
+    /* Sin borde superior */
+    box-shadow: none;
+    /* Sin sombra */
     z-index: 1000;
     overflow-x: auto;
     overflow-y: hidden;
@@ -79,36 +93,45 @@
 
 /* Estilos para la scrollbar fija - MÁS GRANDE y visible */
 .fixed-scrollbar-container::-webkit-scrollbar {
-    height: 18px; /* Scrollbar más alta para mejor visibilidad */
-    background: rgba(241, 243, 244, 0.9); /* Fondo semi-transparente solo en el scrollbar */
+    height: 18px;
+    /* Scrollbar más alta para mejor visibilidad */
+    background: rgba(241, 243, 244, 0.9);
+    /* Fondo semi-transparente solo en el scrollbar */
     border-radius: 9px;
 }
 
 .fixed-scrollbar-container::-webkit-scrollbar-track {
     background: rgba(241, 243, 244, 0.9);
     border-radius: 9px;
-    margin: 0 4px; /* Pequeño margen lateral */
+    margin: 0 4px;
+    /* Pequeño margen lateral */
 }
 
 .fixed-scrollbar-container::-webkit-scrollbar-thumb {
-    background: #5f6368; /* Color más oscuro para mejor visibilidad */
+    background: #5f6368;
+    /* Color más oscuro para mejor visibilidad */
     border-radius: 9px;
     border: 3px solid rgba(241, 243, 244, 0.9);
-    min-width: 60px; /* Mínimo ancho del thumb para fácil arrastre */
+    min-width: 60px;
+    /* Mínimo ancho del thumb para fácil arrastre */
 }
 
 .fixed-scrollbar-container::-webkit-scrollbar-thumb:hover {
-    background: #3c4043; /* Aún más oscuro al hover */
+    background: #3c4043;
+    /* Aún más oscuro al hover */
 }
 
 .fixed-scrollbar-container::-webkit-scrollbar-thumb:active {
-    background: #202124; /* Oscuro al hacer clic */
+    background: #202124;
+    /* Oscuro al hacer clic */
 }
 
 /* Firefox scrollbar - más visible */
 .fixed-scrollbar-container {
-    scrollbar-width: auto; /* Ancho normal para mejor visibilidad */
-    scrollbar-color: #5f6368 transparent; /* Thumb oscuro, track transparente */
+    scrollbar-width: auto;
+    /* Ancho normal para mejor visibilidad */
+    scrollbar-color: #5f6368 transparent;
+    /* Thumb oscuro, track transparente */
 }
 
 /* Estilo del scrollbar horizontal - siempre visible */
