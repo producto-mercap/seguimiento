@@ -17,20 +17,45 @@
     border: 1px solid var(--border-color); /* Agregar borde completo (izquierdo y derecho) */
 }
 
-/* Para proyectos, hacer el wrapper responsive - ocupar todo el ancho */
+/* Para proyectos, wrapper con scroll horizontal siempre visible */
 .modern-table-wrapper.proyectos-wrapper {
     display: block;
     width: calc(100% - 32px); /* Ocupar todo el ancho menos márgenes */
     max-width: calc(100% - 32px); /* Asegurar que no exceda el contenedor */
-    overflow: visible; /* Permitir que se vea el contenido completo */
+    overflow-x: auto; /* Scroll horizontal cuando el contenido excede */
+    overflow-y: visible; /* Permitir que el contenido vertical se vea */
     box-sizing: border-box;
     min-width: 0; /* Permitir que se reduzca */
     margin-left: 16px; /* Margen izquierdo */
     margin-right: 16px; /* Margen derecho */
     border: 1px solid var(--border-color); /* Borde completo igual al izquierdo */
     border-radius: 12px; /* Mantener esquinas redondeadas */
-    position: relative; /* Para asegurar que el borde sea visible */
+    position: sticky; /* Para que el scrollbar sea visible */
     padding: 0; /* Sin padding extra */
+    padding-bottom: 8px; /* Espacio para el scrollbar */
+}
+
+/* Estilo del scrollbar horizontal - siempre visible */
+.modern-table-wrapper.proyectos-wrapper::-webkit-scrollbar {
+    height: 12px;
+    background: #f1f3f4;
+    border-radius: 6px;
+}
+
+.modern-table-wrapper.proyectos-wrapper::-webkit-scrollbar-thumb {
+    background: #bdc1c6;
+    border-radius: 6px;
+    border: 2px solid #f1f3f4;
+}
+
+.modern-table-wrapper.proyectos-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #9aa0a6;
+}
+
+/* Firefox scrollbar */
+.modern-table-wrapper.proyectos-wrapper {
+    scrollbar-width: auto;
+    scrollbar-color: #bdc1c6 #f1f3f4;
 }
 
 /* Centrar la tabla de mantenimiento en la página */
@@ -42,13 +67,12 @@
     max-width: calc(100% - 32px);
 }
 
-/* Para proyectos, ajustar el ancho - permitir que sea responsive */
+/* Para proyectos, tabla con ancho mínimo fijo para scroll horizontal */
 .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos {
     margin: 0;
     padding: 0;
-    width: 100%;     /* Ocupar todo el ancho disponible */
-    min-width: 0;   /* Permitir que el grid sea flexible */
-    max-width: 100%;
+    width: max-content; /* Ancho basado en el contenido */
+    min-width: 1650px; /* Ancho mínimo fijo para consistencia */
     box-sizing: border-box;
     overflow: visible; /* Permitir que se vea el contenido completo */
 }
@@ -181,21 +205,20 @@
     max-width: 380px !important;
 }
 
-/* Asegurar que la tabla ocupe todo el ancho sin espacio extra */
+/* Asegurar que la tabla tenga ancho consistente */
 .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    width: max-content;
+    min-width: 1650px; /* Ancho mínimo fijo */
     padding-right: 0 !important;
     margin-right: 0 !important;
 }
 
-/* Proyectos: 15 columnas (con Categoria, Accionables, Fecha Inicio, Fecha Fin y WIN) - Avance después de Estado */
+/* Proyectos: 15 columnas - TODAS CON ANCHO FIJO excepto Proyecto que tiene min-width */
 /* 
  * Orden de columnas (índice 0-based):
  * 0: Vacío (30px)
  * 1: Cliente (150px)
- * 2: Proyecto (minmax(80px, 1fr)) - Responsive
+ * 2: Proyecto (minmax(160px, 1fr)) - Min 160px, se expande si hay espacio
  * 3: Categoría (90px)
  * 4: Estado (100px)
  * 5: Avance (80px)
@@ -206,32 +229,36 @@
  * 10: Accionables (70px) - NO MODIFICAR sin consultar
  * 11: Fecha Inicio (100px)
  * 12: Fecha Fin (75px)
- * 13: WIN (400px) - Última columna
+ * 13: WIN (380px) - FIJO, última columna
+ * 
+ * Total fijo: 30+150+160(min)+90+100+80+50+50+45+45+70+100+75+75+380 = 1500px
+ * Gaps: 14 gaps x 8px = 112px
+ * Padding izquierdo: 12px
+ * TOTAL MÍNIMO: ~1624px
  */
 .modern-table.proyectos .modern-table-header,
 .modern-table.proyectos .modern-table-row {
-    /* Columna Proyecto es responsive usando minmax (mínimo 80px, máximo flexible con 1fr) */
-    /* Suma de columnas fijas: 30 + 150 + 90 + 100 + 80 + 50 + 50 + 45 + 45 + 70 + 100 + 75 + 75 + 380 = 1390px */
-    /* Gaps: 14 gaps de 8px = 112px, Padding: 12px izquierdo = 12px, Total fijo: ~1514px */
-    grid-template-columns: 30px 150px minmax(80px, 1fr) 90px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
+    /* Proyecto usa minmax(160px, 1fr) - mínimo 160px, se expande si hay espacio */
+    /* WIN tiene ancho FIJO de 380px - NO responsive */
+    grid-template-columns: 30px 150px minmax(160px, 1fr) 90px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
     padding-left: 12px;
-    padding-right: 0 !important;
-    gap: 0 8px; /* row-gap: 0, column-gap: 8px = 13 gaps de 8px = 104px */
-    width: 100%;
-    min-width: 0; /* Permitir que el grid sea flexible */
-    max-width: 100%; /* No permitir que se expanda más allá del contenedor */
+    padding-right: 12px;
+    gap: 0 8px; /* row-gap: 0, column-gap: 8px */
+    width: 100%; /* Ocupar todo el ancho de la tabla */
+    min-width: 1650px; /* Ancho mínimo fijo para consistencia */
     box-sizing: border-box;
-    overflow: hidden; /* Asegurar que el contenido no se extienda más allá */
+    overflow: visible;
 }
 
-/* Forzar que la tercera columna (Proyecto) respete el ancho del grid y se reduzca */
+/* Columna Proyecto (índice 3) - min 160px, se expande si hay espacio */
 .modern-table.proyectos .modern-table-header > .modern-table-cell:nth-child(3),
 .modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) {
     grid-column: 3;
+    min-width: 160px; /* Mínimo 160px */
     max-width: 100%;
     overflow: hidden !important;
-    width: 100%;
-    min-width: 0 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* NOTA: No agregar estilos específicos para Accionables (columna 10) - usar solo el grid-template-columns */
@@ -268,19 +295,18 @@
     width: max-content;
 }
 
-/* Asegurar que la tabla ocupe el 100% del contenedor y permita columnas flexibles */
+/* Asegurar que la tabla tenga ancho mínimo fijo para consistencia */
 .modern-table.proyectos {
-    width: 100%;
-    min-width: 0; /* Permitir que el grid sea flexible */
-    max-width: 100%; /* No permitir que se expanda más allá del contenedor */
+    width: max-content;
+    min-width: 1650px; /* Ancho mínimo fijo */
     box-sizing: border-box;
-    overflow: hidden; /* Asegurar que no se extienda más allá */
+    overflow: visible;
 }
 
-/* Hacer que la columna Proyecto sea responsive - se ajusta automáticamente con minmax en grid-template-columns */
+/* Columna Proyecto - min 160px, con text-overflow */
 .modern-table.proyectos .modern-table-header > .modern-table-cell:nth-child(3),
 .modern-table.proyectos .modern-table-row > .modern-table-cell:nth-child(3) {
-    min-width: 80px; /* Mínimo reducido para aprovechar más espacio */
+    min-width: 160px; /* Mínimo 160px (el doble del anterior) */
     max-width: 100%; /* Máximo flexible - se ajusta al espacio disponible */
     width: 100%;
     overflow: hidden;
