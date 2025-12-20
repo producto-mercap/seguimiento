@@ -267,8 +267,17 @@
     /* Altura automática en lugar de flex: 1 */
     display: block;
     /* Cambiar de flex a block para evitar expansión excesiva */
+}
+
+/* Contenedor wrapper para agrupar seguimiento-container y table-container */
+.seguimiento-wrapper {
+    display: block;
+    width: 100%;
     position: relative;
-    /* Posición relativa para mantener fijo */
+    /* Posición relativa para mantener flujo normal */
+    min-width: 0;
+    /* Permitir que se reduzca */
+    box-sizing: border-box;
 }
 
 /* ================================
@@ -278,8 +287,8 @@
     width: 100%;
     /* Ancho completo sin márgenes */
     max-width: 100%;
-    margin: 0;
-    /* Sin márgenes laterales */
+    margin: 0 0 24px 0;
+    /* Margen inferior para mantener distancia con la tabla */
     box-sizing: border-box;
     overflow-y: hidden;
     /* Sin scrollbar vertical */
@@ -293,6 +302,10 @@
     /* No permitir que crezca en contenedores flex */
     display: block;
     /* Display block para evitar ajustes flex */
+    position: relative;
+    /* Posición relativa para mantener el flujo normal */
+    z-index: 1;
+    /* Z-index para asegurar que esté por encima */
 }
 
 .seguimiento-header {

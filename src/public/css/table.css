@@ -26,7 +26,8 @@
 
 /* Contenedor principal para tabla de proyectos */
 .proyectos-table-container {
-    position: relative;
+    position: static;
+    /* Posición estática para mantener flujo normal */
     width: 100%;
     /* Ancho completo sin márgenes */
     margin-left: 0;
@@ -35,6 +36,10 @@
     /* Sin margen derecho */
     margin-bottom: 0;
     /* Sin margen inferior - la scrollbar fija no necesita espacio extra */
+    margin-top: 0;
+    /* Sin margen superior - debe seguir al seguimiento-container */
+    display: block;
+    /* Display block para mantener flujo normal */
 }
 
 /* Wrapper de la tabla - contenedor estructural INVISIBLE (sin estilos visuales) */
@@ -251,6 +256,8 @@
     /* Por encima de las filas */
     background: rgba(230, 235, 239, 1);
     /* Mismo color que el header base */
+    /* Nota: sticky solo funciona dentro de su contenedor con scroll */
+    /* Si el contenedor padre no tiene scroll, sticky no tiene efecto */
 }
 
 .modern-table-header .modern-table-cell {
@@ -640,6 +647,14 @@
     /* Sin scroll propio */
     min-width: max-content;
     /* Permitir que expanda */
+    margin-top: 0;
+    /* Sin margen superior - el seguimiento-container ya tiene margen inferior */
+    position: static;
+    /* Posición estática para mantener flujo normal del documento */
+    z-index: 0;
+    /* Z-index menor que seguimiento-container */
+    display: block;
+    /* Display block para mantener flujo normal */
 }
 
 /* Para proyectos, hacer el table-container responsive */

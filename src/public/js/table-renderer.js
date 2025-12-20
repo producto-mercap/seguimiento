@@ -509,6 +509,10 @@ function configurarScrollbarFija() {
     fixedScrollbar.style.left = tableRect.left + 'px';
     fixedScrollbar.style.width = tableRect.width + 'px';
     fixedScrollbar.style.right = 'auto';
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:configurarScrollbarFija',message:'Scrollbar fija configurada',data:{tableRectLeft:tableRect.left,tableRectWidth:tableRect.width,tableRectTop:tableRect.top,tableRectBottom:tableRect.bottom},timestamp:Date.now(),sessionId:'debug-session',runId:'resize-debug',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
 
     // Sincronizar scroll
     let isSyncingFixed = false;
@@ -856,15 +860,149 @@ function ajustarAlturaTextarea(textarea) {
     }
 }
 
+// Función para rastrear posiciones y estilos de contenedores
+function rastrearPosicionesContenedores() {
+    const seguimientoContainer = document.querySelector('.seguimiento-container');
+    const tableContainer = document.querySelector('#contenido');
+    const proyectosTableContainer = document.querySelector('.proyectos-table-container');
+    const seguimientoWrapper = document.querySelector('.seguimiento-wrapper');
+    const contentArea = document.querySelector('.content-area');
+    const mainContent = document.querySelector('.main-content');
+    
+    const datos = {
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        scrollY: window.scrollY,
+        scrollX: window.scrollX
+    };
+    
+    if (seguimientoContainer) {
+        const rect = seguimientoContainer.getBoundingClientRect();
+        const styles = window.getComputedStyle(seguimientoContainer);
+        datos.seguimientoContainer = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            position: styles.position,
+            display: styles.display,
+            marginTop: styles.marginTop,
+            marginBottom: styles.marginBottom
+        };
+    }
+    
+    if (tableContainer) {
+        const rect = tableContainer.getBoundingClientRect();
+        const styles = window.getComputedStyle(tableContainer);
+        datos.tableContainer = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            position: styles.position,
+            display: styles.display,
+            marginTop: styles.marginTop,
+            marginBottom: styles.marginBottom
+        };
+    }
+    
+    if (proyectosTableContainer) {
+        const rect = proyectosTableContainer.getBoundingClientRect();
+        const styles = window.getComputedStyle(proyectosTableContainer);
+        datos.proyectosTableContainer = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            position: styles.position,
+            display: styles.display,
+            marginTop: styles.marginTop,
+            marginBottom: styles.marginBottom
+        };
+    }
+    
+    if (seguimientoWrapper) {
+        const rect = seguimientoWrapper.getBoundingClientRect();
+        const styles = window.getComputedStyle(seguimientoWrapper);
+        datos.seguimientoWrapper = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            position: styles.position,
+            display: styles.display
+        };
+    }
+    
+    if (contentArea) {
+        const rect = contentArea.getBoundingClientRect();
+        const styles = window.getComputedStyle(contentArea);
+        datos.contentArea = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            position: styles.position,
+            display: styles.display,
+            overflowY: styles.overflowY,
+            overflowX: styles.overflowX
+        };
+    }
+    
+    if (mainContent) {
+        const rect = mainContent.getBoundingClientRect();
+        const styles = window.getComputedStyle(mainContent);
+        datos.mainContent = {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            position: styles.position,
+            display: styles.display,
+            overflowY: styles.overflowY,
+            overflowX: styles.overflowX
+        };
+    }
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:rastrearPosicionesContenedores',message:'Posiciones y estilos de contenedores',data:datos,timestamp:Date.now(),sessionId:'debug-session',runId:'resize-debug',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    return datos;
+}
+
 // Ajustar scroll cuando se redimensiona la ventana
 if (typeof window !== 'undefined') {
     let resizeTimeout;
     window.addEventListener('resize', () => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:resize',message:'Resize event disparado',data:{windowWidth:window.innerWidth,windowHeight:window.innerHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'resize-debug',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        
+        // Rastrear posiciones ANTES del timeout
+        rastrearPosicionesContenedores();
+        
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:resize-timeout',message:'Resize timeout ejecutado',data:{windowWidth:window.innerWidth,windowHeight:window.innerHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'resize-debug',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            
             configurarScrollbarFija();
             ajustarScrollHorizontal();
+            
+            // Rastrear posiciones DESPUÉS del timeout
+            setTimeout(() => {
+                rastrearPosicionesContenedores();
+            }, 100);
         }, 250);
+    });
+    
+    // Rastrear posiciones iniciales al cargar
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            rastrearPosicionesContenedores();
+        }, 500);
     });
 }
 
