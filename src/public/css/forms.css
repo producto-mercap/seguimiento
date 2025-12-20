@@ -378,19 +378,18 @@ select.modern-select::-ms-expand {
     border: none !important;
 }
 
-/* Textarea de WIN */
+/* Textarea de WIN - 1 línea cuando está vacío (rows="1"), se expande con contenido */
 .win-textarea {
     width: 100% !important;
     box-sizing: border-box !important;
     background-color: transparent !important;
     border-radius: 0 !important;
-    border: none !important;
-    border-bottom: 1px solid #e0e0e0 !important;
-    padding: 8px 4px !important;
+    border: none !important; /* Sin borde - quitar línea del renglón */
+    padding: 4px 4px !important; /* Padding reducido para altura mínima */
     font-size: 13px !important;
     font-family: 'Google Sans', 'Roboto', sans-serif !important;
     resize: none !important;
-    min-height: 32px !important;
+    min-height: 20px !important; /* Mínimo 1 línea */
     max-height: 120px !important;
     overflow-y: auto !important;
     transition: all 0.2s ease !important;
@@ -398,21 +397,28 @@ select.modern-select::-ms-expand {
     color: var(--text-primary) !important;
 }
 
+/* Cuando rows="1" (vacío o 1 línea), altura fija de 1 línea */
+.win-textarea[rows="1"] {
+    height: 20px !important; /* Altura fija de 1 línea cuando está vacío */
+    overflow-y: hidden !important; /* Sin scroll cuando está vacío */
+    min-height: 20px !important;
+    max-height: 20px !important;
+}
+
 .win-textarea:hover {
-    border-bottom-color: #bdc1c6 !important;
+    border: none !important; /* Sin borde en hover */
     background-color: #f8f9fa !important;
-    border-radius: 4px 4px 0 0 !important;
-    padding: 8px 8px !important;
+    border-radius: 4px !important;
+    padding: 4px 4px !important; /* Mantener padding constante */
 }
 
 .win-textarea:focus {
     outline: none !important;
-    border: none !important;
-    border-bottom: 2px solid var(--primary-color) !important;
-    background-color: #f8f9fa !important;
-    border-radius: 4px 4px 0 0 !important;
-    padding: 8px 8px !important;
-    box-shadow: 0 1px 0 0 var(--primary-color) !important;
+    border: none !important; /* Sin borde en focus */
+    background-color: transparent !important; /* Sin fondo gris en focus */
+    border-radius: 0 !important;
+    padding: 4px 4px !important; /* Mantener padding constante para evitar desplazamiento */
+    box-shadow: none !important; /* Sin sombra */
 }
 
 /* Scrollbar para textarea WIN */

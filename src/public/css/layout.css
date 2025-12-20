@@ -251,21 +251,20 @@
 /* El ajuste del margen se maneja con JavaScript para mejor compatibilidad */
 
 .content-area {
-    padding: 24px 0 0 0;
-    /* Solo padding superior - el lateral está en main-content */
+    padding: 0;
+    /* Sin padding para evitar desplazamiento */
     min-width: 0;
     /* Permitir que se reduzca para proyectos responsive */
     overflow-x: visible;
     /* Permitir ver el borde derecho de la tabla */
-    overflow-y: visible;
-    /* Sin scroll vertical - altura fija */
+    overflow-y: auto;
+    /* Scroll vertical si es necesario */
     width: 100%;
     box-sizing: border-box;
-    flex: 1;
-    /* Ocupar todo el espacio disponible en main-content */
-    display: flex;
-    flex-direction: column;
-    /* Para que los hijos ocupen el espacio vertical */
+    height: auto;
+    /* Altura automática en lugar de flex: 1 */
+    display: block;
+    /* Cambiar de flex a block para evitar expansión excesiva */
 }
 
 /* ================================

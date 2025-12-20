@@ -173,7 +173,7 @@ function renderizarTablaMantenimiento(datos, contenido) {
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownIconos(item.id_proyecto, 'demanda', item.demanda || '', 'demanda', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownIconos(item.id_proyecto, 'estabilidad', item.estabilidad || '', 'estabilidad', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownCaras(item.id_proyecto, 'satisfaccion', item.satisfaccion || '', '') + '</div>';
-        tablaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'win\', this.value)">' + (item.win || '') + '</textarea></div>';
+        tablaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" rows="1" onchange="actualizarMantenimiento(' + item.id_proyecto + ', \'win\', this.value); ajustarAlturaTextarea(this);">' + (item.win || '') + '</textarea></div>';
         tablaHTML += '</div>';
     });
 
@@ -414,7 +414,8 @@ function renderizarTablaProyectos(datos, contenido) {
 
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaInicioCorta + '</div>';
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinCorta + '</div>';
-        tablaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" onchange="actualizarProyecto(' + item.id_proyecto + ', \'win\', this.value)">' + (item.win || '') + '</textarea></div>';
+        const winValue = item.win || '';
+        tablaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" rows="1" onchange="actualizarProyecto(' + item.id_proyecto + ', \'win\', this.value); ajustarAlturaTextarea(this);">' + winValue + '</textarea></div>';
 
         tablaHTML += '</div>';
 
@@ -449,6 +450,17 @@ function renderizarTablaProyectos(datos, contenido) {
     setTimeout(() => {
         configurarScrollbarFija();
         ajustarScrollHorizontal();
+        // Ajustar altura de todos los textareas WIN
+        document.querySelectorAll('.win-textarea').forEach(textarea => {
+            ajustarAlturaTextarea(textarea);
+            // Agregar listener para ajustar altura mientras escribe
+            textarea.addEventListener('input', function() {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:457',message:'Evento INPUT disparado',data:{valueLength:this.value.length,currentHeight:this.clientHeight,currentRows:this.getAttribute('rows')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                ajustarAlturaTextarea(this);
+            });
+        });
     }, 100);
 }
 
@@ -640,7 +652,8 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
 
     filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaInicioSubCorta + '</div>';
     filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinSubCorta + '</div>';
-    filaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'win\', this.value)">' + (subproyecto.win || '') + '</textarea></div>';
+    const subproyectoWinValue = subproyecto.win || '';
+    filaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" rows="1" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'win\', this.value); ajustarAlturaTextarea(this);">' + subproyectoWinValue + '</textarea></div>';
     filaHTML += '</div>';
 
     return filaHTML;
@@ -724,6 +737,124 @@ window.toggleSubproyectos = function (idProyectoPadre) {
         }
     }, 50);
 };
+
+// Función para ajustar la altura del textarea WIN dinámicamente
+function ajustarAlturaTextarea(textarea) {
+    if (!textarea) return;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:739',message:'ajustarAlturaTextarea ENTRY',data:{textareaExists:!!textarea,valueLength:textarea?.value?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
+    const contenido = textarea.value;
+    
+    // Si está vacío, mantener en 1 renglón
+    if (!contenido.trim()) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:747',message:'textarea vacío - manteniendo 1 renglón',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        textarea.setAttribute('rows', '1');
+        textarea.style.height = '20px';
+        return;
+    }
+    
+    // Contar saltos de línea reales (Enter presionado)
+    const lineasReales = contenido.split('\n').length;
+    
+    // Guardar altura y rows actuales ANTES de modificar
+    const alturaActual = textarea.clientHeight;
+    const rowsActual = parseInt(textarea.getAttribute('rows')) || 1;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:760',message:'ANTES de modificar altura',data:{alturaActual,rowsActual,lineasReales,contenidoLength:contenido.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    
+    // Estrategia: Verificar overflow real usando la altura actual (sin forzar altura mínima)
+    // Solo expandir cuando realmente hay overflow o saltos de línea
+    
+    // Si está en 1 renglón, verificar si realmente necesita expandir
+    if (rowsActual === 1) {
+        // Verificar overflow usando la altura actual (sin forzar a 20px)
+        const scrollHeightActual = textarea.scrollHeight;
+        const hayOverflow = scrollHeightActual > alturaActual;
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:771',message:'Verificación overflow (rows=1)',data:{hayOverflow,scrollHeightActual,alturaActual,lineasReales},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        
+        // Si no hay overflow y solo hay 1 línea de texto (sin saltos de línea)
+        if (!hayOverflow && lineasReales === 1) {
+            // Mantener en 1 renglón - no expandir
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:777',message:'Mantener en 1 renglón (no overflow, 1 línea)',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            return; // No hacer nada, ya está bien
+        }
+        
+        // Hay overflow o múltiples líneas, necesitamos expandir
+        // Usar una altura temporal muy grande para medir sin afectar visualmente
+        const alturaTemporal = textarea.style.height;
+        textarea.style.height = '9999px';
+        const scrollHeight = textarea.scrollHeight;
+        textarea.style.height = alturaTemporal; // Restaurar inmediatamente
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:789',message:'Calculando altura necesaria (overflow o múltiples líneas)',data:{scrollHeight,lineasReales},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        
+        // Calcular número de líneas necesarias
+        const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 19.5;
+        const padding = 8;
+        const lineasPorOverflow = Math.ceil((scrollHeight - padding) / lineHeight);
+        const lineasNecesarias = Math.max(lineasReales, lineasPorOverflow);
+        
+        // Expandir
+        if (lineasNecesarias > 1) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:802',message:'AJUSTANDO altura del textarea (expandir)',data:{lineasNecesarias,scrollHeight},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            textarea.setAttribute('rows', lineasNecesarias);
+            textarea.style.height = scrollHeight + 'px';
+        }
+        return;
+    }
+    
+    // Si ya está en múltiples renglones, verificar si necesita ajustar
+    // Usar una altura temporal muy grande para medir
+    const alturaTemporal = textarea.style.height;
+    textarea.style.height = '9999px';
+    const scrollHeight = textarea.scrollHeight;
+    textarea.style.height = alturaTemporal; // Restaurar inmediatamente
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:815',message:'Verificando altura en múltiples renglones',data:{scrollHeight,alturaActual,lineasReales},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
+    // Calcular número de líneas necesarias
+    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 19.5;
+    const padding = 8;
+    const lineasPorOverflow = Math.ceil((scrollHeight - padding) / lineHeight);
+    const lineasNecesarias = Math.max(lineasReales, lineasPorOverflow);
+    
+    // Solo ajustar si la altura necesaria es diferente a la actual
+    // (con un margen de 2px para evitar ajustes mínimos)
+    if (Math.abs(scrollHeight - alturaActual) > 2 || rowsActual !== lineasNecesarias) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:825',message:'AJUSTANDO altura del textarea',data:{lineasNecesarias,scrollHeight,alturaActual,rowsActual},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        if (lineasNecesarias > 1) {
+            textarea.setAttribute('rows', lineasNecesarias);
+            textarea.style.height = scrollHeight + 'px';
+        } else {
+            textarea.setAttribute('rows', '1');
+            textarea.style.height = '20px';
+        }
+    } else {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/c387d317-3dcc-4598-b290-b71e313e8754',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'table-renderer.js:833',message:'NO ajustar - altura ya es correcta',data:{scrollHeight,alturaActual,diferencia:Math.abs(scrollHeight-alturaActual)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+    }
+}
 
 // Ajustar scroll cuando se redimensiona la ventana
 if (typeof window !== 'undefined') {
