@@ -187,7 +187,7 @@ async function renderizarGanttEquipo(proyectos) {
     // Header y Controles
     html += '<div class="gantt-header">';
     html += '<div class="gantt-title" style="display: flex; align-items: center; gap: 8px;">';
-    html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 22V8h4v14H3zm7 0V2h4v20h-4zm7 0v-8h4v8h-4z"/></svg>';
+    html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(90deg);"><path d="M3 22V8h4v14H3zm7 0V2h4v20h-4zm7 0v-8h4v8h-4z"/></svg>';
     html += '<span>Planificacion de Equipo</span>';
     html += '<div class="win-info-icon" style="position: relative; display: inline-flex; align-items: center; cursor: help; z-index: 99999;" onmouseenter="const icon = this; const tooltip = icon.querySelector(\'.win-tooltip\'); if (tooltip) { const rect = icon.getBoundingClientRect(); tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + \'px\'; tooltip.style.left = rect.left + (rect.width / 2) + \'px\'; tooltip.style.transform = \'translateX(-50%)\'; }">';
     html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368; opacity: 0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'">';
@@ -317,7 +317,8 @@ async function renderizarGanttEquipo(proyectos) {
             const estadoFormateado = formatearEstado(estadoProyecto);
             html += `<div class="gantt-bar bar-parent" style="left: ${barra.left}px; width: ${barra.width}px;" 
                      onmouseenter="mostrarTooltipGantt(event, '${(p.nombre_proyecto || '').replace(/'/g, "\\'")}', '${formatearFechaGantt(fechaInicioProyecto)}', '${formatearFechaGantt(fechaFinProyecto)}', '${estadoFormateado.replace(/'/g, "\\'")}')"
-                     onmouseleave="ocultarTooltipGantt()">`;
+                     onmouseleave="ocultarTooltipGantt()"
+                     onclick="event.stopPropagation(); toggleGanttExpand('${p.id_proyecto}', true)">`;
             html += `<span class="gantt-bar-label">${p.nombre_proyecto || ''}</span>`;
             html += '</div>';
         }
@@ -390,7 +391,7 @@ function generarHTMLGantt(idProyecto, minDate, maxDate, ganttItems, proyectoData
     // Header
     html += '<div class="gantt-header">';
     html += '<div class="gantt-title">';
-    html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 22V8h4v14H3zm7 0V2h4v20h-4zm7 0v-8h4v8h-4z"/></svg>';
+    html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="transform: rotate(90deg);"><path d="M3 22V8h4v14H3zm7 0V2h4v20h-4zm7 0v-8h4v8h-4z"/></svg>';
     html += '<span>Planificación del Proyecto</span>';
     html += '</div>';
     html += '<div class="gantt-controls">';
