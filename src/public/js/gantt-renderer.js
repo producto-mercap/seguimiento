@@ -193,7 +193,7 @@ async function renderizarGanttEquipo(proyectos) {
     html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368; opacity: 0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'">';
     html += '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>';
     html += '</svg>';
-    html += '<div class="win-tooltip">Gantt de proyectos a partir de fecha inicio/fin planificada de sus epics</div>';
+    html += '<div class="win-tooltip">Cronograma de proyectos a partir del Inicio/Fin planificado de sus epics</div>';
     html += '</div>';
     html += '</div>';
     html += '<div class="gantt-controls">';
