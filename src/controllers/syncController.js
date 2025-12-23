@@ -138,13 +138,6 @@ async function crearPedido(req, res) {
             });
         }
 
-        if (equipo_solicitante === equipo_responsable) {
-            return res.status(400).json({
-                success: false,
-                error: 'El equipo solicitante y el equipo responsable no pueden ser el mismo'
-            });
-        }
-
         const estadosValidos = ['Pendiente', 'En curso', 'Bloqueado', 'Realizado'];
         if (!estadosValidos.includes(estado)) {
             return res.status(400).json({
@@ -204,13 +197,6 @@ async function actualizarPedido(req, res) {
         } = req.body;
 
         // Validaciones solo si se están actualizando esos campos
-        if (equipo_solicitante === equipo_responsable) {
-            return res.status(400).json({
-                success: false,
-                error: 'El equipo solicitante y el equipo responsable no pueden ser el mismo'
-            });
-        }
-
         if (req.body.estado !== undefined) {
             const estadosValidos = ['Pendiente', 'En curso', 'Bloqueado', 'Realizado'];
             if (!estadosValidos.includes(estado)) {

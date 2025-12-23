@@ -215,12 +215,6 @@ function validarFormularioPedido() {
         return false;
     }
 
-    // Validar que los equipos no sean iguales
-    if (equipoSolicitante === equipoResponsable) {
-        alert('El equipo solicitante y el equipo responsable no pueden ser el mismo');
-        return false;
-    }
-
     return true;
 }
 

@@ -112,11 +112,6 @@ class PedidosEquiposModel {
                 comentario
             } = datos;
 
-            // Validar que los equipos no sean iguales
-            if (equipo_solicitante === equipo_responsable) {
-                throw new Error('El equipo solicitante y el equipo responsable no pueden ser el mismo');
-            }
-
             const query = `
                 INSERT INTO pedidos_equipos 
                 (equipo_solicitante, equipo_responsable, descripcion, fecha_planificada_entrega, estado, comentario)
@@ -156,11 +151,6 @@ class PedidosEquiposModel {
                 estado,
                 comentario
             } = datos;
-
-            // Validar que los equipos no sean iguales
-            if (equipo_solicitante === equipo_responsable) {
-                throw new Error('El equipo solicitante y el equipo responsable no pueden ser el mismo');
-            }
 
             const query = `
                 UPDATE pedidos_equipos
