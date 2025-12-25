@@ -422,12 +422,11 @@
     overflow-x: auto;
     overflow-y: hidden;
     position: relative;
-    cursor: grab;
     user-select: none;
 }
 
-.gantt-timeline:active {
-    cursor: grabbing;
+.gantt-timeline.gantt-dragging {
+    cursor: grabbing !important;
 }
 
 /* Animación de spinner para carga */

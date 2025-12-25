@@ -523,7 +523,7 @@ function inicializarComportamientoGantt(idGantt, minDate, maxDate) {
                 timeline.scrollLeft = Math.max(0, todayColLeft - (timeline.clientWidth / 2) + (baseCellWidth / 2));
             }
 
-            inicializarDragScroll(timeline);
+            inicializarDragScrollGantt(timeline);
         }
     }, 100);
 }
@@ -854,28 +854,94 @@ function renderizarGanttVacio() {
             </div>`;
 }
 
-function inicializarDragScroll(element) {
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-    element.style.cursor = 'grab';
-    element.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.gantt-bar')) return;
-        isDown = true;
+/**
+ * Nueva implementación de drag scroll para Gantt
+ * Implementada desde cero para solucionar problemas de cursor en Chrome
+ */
+function inicializarDragScrollGantt(element) {
+    if (!element) return;
+    
+    let isDragging = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+    
+    // Función para establecer cursor grab
+    const setCursorGrab = () => {
+        element.style.cursor = 'grab';
+        element.classList.remove('gantt-dragging');
+    };
+    
+    // Función para establecer cursor grabbing
+    const setCursorGrabbing = () => {
         element.style.cursor = 'grabbing';
-        startX = e.pageX - element.offsetLeft;
-        scrollLeft = element.scrollLeft;
+        element.classList.add('gantt-dragging');
+    };
+    
+    // Inicializar cursor
+    setCursorGrab();
+    
+    // Mousedown: iniciar arrastre
+    const handleMouseDown = (e) => {
+        // No arrastrar si se hace click en una barra del Gantt
+        if (e.target.closest('.gantt-bar')) {
+            return;
+        }
+        
+        isDragging = true;
+        startX = e.clientX;
+        startScrollLeft = element.scrollLeft;
+        
+        setCursorGrabbing();
+        
+        // Prevenir selección de texto
         e.preventDefault();
-    });
-    element.addEventListener('mouseleave', () => { isDown = false; element.style.cursor = 'grab'; });
-    element.addEventListener('mouseup', () => { isDown = false; element.style.cursor = 'grab'; });
-    element.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
+        
+        // Agregar clase al body para prevenir selección global
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'grabbing';
+    };
+    
+    // Mousemove: arrastrar
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        
         e.preventDefault();
-        const x = e.pageX - element.offsetLeft;
-        const walk = (x - startX) * 1.5;
-        element.scrollLeft = scrollLeft - walk;
-    });
+        
+        const deltaX = e.clientX - startX;
+        const scrollAmount = deltaX * 1.5; // Factor de velocidad
+        element.scrollLeft = startScrollLeft - scrollAmount;
+    };
+    
+    // Mouseup: finalizar arrastre
+    const handleMouseUp = () => {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        setCursorGrab();
+        
+        // Restaurar selección de texto
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+    };
+    
+    // Mouseleave: cancelar arrastre si el mouse sale del elemento
+    const handleMouseLeave = () => {
+        if (isDragging) {
+            isDragging = false;
+            setCursorGrab();
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+        }
+    };
+    
+    // Agregar event listeners
+    element.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    element.addEventListener('mouseleave', handleMouseLeave);
+    
+    // Limpiar listeners cuando el elemento se elimine (opcional, para evitar memory leaks)
+    // Esto se puede mejorar con AbortController si es necesario
 }
 
 function truncarNombreGantt(nombre) {

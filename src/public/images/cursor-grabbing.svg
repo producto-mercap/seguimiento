@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+  <!-- Palma de la mano -->
+  <path fill="#000" stroke="#fff" stroke-width="1.5" d="M12 5c-1 0-2 1-2 2v2H8c-1 0-2 1-2 2v2c0 1 1 2 2 2h2v2c0 1 1 2 2 2h2c1 0 2-1 2-2v-2h2c1 0 2-1 2-2v-2c0-1-1-2-2-2h-2V7c0-1-1-2-2-2h-2z"/>
+  <!-- Dedo índice -->
+  <rect fill="#000" stroke="#fff" stroke-width="1" x="8" y="11" width="1.5" height="5"/>
+  <!-- Dedo medio -->
+  <rect fill="#000" stroke="#fff" stroke-width="1" x="10.5" y="11" width="1.5" height="5"/>
+  <!-- Dedo anular -->
+  <rect fill="#000" stroke="#fff" stroke-width="1" x="13" y="11" width="1.5" height="5"/>
+  <!-- Dedo meñique -->
+  <rect fill="#000" stroke="#fff" stroke-width="1" x="15.5" y="11" width="1.5" height="5"/>
+  <!-- Puño cerrado (círculo en lugar del pulgar extendido) -->
+  <circle fill="#000" stroke="#fff" stroke-width="1.5" cx="12" cy="7.5" r="2.5"/>
+</svg>
+
+
