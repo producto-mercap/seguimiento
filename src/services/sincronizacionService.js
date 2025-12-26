@@ -81,16 +81,9 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
             }
         });
         
-        // Excluir proyectos cuyo cliente sea "Mercap"
+        // No excluir proyectos cuyo cliente sea "Mercap" (solicitado por el usuario)
         let proyectosExcluidos = 0;
-        const proyectosMapeados = Array.from(proyectosMap.values()).filter(p => {
-            const cliente = (p.cliente || '').toLowerCase().trim();
-            if (cliente === 'mercap') {
-                proyectosExcluidos++;
-                return false;
-            }
-            return true;
-        });
+        const proyectosMapeados = Array.from(proyectosMap.values());
         
         // Filtrar proyectos excluyendo "Licencias"
         const proyectosMantenimientoFiltrados = proyectosMapeados.filter(p => {

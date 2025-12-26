@@ -456,60 +456,6 @@ function renderizarTablaProyectos(datos, contenido) {
         ajustarScrollHorizontal();
         // Inicializar drag scroll para la tabla de proyectos
         inicializarDragScrollTabla();
-        // #region agent log
-        // Verificar estilos aplicados al wrapper de la tabla
-        setTimeout(() => {
-            const tableWrapper = document.querySelector('.modern-table-wrapper.proyectos-wrapper');
-            if (tableWrapper) {
-                const computedStyle = window.getComputedStyle(tableWrapper);
-                const cursorValue = computedStyle.cursor;
-                const isInContenido = tableWrapper.closest('#contenido') !== null;
-                
-                fetch('http://127.0.0.1:7242/ingest/189ba8e2-2400-4df2-81c2-090fea5089e3', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        location: 'table-renderer.js:454',
-                        message: 'Table wrapper styles after render',
-                        data: {
-                            wrapperClasses: Array.from(tableWrapper.classList),
-                            computedCursor: cursorValue,
-                            inlineCursor: tableWrapper.style.cursor,
-                            isInContenido: isInContenido,
-                            parentElement: tableWrapper.parentElement ? tableWrapper.parentElement.className : null
-                        },
-                        timestamp: Date.now(),
-                        sessionId: 'debug-session',
-                        runId: 'run1',
-                        hypothesisId: 'A'
-                    })
-                }).catch(() => {});
-                
-                // Verificar estilos de elementos hijos
-                const table = tableWrapper.querySelector('.modern-table.proyectos');
-                if (table) {
-                    const tableComputed = window.getComputedStyle(table);
-                    fetch('http://127.0.0.1:7242/ingest/189ba8e2-2400-4df2-81c2-090fea5089e3', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            location: 'table-renderer.js:454',
-                            message: 'Table element styles',
-                            data: {
-                                tableClasses: Array.from(table.classList),
-                                computedCursor: tableComputed.cursor,
-                                inlineCursor: table.style.cursor
-                            },
-                            timestamp: Date.now(),
-                            sessionId: 'debug-session',
-                            runId: 'run1',
-                            hypothesisId: 'B'
-                        })
-                    }).catch(() => {});
-                }
-            }
-        }, 200);
-        // #endregion
         // Ajustar altura de todos los textareas WIN
         document.querySelectorAll('.win-textarea').forEach(textarea => {
             ajustarAlturaTextarea(textarea);

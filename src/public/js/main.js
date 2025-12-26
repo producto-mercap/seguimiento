@@ -98,16 +98,21 @@ function ocultarPopupSincronizacion() {
     }
 }
 
-// Función para sincronizar proyectos desde el botón principal
+// Función para sincronizar proyectos o mantenimiento desde el botón principal
 async function sincronizar() {
     if (!productoActual) {
         alert('Por favor selecciona un producto primero');
         return;
     }
     
-    console.log('🔄 Iniciando sincronización de proyectos...');
+    // Determinar si es mantenimiento o proyectos según tipoActual
+    const esMantenimiento = typeof tipoActual !== 'undefined' && tipoActual === 'mantenimiento';
+    const tipoSincronizacion = esMantenimiento ? 'mantenimiento' : 'proyectos';
+    
+    console.log('🔄 Iniciando sincronización de ' + tipoSincronizacion + '...');
     console.log('   Producto:', productoActual);
     console.log('   Equipo:', equipoActual || 'todos');
+    console.log('   Tipo:', tipoSincronizacion);
     
     mostrarPopupSincronizacion();
     
@@ -121,7 +126,8 @@ async function sincronizar() {
     }
 
     try {
-        const endpoint = '/api/sincronizar/proyectos';
+        // Usar el endpoint correcto según el tipo
+        const endpoint = esMantenimiento ? '/api/sincronizar/mantenimiento' : '/api/sincronizar/proyectos';
         const bodyData = {
             producto: productoActual,
             equipo: equipoActual || null
