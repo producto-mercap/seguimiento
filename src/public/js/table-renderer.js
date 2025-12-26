@@ -346,22 +346,9 @@ function renderizarTablaProyectos(datos, contenido) {
         tablaHTML += '<div class="modern-table-cell item-text">' + abreviarCategoria(item.categoria) + '</div>';
 
         const estadoValue = item.estado || '';
-        let estadoClass = '';
-        if (estadoValue === 'Entregado' || estadoValue === 'Cerrado') {
-            estadoClass = 'estado-entregado';
-        } else if (estadoValue === 'sin comenzar') {
-            estadoClass = 'estado-sin-comenzar';
-        } else if (estadoValue === 'en curso') {
-            estadoClass = 'estado-progreso';
-        } else if (estadoValue === 'Testing') {
-            estadoClass = 'estado-testing';
-        } else if (estadoValue === 'Rework') {
-            estadoClass = 'estado-rework';
-        } else if (estadoValue === 'Bloqueado') {
-            estadoClass = 'estado-bloqueado';
-        }
         // Celda de estado - editable (tiene dropdown)
-        tablaHTML += '<div class="modern-table-cell editable-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(item.id_proyecto, estadoValue, estadoClass) + '</div>';
+        // crearDropdownEstado ya calcula la clase de estado internamente, no necesitamos pasarla
+        tablaHTML += '<div class="modern-table-cell editable-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(item.id_proyecto, estadoValue, '') + '</div>';
 
         const avanceValue = parseInt(item.avance) || 0;
         let avanceGradient = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
@@ -614,20 +601,6 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     const subproyectoDataJson = JSON.stringify(subproyectoData).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     const estadoSubproyecto = subproyecto.estado || '';
-    let estadoClassSub = '';
-    if (estadoSubproyecto === 'Entregado' || estadoSubproyecto === 'Cerrado') {
-        estadoClassSub = 'estado-entregado';
-    } else if (estadoSubproyecto === 'sin comenzar') {
-        estadoClassSub = 'estado-sin-comenzar';
-    } else if (estadoSubproyecto === 'en curso') {
-        estadoClassSub = 'estado-progreso';
-    } else if (estadoSubproyecto === 'Testing') {
-        estadoClassSub = 'estado-testing';
-    } else if (estadoSubproyecto === 'Rework') {
-        estadoClassSub = 'estado-rework';
-    } else if (estadoSubproyecto === 'Bloqueado') {
-        estadoClassSub = 'estado-bloqueado';
-    }
 
     const avanceSubproyecto = parseInt(subproyecto.avance) || 0;
     let avanceGradientSub = 'linear-gradient(90deg, #66bb6a 0%, #34a853 100%)';
@@ -649,7 +622,8 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     filaHTML += '<div class="modern-table-cell item-text editable-cell" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + subproyecto.id_proyecto + '); event.stopPropagation();" data-item="' + subproyectoDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">' + nombreSubproyecto + '</a></div>';
     filaHTML += '<div class="modern-table-cell item-text" style="font-size: 12px; color: var(--text-secondary);">' + abreviarCategoria(subproyecto.categoria) + '</div>';
     // Celda de estado del subproyecto - editable (tiene dropdown)
-    filaHTML += '<div class="modern-table-cell editable-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(subproyecto.id_proyecto, estadoSubproyecto, 'subproyecto ' + estadoClassSub) + '</div>';
+    // crearDropdownEstado ya calcula la clase de estado internamente, solo pasamos 'subproyecto' como clase adicional
+    filaHTML += '<div class="modern-table-cell editable-cell" style="text-align: center; justify-content: center;">' + crearDropdownEstado(subproyecto.id_proyecto, estadoSubproyecto, 'subproyecto') + '</div>';
     // Celda de avance del subproyecto - editable (tiene slider)
     filaHTML += '<div class="modern-table-cell editable-cell"><div class="progress-bar-container" data-id="' + subproyecto.id_proyecto + '"><div class="progress-bar" style="width: ' + avanceSubproyecto + '%; background: ' + avanceGradientSub + ';"></div><input type="range" min="0" max="100" step="5" value="' + avanceSubproyecto + '" class="progress-slider" oninput="actualizarBarraProgreso(this);" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'avance\', this.value);" /></div></div>';
     // Celdas de Overall, Alcance, Costo, Plazos del subproyecto - editables (tienen dropdowns)

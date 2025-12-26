@@ -124,7 +124,11 @@ function crearDropdownEstado(idProyecto, valorActual, clasesAdicionales) {
     }
     
     let html = '<div style="position: relative; display: inline-block;">';
-    html += '<button class="modern-select estado-select ' + estadoClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: center; border: none; padding: 4px 8px; border-radius: 14px; cursor: pointer; font-size: 11px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; min-width: 80px; height: 28px; white-space: nowrap;">' + textoMostrado + '</button>';
+    // Limpiar clases adicionales para evitar duplicados (solo mantener 'subproyecto' si existe)
+    const clasesAdicionalesLimpias = clasesAdicionales ? clasesAdicionales.replace(/estado-\w+/g, '').trim() : '';
+    // Construir la clase del botón sin espacios extra
+    const claseCompleta = 'modern-select estado-select' + (estadoClass ? ' ' + estadoClass : '') + (clasesAdicionalesLimpias ? ' ' + clasesAdicionalesLimpias : '');
+    html += '<button class="' + claseCompleta.trim() + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: center; border: none; padding: 4px 8px; border-radius: 14px; cursor: pointer; font-size: 11px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; min-width: 80px; height: 28px; white-space: nowrap;">' + textoMostrado + '</button>';
     html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 99999; margin-top: 4px; overflow: hidden; min-width: 120px;">';
     opciones.forEach(opcion => {
         const isSelected = opcion.valor === valorActual;
@@ -234,6 +238,15 @@ function toggleCustomDropdown(dropdownId, button) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
     
+    // Guardar referencia al botón en el dropdown para poder recuperarlo después
+    if (button) {
+        dropdown.dataset.associatedButton = button.id || `btn-${dropdownId}`;
+        // Si el botón no tiene ID, crear uno temporal
+        if (!button.id) {
+            button.id = `btn-${dropdownId}`;
+        }
+    }
+    
     // Cerrar todos los otros dropdowns
     document.querySelectorAll('.custom-dropdown').forEach(dd => {
         if (dd.id !== dropdownId) {
@@ -337,7 +350,69 @@ function toggleCustomDropdown(dropdownId, button) {
 
 function seleccionarDropdownOption(dropdownId, campo, idProyecto, valor, elemento) {
     const dropdown = document.getElementById(dropdownId);
-    const button = dropdown.previousElementSibling;
+    if (!dropdown) {
+        console.error('❌ Dropdown no encontrado:', dropdownId);
+        return;
+    }
+    
+    // Buscar el botón correcto usando el dropdownId específico
+    let button = null;
+    
+    // 1. Intentar usar la referencia guardada en el dropdown
+    if (dropdown.dataset.associatedButton) {
+        button = document.getElementById(dropdown.dataset.associatedButton);
+    }
+    
+    // 2. Si no está, buscar en el contenedor original (si el dropdown fue movido al body)
+    if (!button && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = originalParent.querySelectorAll('button[onclick*="' + dropdownId + '"]');
+            if (allButtons.length > 0) {
+                button = allButtons[0];
+            }
+        }
+    }
+    
+    // 3. Si no está, buscar como hermano anterior
+    if (!button) {
+        button = dropdown.previousElementSibling;
+        if (!button || button.tagName !== 'BUTTON') {
+            button = null;
+        } else {
+            // Verificar que el botón tiene el onclick correcto
+            const onclick = button.getAttribute('onclick');
+            if (!onclick || !onclick.includes(dropdownId)) {
+                button = null;
+            }
+        }
+    }
+    
+    // 4. Si no está, buscar en el contenedor padre actual
+    if (!button) {
+        const parent = dropdown.parentElement;
+        if (parent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = parent.querySelectorAll('button[onclick*="' + dropdownId + '"]');
+            if (allButtons.length > 0) {
+                button = allButtons[0];
+            }
+        }
+    }
+    
+    // 5. Último recurso: buscar por el dropdownId en el onclick del botón en todo el documento
+    if (!button) {
+        const allButtons = document.querySelectorAll('button[onclick*="' + dropdownId + '"]');
+        if (allButtons.length > 0) {
+            button = allButtons[0];
+        }
+    }
+    
+    if (!button) {
+        console.error('❌ Botón no encontrado para el dropdown:', dropdownId);
+        return;
+    }
     
     // Actualizar el botón
     const opciones = Array.from(dropdown.children);
@@ -351,36 +426,61 @@ function seleccionarDropdownOption(dropdownId, campo, idProyecto, valor, element
     // Cerrar dropdown
     dropdown.style.display = 'none';
     
+    // Devolver el dropdown a su contenedor original si estaba en el body
+    if (dropdown.parentElement === document.body && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            originalParent.appendChild(dropdown);
+        }
+    }
+    
     // Detectar si estamos en proyectos internos
     const esProyectoInterno = typeof tipoActual !== 'undefined' && tipoActual === 'proyectos-internos';
+    
+    // FORZAR REFRESH COMPLETO DEL BOTÓN ANTES DE LA MODIFICACIÓN
+    const originalDisplay = button.style.display;
+    button.style.display = 'none';
+    void button.offsetWidth; // Forzar reflow
+    
+    // Limpiar completamente el botón
+    button.className = '';
+    button.style.removeProperty('background');
+    button.style.removeProperty('background-color');
+    button.style.removeProperty('color');
+    button.textContent = '';
+    
+    // Forzar otro reflow
+    void button.offsetWidth;
     
     // Actualizar valor
     // Proyectos internos ahora usan la misma tabla que proyectos externos, así que usamos actualizarProyecto
     if (campo === 'overall' || campo === 'alcance' || campo === 'costo' || campo === 'plazos') {
         // Usar actualizarProyecto para ambos (proyectos internos y externos usan la misma tabla)
-        actualizarProyecto(idProyecto, campo, valor);
         button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
         button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
         if (valor === 'verde') button.style.background = '#e6f4ea';
         else if (valor === 'amarillo') button.style.background = '#fef7e0';
         else if (valor === 'rojo') button.style.background = '#fce8e6';
         else button.style.background = '#f8f9fa';
+        
+        // Llamar a actualizarProyecto después de actualizar la visual
+        actualizarProyecto(idProyecto, campo, valor);
     } else if (campo === 'estado') {
         // Para todas las categorías de proyectos (no mantenimiento), usar actualizarProyecto
         // Para mantenimiento, usar actualizarMantenimiento
+        button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
+        button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
+        if (valor === 'verde') button.style.background = '#e6f4ea';
+        else if (valor === 'amarillo') button.style.background = '#fef7e0';
+        else if (valor === 'rojo') button.style.background = '#fce8e6';
+        else button.style.background = '#f8f9fa';
+        
         if (esProyectoInterno || (typeof tipoActual !== 'undefined' && tipoActual !== 'mantenimiento')) {
             actualizarProyecto(idProyecto, campo, valor);
         } else {
             actualizarMantenimiento(idProyecto, campo, valor);
         }
-        button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
-        button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
-        if (valor === 'verde') button.style.background = '#e6f4ea';
-        else if (valor === 'amarillo') button.style.background = '#fef7e0';
-        else if (valor === 'rojo') button.style.background = '#fce8e6';
-        else button.style.background = '#f8f9fa';
     } else if (campo === 'demanda' || campo === 'estabilidad') {
-        actualizarMantenimiento(idProyecto, campo, valor);
         const tipo = campo === 'demanda' ? 'demanda' : 'estabilidad';
         button.className = 'modern-select icon-select ' + (valor ? tipo + '-' + valor : '');
         const iconos = {
@@ -388,8 +488,8 @@ function seleccionarDropdownOption(dropdownId, campo, idProyecto, valor, element
             'estabilidad': { 'llama': '🔥', 'herramientas': '🔧', 'cohete': '🚀' }
         };
         button.textContent = valor ? (iconos[tipo][valor] || '-') : '-';
-    } else if (campo === 'satisfaccion') {
         actualizarMantenimiento(idProyecto, campo, valor);
+    } else if (campo === 'satisfaccion') {
         button.className = 'modern-select face-select ' + (valor ? 'satisfaccion-' + valor : '');
         const caras = { 'feliz': '😄', 'buena': '😊', 'regular': '😐', 'mala': '😞', 'enojado': '😠', 'calavera': '💀' };
         button.textContent = valor ? (caras[valor] || '-') : '-';
@@ -400,7 +500,12 @@ function seleccionarDropdownOption(dropdownId, campo, idProyecto, valor, element
             button.style.background = '#f8f9fa';
             button.style.color = 'var(--text-primary)';
         }
+        actualizarMantenimiento(idProyecto, campo, valor);
     }
+    
+    // Restaurar display y forzar re-renderizado final
+    button.style.display = originalDisplay || '';
+    void button.offsetWidth; // Forzar reflow final
 }
 
 function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
@@ -418,13 +523,69 @@ function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
         return;
     }
     
-    // Buscar el botón - puede estar antes del dropdown o en el contenedor padre
-    let button = dropdown.previousElementSibling;
-    if (!button || !button.classList.contains('estado-select')) {
-        // Si no está antes, buscar en el contenedor padre
+    // Buscar el botón correcto usando el dropdownId específico
+    let button = null;
+    
+    // 1. Intentar usar la referencia guardada en el dropdown
+    if (dropdown.dataset.associatedButton) {
+        button = document.getElementById(dropdown.dataset.associatedButton);
+    }
+    
+    // 2. Si no está, buscar en el contenedor original (si el dropdown fue movido al body)
+    if (!button && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = originalParent.querySelectorAll('.estado-select');
+            for (let btn of allButtons) {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes(dropdownId)) {
+                    button = btn;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 3. Si no está, buscar como hermano anterior
+    if (!button) {
+        button = dropdown.previousElementSibling;
+        if (!button || !button.classList.contains('estado-select')) {
+            button = null;
+        } else {
+            // Verificar que el botón tiene el onclick correcto
+            const onclick = button.getAttribute('onclick');
+            if (!onclick || !onclick.includes(dropdownId)) {
+                button = null;
+            }
+        }
+    }
+    
+    // 4. Si no está, buscar en el contenedor padre actual
+    if (!button) {
         const parent = dropdown.parentElement;
         if (parent) {
-            button = parent.querySelector('.estado-select');
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = parent.querySelectorAll('.estado-select');
+            for (let btn of allButtons) {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes(dropdownId)) {
+                    button = btn;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 5. Último recurso: buscar por el dropdownId en el onclick del botón en todo el documento
+    if (!button) {
+        const allButtons = document.querySelectorAll('.estado-select');
+        for (let btn of allButtons) {
+            const onclick = btn.getAttribute('onclick');
+            if (onclick && onclick.includes(dropdownId)) {
+                button = btn;
+                break;
+            }
         }
     }
     
@@ -456,7 +617,6 @@ function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
     
     // Proyectos internos ahora usan la misma tabla que proyectos externos
     console.log('🟢 Llamando a actualizarProyecto con id_proyecto:', idProyecto);
-    actualizarProyecto(idProyecto, 'estado', valor);
     
     const estados = {
         '': '-',
@@ -469,16 +629,33 @@ function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
         'Bloqueado': 'Bloqueado'
     };
     
-    // Actualizar el texto del botón
-    button.textContent = estados[valor] || '-';
-    
-    // Actualizar el color del botón - forzar actualización visual
-    actualizarEstadoColor(button, valor);
-    
-    // Forzar re-renderizado del botón
+    // FORZAR REFRESH COMPLETO DEL BOTÓN ANTES DE LA MODIFICACIÓN
+    // 1. Ocultar el botón temporalmente
+    const originalDisplay = button.style.display;
     button.style.display = 'none';
     void button.offsetWidth; // Forzar reflow
-    button.style.display = '';
+    
+    // 2. Limpiar completamente el botón
+    button.className = 'modern-select estado-select';
+    button.style.removeProperty('background');
+    button.style.removeProperty('background-color');
+    button.textContent = '';
+    
+    // 3. Forzar otro reflow
+    void button.offsetWidth;
+    
+    // 4. Actualizar el texto
+    button.textContent = estados[valor] || '-';
+    
+    // 5. Actualizar el color del botón
+    actualizarEstadoColor(button, valor);
+    
+    // 6. Restaurar display y forzar re-renderizado final
+    button.style.display = originalDisplay || '';
+    void button.offsetWidth; // Forzar reflow final
+    
+    // 7. Llamar a actualizarProyecto después de actualizar la visual
+    actualizarProyecto(idProyecto, 'estado', valor);
 }
 
 function seleccionarDropdownRiesgo(dropdownId, idProyecto, valor, elemento) {
@@ -505,7 +682,69 @@ function seleccionarDropdownRiesgo(dropdownId, idProyecto, valor, elemento) {
 // Funciones para subproyectos
 function seleccionarDropdownOptionSubproyecto(dropdownId, campo, idSubproyecto, valor, elemento) {
     const dropdown = document.getElementById(dropdownId);
-    const button = dropdown.previousElementSibling;
+    if (!dropdown) {
+        console.error('❌ Dropdown no encontrado:', dropdownId);
+        return;
+    }
+    
+    // Buscar el botón correcto usando el dropdownId específico
+    let button = null;
+    
+    // 1. Intentar usar la referencia guardada en el dropdown
+    if (dropdown.dataset.associatedButton) {
+        button = document.getElementById(dropdown.dataset.associatedButton);
+    }
+    
+    // 2. Si no está, buscar en el contenedor original (si el dropdown fue movido al body)
+    if (!button && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = originalParent.querySelectorAll('button[onclick*="' + dropdownId + '"]');
+            if (allButtons.length > 0) {
+                button = allButtons[0];
+            }
+        }
+    }
+    
+    // 3. Si no está, buscar como hermano anterior
+    if (!button) {
+        button = dropdown.previousElementSibling;
+        if (!button || button.tagName !== 'BUTTON') {
+            button = null;
+        } else {
+            // Verificar que el botón tiene el onclick correcto
+            const onclick = button.getAttribute('onclick');
+            if (!onclick || !onclick.includes(dropdownId)) {
+                button = null;
+            }
+        }
+    }
+    
+    // 4. Si no está, buscar en el contenedor padre actual
+    if (!button) {
+        const parent = dropdown.parentElement;
+        if (parent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = parent.querySelectorAll('button[onclick*="' + dropdownId + '"]');
+            if (allButtons.length > 0) {
+                button = allButtons[0];
+            }
+        }
+    }
+    
+    // 5. Último recurso: buscar por el dropdownId en el onclick del botón en todo el documento
+    if (!button) {
+        const allButtons = document.querySelectorAll('button[onclick*="' + dropdownId + '"]');
+        if (allButtons.length > 0) {
+            button = allButtons[0];
+        }
+    }
+    
+    if (!button) {
+        console.error('❌ Botón no encontrado para el dropdown:', dropdownId);
+        return;
+    }
     
     const opciones = Array.from(dropdown.children);
     opciones.forEach(op => {
@@ -517,16 +756,44 @@ function seleccionarDropdownOptionSubproyecto(dropdownId, campo, idSubproyecto, 
     
     dropdown.style.display = 'none';
     
+    // Devolver el dropdown a su contenedor original si estaba en el body
+    if (dropdown.parentElement === document.body && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            originalParent.appendChild(dropdown);
+        }
+    }
+    
+    // FORZAR REFRESH COMPLETO DEL BOTÓN ANTES DE LA MODIFICACIÓN
+    const originalDisplay = button.style.display;
+    button.style.display = 'none';
+    void button.offsetWidth; // Forzar reflow
+    
+    // Limpiar completamente el botón
+    button.className = '';
+    button.style.removeProperty('background');
+    button.style.removeProperty('background-color');
+    button.textContent = '';
+    
+    // Forzar otro reflow
+    void button.offsetWidth;
+    
     if (campo === 'overall' || campo === 'alcance' || campo === 'costo' || campo === 'plazos') {
         // Los subproyectos ahora son proyectos normales, usar actualizarProyecto
-        actualizarProyecto(idSubproyecto, campo, valor);
         button.className = 'modern-select overall-select ' + (valor ? 'color-' + valor : '');
         button.textContent = valor === 'verde' ? '🟢' : valor === 'amarillo' ? '🟡' : valor === 'rojo' ? '🔴' : '-';
         if (valor === 'verde') button.style.background = '#e6f4ea';
         else if (valor === 'amarillo') button.style.background = '#fef7e0';
         else if (valor === 'rojo') button.style.background = '#fce8e6';
         else button.style.background = '#f8f9fa';
+        
+        // Llamar a actualizarProyecto después de actualizar la visual
+        actualizarProyecto(idSubproyecto, campo, valor);
     }
+    
+    // Restaurar display y forzar re-renderizado final
+    button.style.display = originalDisplay || '';
+    void button.offsetWidth; // Forzar reflow final
 }
 
 function seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, elemento) {
@@ -537,7 +804,77 @@ function seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, 
         console.error('❌ Dropdown no encontrado:', dropdownId);
         return;
     }
-    const button = dropdown.previousElementSibling;
+    
+    // Buscar el botón correcto usando el dropdownId específico
+    let button = null;
+    
+    // 1. Intentar usar la referencia guardada en el dropdown
+    if (dropdown.dataset.associatedButton) {
+        button = document.getElementById(dropdown.dataset.associatedButton);
+    }
+    
+    // 2. Si no está, buscar en el contenedor original (si el dropdown fue movido al body)
+    if (!button && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = originalParent.querySelectorAll('.estado-select');
+            for (let btn of allButtons) {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes(dropdownId)) {
+                    button = btn;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 3. Si no está, buscar como hermano anterior
+    if (!button) {
+        button = dropdown.previousElementSibling;
+        if (!button || !button.classList.contains('estado-select')) {
+            button = null;
+        } else {
+            // Verificar que el botón tiene el onclick correcto
+            const onclick = button.getAttribute('onclick');
+            if (!onclick || !onclick.includes(dropdownId)) {
+                button = null;
+            }
+        }
+    }
+    
+    // 4. Si no está, buscar en el contenedor padre actual
+    if (!button) {
+        const parent = dropdown.parentElement;
+        if (parent) {
+            // Buscar el botón que tiene el onclick con este dropdownId específico
+            const allButtons = parent.querySelectorAll('.estado-select');
+            for (let btn of allButtons) {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes(dropdownId)) {
+                    button = btn;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 5. Último recurso: buscar por el dropdownId en el onclick del botón en todo el documento
+    if (!button) {
+        const allButtons = document.querySelectorAll('.estado-select');
+        for (let btn of allButtons) {
+            const onclick = btn.getAttribute('onclick');
+            if (onclick && onclick.includes(dropdownId)) {
+                button = btn;
+                break;
+            }
+        }
+    }
+    
+    if (!button) {
+        console.error('❌ Botón no encontrado para el dropdown:', dropdownId);
+        return;
+    }
     
     const opciones = Array.from(dropdown.children);
     opciones.forEach(op => {
@@ -549,8 +886,13 @@ function seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, 
     
     dropdown.style.display = 'none';
     
-    // Los subproyectos ahora son proyectos normales, usar actualizarProyecto
-    actualizarProyecto(idSubproyecto, 'estado', valor);
+    // Devolver el dropdown a su contenedor original si estaba en el body
+    if (dropdown.parentElement === document.body && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            originalParent.appendChild(dropdown);
+        }
+    }
     
     const estados = {
         '': '-',
@@ -562,9 +904,35 @@ function seleccionarDropdownEstadoSubproyecto(dropdownId, idSubproyecto, valor, 
         'Rework': 'Rework',
         'Bloqueado': 'Bloqueado'
     };
+    
+    // FORZAR REFRESH COMPLETO DEL BOTÓN ANTES DE LA MODIFICACIÓN
+    // 1. Ocultar el botón temporalmente
+    const originalDisplay = button.style.display;
+    button.style.display = 'none';
+    void button.offsetWidth; // Forzar reflow
+    
+    // 2. Limpiar completamente el botón
+    button.className = 'modern-select estado-select';
+    button.style.removeProperty('background');
+    button.style.removeProperty('background-color');
+    button.textContent = '';
+    
+    // 3. Forzar otro reflow
+    void button.offsetWidth;
+    
+    // 4. Actualizar el texto
     button.textContent = estados[valor] || '-';
     
+    // 5. Actualizar el color del botón
     actualizarEstadoColor(button, valor);
+    
+    // 6. Restaurar display y forzar re-renderizado final
+    button.style.display = originalDisplay || '';
+    void button.offsetWidth; // Forzar reflow final
+    
+    // 7. Llamar a actualizarProyecto después de actualizar la visual
+    // Los subproyectos ahora son proyectos normales, usar actualizarProyecto
+    actualizarProyecto(idSubproyecto, 'estado', valor);
 }
 
 function seleccionarDropdownRiesgoSubproyecto(dropdownId, idSubproyecto, valor, elemento) {
