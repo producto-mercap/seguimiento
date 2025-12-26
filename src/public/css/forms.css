@@ -695,7 +695,8 @@ input[type="date"] {
     max-height: 400px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    z-index: 20001 !important;
+    z-index: 99999 !important;
+    position: fixed !important;
 }
 
 .custom-dropdown > div {

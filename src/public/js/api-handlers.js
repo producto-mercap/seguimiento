@@ -5,6 +5,11 @@
 
 // Funciones de actualización de colores
 function actualizarEstadoColor(element, value) {
+    if (!element) {
+        console.error('❌ Elemento no proporcionado a actualizarEstadoColor');
+        return;
+    }
+    
     if (!value) {
         value = element.value || element.textContent.trim();
         const estadosMap = {
@@ -22,10 +27,17 @@ function actualizarEstadoColor(element, value) {
         value = estadosMap[value] || value;
     }
     
+    // Limpiar todas las clases de estado anteriores
+    element.classList.remove('estado-entregado', 'estado-progreso', 'estado-testing', 'estado-rework', 'estado-bloqueado', 'estado-sin-comenzar');
+    
+    // Establecer clases base
     element.className = 'modern-select estado-select';
+    
+    // Limpiar estilos inline que puedan interferir
     element.style.removeProperty('background');
     element.style.removeProperty('background-color');
     
+    // Agregar la clase de estado correspondiente
     if (value === 'Entregado' || value === 'Cerrado' || value === 'Realizado') {
         element.classList.add('estado-entregado');
     } else if (value === 'sin comenzar' || value === 'Pendiente') {
@@ -39,6 +51,9 @@ function actualizarEstadoColor(element, value) {
     } else if (value === 'Bloqueado') {
         element.classList.add('estado-bloqueado');
     }
+    
+    // Forzar actualización visual
+    void element.offsetWidth;
 }
 
 function actualizarRiesgoColor(select) {

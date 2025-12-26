@@ -125,7 +125,7 @@ function crearDropdownEstado(idProyecto, valorActual, clasesAdicionales) {
     
     let html = '<div style="position: relative; display: inline-block;">';
     html += '<button class="modern-select estado-select ' + estadoClass + ' ' + clasesAdicionales + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: center; border: none; padding: 4px 8px; border-radius: 14px; cursor: pointer; font-size: 11px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; min-width: 80px; height: 28px; white-space: nowrap;">' + textoMostrado + '</button>';
-    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 20001; margin-top: 4px; overflow: hidden; min-width: 120px;">';
+    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 99999; margin-top: 4px; overflow: hidden; min-width: 120px;">';
     opciones.forEach(opcion => {
         const isSelected = opcion.valor === valorActual;
         const onclickFunc = esSubproyecto ? 'seleccionarDropdownEstadoSubproyecto' : 'seleccionarDropdownEstado';
@@ -191,7 +191,7 @@ function crearDropdownEstadoAccionable(id_accionable, valorActual) {
     
     let html = '<div style="position: relative; display: inline-block;">';
     html += '<button class="modern-select estado-select ' + estadoClass + '" onclick="toggleCustomDropdown(\'' + dropdownId + '\', this)" style="text-align: center; border: none; padding: 4px 8px; border-radius: 14px; cursor: pointer; font-size: 11px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; min-width: 80px; height: 28px; white-space: nowrap;">' + textoMostrado + '</button>';
-    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 20001; margin-top: 4px; overflow: hidden; min-width: 120px;">';
+    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 99999; margin-top: 4px; overflow: hidden; min-width: 120px;">';
     opciones.forEach(opcion => {
         const isSelected = opcion.valor === valorActual;
         html += '<div onclick="seleccionarDropdownEstadoAccionable(\'' + dropdownId + '\', ' + id_accionable + ', \'' + opcion.valor + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: center; font-size: 13px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + opcion.label + '</div>';
@@ -238,14 +238,46 @@ function toggleCustomDropdown(dropdownId, button) {
     document.querySelectorAll('.custom-dropdown').forEach(dd => {
         if (dd.id !== dropdownId) {
             dd.style.display = 'none';
+            // Devolver al contenedor original si estaba en el body
+            if (dd.parentElement === document.body && dd.dataset.originalParent) {
+                const originalParent = document.querySelector(dd.dataset.originalParent);
+                if (originalParent) {
+                    originalParent.appendChild(dd);
+                }
+            }
         }
     });
     
     const isVisible = dropdown.style.display === 'block';
     if (isVisible) {
         dropdown.style.display = 'none';
+        // Devolver el dropdown a su contenedor original
+        if (dropdown.parentElement === document.body && dropdown.dataset.originalParent) {
+            const originalParent = document.querySelector(dropdown.dataset.originalParent);
+            if (originalParent) {
+                originalParent.appendChild(dropdown);
+            }
+        }
     } else {
         const rect = button.getBoundingClientRect();
+        
+        // Guardar referencia al contenedor original si no está guardada
+        if (!dropdown.dataset.originalParent) {
+            const parentSelector = dropdown.parentElement.id 
+                ? '#' + dropdown.parentElement.id 
+                : dropdown.parentElement.className 
+                    ? '.' + dropdown.parentElement.className.split(' ')[0]
+                    : null;
+            if (parentSelector) {
+                dropdown.dataset.originalParent = parentSelector;
+            }
+        }
+        
+        // Mover el dropdown al body para que esté fuera del contexto del modal
+        // Esto permite que el z-index funcione correctamente
+        if (dropdown.parentElement !== document.body) {
+            document.body.appendChild(dropdown);
+        }
         
         // Mostrar temporalmente el dropdown para calcular su altura
         dropdown.style.position = 'fixed';
@@ -268,18 +300,16 @@ function toggleCustomDropdown(dropdownId, button) {
         dropdown.style.position = 'fixed';
         dropdown.style.left = rect.left + 'px';
         dropdown.style.width = rect.width + 'px';
-        // Aumentar z-index para que esté por encima del Gantt y otros elementos
-        // El modal tiene z-index 2000, así que usamos 20001 para estar por encima
-        dropdown.style.zIndex = '20001';
+        // Aumentar z-index significativamente para que esté por encima del Gantt y otros elementos
+        // El modal tiene z-index 2000, el Gantt tiene z-index hasta 10000, así que usamos 99999 para estar por encima de todo
+        dropdown.style.zIndex = '99999';
         dropdown.style.visibility = 'visible';
         
         // Determinar si mostrar arriba o abajo
-        // Priorizar mostrar hacia arriba si hay poco espacio abajo y más espacio arriba
+        // Preferir mostrar hacia abajo (solo mostrar arriba si no hay espacio abajo)
         let showAbove = false;
         if (!hasSpaceBelow && hasSpaceAbove) {
-            showAbove = true;
-        } else if (hasSpaceBelow && hasSpaceAbove && spaceBelow < spaceAbove && spaceBelow < 200) {
-            // Si hay poco espacio abajo pero más arriba, mostrar arriba
+            // Solo mostrar arriba si no hay espacio abajo
             showAbove = true;
         }
         
@@ -383,7 +413,25 @@ function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
     }
     
     const dropdown = document.getElementById(dropdownId);
-    const button = dropdown.previousElementSibling;
+    if (!dropdown) {
+        console.error('❌ Dropdown no encontrado:', dropdownId);
+        return;
+    }
+    
+    // Buscar el botón - puede estar antes del dropdown o en el contenedor padre
+    let button = dropdown.previousElementSibling;
+    if (!button || !button.classList.contains('estado-select')) {
+        // Si no está antes, buscar en el contenedor padre
+        const parent = dropdown.parentElement;
+        if (parent) {
+            button = parent.querySelector('.estado-select');
+        }
+    }
+    
+    if (!button) {
+        console.error('❌ Botón no encontrado para el dropdown:', dropdownId);
+        return;
+    }
     
     const opciones = Array.from(dropdown.children);
     opciones.forEach(op => {
@@ -394,6 +442,14 @@ function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
     elemento.style.color = 'var(--primary-color)';
     
     dropdown.style.display = 'none';
+    
+    // Devolver el dropdown a su contenedor original si estaba en el body
+    if (dropdown.parentElement === document.body && dropdown.dataset.originalParent) {
+        const originalParent = document.querySelector(dropdown.dataset.originalParent);
+        if (originalParent) {
+            originalParent.appendChild(dropdown);
+        }
+    }
     
     // Detectar si estamos en proyectos internos
     const esProyectoInterno = typeof tipoActual !== 'undefined' && tipoActual === 'proyectos-internos';
@@ -412,9 +468,17 @@ function seleccionarDropdownEstado(dropdownId, idProyecto, valor, elemento) {
         'Rework': 'Rework',
         'Bloqueado': 'Bloqueado'
     };
+    
+    // Actualizar el texto del botón
     button.textContent = estados[valor] || '-';
     
+    // Actualizar el color del botón - forzar actualización visual
     actualizarEstadoColor(button, valor);
+    
+    // Forzar re-renderizado del botón
+    button.style.display = 'none';
+    void button.offsetWidth; // Forzar reflow
+    button.style.display = '';
 }
 
 function seleccionarDropdownRiesgo(dropdownId, idProyecto, valor, elemento) {
@@ -529,6 +593,13 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('.custom-dropdown') && !e.target.closest('button[onclick*="toggleCustomDropdown"]')) {
         document.querySelectorAll('.custom-dropdown').forEach(dd => {
             dd.style.display = 'none';
+            // Devolver al contenedor original si estaba en el body
+            if (dd.parentElement === document.body && dd.dataset.originalParent) {
+                const originalParent = document.querySelector(dd.dataset.originalParent);
+                if (originalParent) {
+                    originalParent.appendChild(dd);
+                }
+            }
         });
     }
 });

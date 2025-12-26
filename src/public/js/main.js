@@ -463,6 +463,9 @@ async function sincronizarEpicsDesdeModal(id_proyecto, codigo_proyecto, botonEle
                 
                 // Actualizar el contenido del modal sin cerrarlo
                 await actualizarEpicsEnModal(id_proyecto, result.data);
+                
+                // Actualizar la tabla de proyectos con las fechas refrescadas
+                await actualizarFilaProyectoEnTabla(id_proyecto);
             } else {
                 throw new Error(result.error || 'Error desconocido');
             }
@@ -475,6 +478,122 @@ async function sincronizarEpicsDesdeModal(id_proyecto, codigo_proyecto, botonEle
             botonElement.style.opacity = '1';
             botonElement.style.cursor = 'pointer';
             botonElement.innerHTML = textoOriginal;
+        }
+    }
+}
+
+// Función para actualizar la fila del proyecto en la tabla después de sincronizar epics
+async function actualizarFilaProyectoEnTabla(id_proyecto) {
+    try {
+        // Obtener los datos actualizados del proyecto
+        const response = await fetch('/api/proyectos/' + id_proyecto);
+        const result = await response.json();
+        
+        if (!result.success || !result.data) {
+            console.error('Error al obtener datos actualizados del proyecto para la tabla');
+            return;
+        }
+        
+        const itemData = result.data;
+        
+        // Buscar la fila del proyecto en la tabla
+        const tableRow = document.querySelector(`.modern-table-row[data-id-proyecto="${id_proyecto}"]`);
+        if (!tableRow) {
+            console.log('Fila del proyecto no encontrada en la tabla, recargando toda la tabla...');
+            // Si no se encuentra la fila, recargar toda la tabla
+            if (typeof cargarDatos === 'function') {
+                cargarDatos();
+            }
+            return;
+        }
+        
+        // Función auxiliar para formatear fecha corta (dd/mm)
+        function formatearFechaCorta(fecha) {
+            if (!fecha) return '-';
+            const match = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                return match[3] + '/' + match[2];
+            }
+            return fecha;
+        }
+        
+        // Calcular fechas de inicio y fin desde epics o del proyecto
+        let fechasInicioAll = [];
+        let fechasFinAll = [];
+        
+        if (itemData.fecha_inicio_epics) fechasInicioAll.push(itemData.fecha_inicio_epics);
+        if (itemData.fecha_inicio) fechasInicioAll.push(itemData.fecha_inicio);
+        if (itemData.fecha_fin_epics) fechasFinAll.push(itemData.fecha_fin_epics);
+        if (itemData.fecha_fin) fechasFinAll.push(itemData.fecha_fin);
+        
+        // Si tiene subproyectos, incluir sus fechas también
+        if (itemData.tiene_subproyectos && Array.isArray(itemData.subproyectos) && itemData.subproyectos.length > 0) {
+            itemData.subproyectos.forEach(sp => {
+                if (sp.fecha_inicio_epics) fechasInicioAll.push(sp.fecha_inicio_epics);
+                if (sp.fecha_inicio) fechasInicioAll.push(sp.fecha_inicio);
+                if (sp.fecha_fin_epics) fechasFinAll.push(sp.fecha_fin_epics);
+                if (sp.fecha_fin) fechasFinAll.push(sp.fecha_fin);
+            });
+        }
+        
+        let fechaInicio = '';
+        let fechaFin = '';
+        if (fechasInicioAll.length > 0) {
+            fechaInicio = fechasInicioAll.slice().sort()[0]; // mínima
+        }
+        if (fechasFinAll.length > 0) {
+            fechaFin = fechasFinAll.slice().sort().reverse()[0]; // máxima
+        }
+        const fechaInicioCorta = fechaInicio ? formatearFechaCorta(fechaInicio) : '-';
+        const fechaFinCorta = fechaFin ? formatearFechaCorta(fechaFin) : '-';
+        
+        // Buscar las celdas de fecha en la fila
+        // Las fechas están antes del WIN, en celdas con estilo específico
+        const cells = Array.from(tableRow.querySelectorAll('.modern-table-cell'));
+        
+        // Buscar la celda del WIN (contiene textarea con clase win-textarea)
+        const winCellIndex = cells.findIndex(cell => cell.querySelector('.win-textarea'));
+        
+        let fechaInicioCell = null;
+        let fechaFinCell = null;
+        
+        if (winCellIndex > 0) {
+            // Fecha fin es la celda antes del WIN (penúltima)
+            fechaFinCell = cells[winCellIndex - 1];
+            // Fecha inicio es la celda antes de la fecha fin (antepenúltima)
+            if (winCellIndex > 1) {
+                fechaInicioCell = cells[winCellIndex - 2];
+            }
+        }
+        
+        // Si no encontramos por el método anterior, buscar por el estilo (font-size: 11px)
+        if (!fechaInicioCell || !fechaFinCell) {
+            const fechaCells = cells.filter(cell => {
+                const style = cell.getAttribute('style') || '';
+                return style.includes('font-size: 11px') && style.includes('text-align: center');
+            });
+            
+            if (fechaCells.length >= 2) {
+                // La primera es fecha inicio, la segunda es fecha fin
+                fechaInicioCell = fechaCells[0];
+                fechaFinCell = fechaCells[1];
+            }
+        }
+        
+        // Actualizar las celdas de fecha
+        if (fechaInicioCell) {
+            fechaInicioCell.textContent = fechaInicioCorta;
+        }
+        if (fechaFinCell) {
+            fechaFinCell.textContent = fechaFinCorta;
+        }
+        
+        console.log('✅ Fila del proyecto actualizada en la tabla con fechas:', fechaInicioCorta, fechaFinCorta);
+    } catch (error) {
+        console.error('Error al actualizar fila del proyecto en la tabla:', error);
+        // Si falla, recargar toda la tabla como fallback
+        if (typeof cargarDatos === 'function') {
+            cargarDatos();
         }
     }
 }
