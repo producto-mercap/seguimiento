@@ -44,15 +44,38 @@ async function abrirModalPedido(id = null) {
 }
 
 // Función helper para formatear fecha de YYYY-MM-DD a DD-MM-YYYY
+// Parsea manualmente para evitar problemas de zona horaria
 function formatearFechaParaInput(fecha) {
     if (!fecha) return '';
     try {
-        const partes = fecha.split('T')[0].split('-');
-        if (partes.length === 3) {
-            return partes[2] + '-' + partes[1] + '-' + partes[0];
+        // Si viene como string YYYY-MM-DD, parsear directamente
+        if (typeof fecha === 'string') {
+            const match = fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                const año = match[1];
+                const mes = match[2];
+                const dia = match[3];
+                return dia + '-' + mes + '-' + año;
+            }
+            // Si tiene formato ISO con T, extraer solo la parte de fecha
+            const matchISO = fecha.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+            if (matchISO) {
+                const año = matchISO[1];
+                const mes = matchISO[2];
+                const dia = matchISO[3];
+                return dia + '-' + mes + '-' + año;
+            }
+        }
+        // Si es un objeto Date, usar componentes locales
+        if (fecha instanceof Date) {
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const año = fecha.getFullYear();
+            return dia + '-' + mes + '-' + año;
         }
         return fecha;
     } catch (e) {
+        console.error('Error al formatear fecha para input:', e);
         return fecha;
     }
 }

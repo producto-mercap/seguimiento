@@ -141,8 +141,9 @@ function renderizarTablaPedidos(pedidos) {
     html += '</div>';
 
     pedidos.forEach(pedido => {
+        // Usar formatearFechaParaMostrar para evitar problemas de zona horaria
         const fechaFormateada = pedido.fecha_planificada_entrega ? 
-            new Date(pedido.fecha_planificada_entrega).toLocaleDateString('es-AR') : '-';
+            formatearFechaParaMostrar(pedido.fecha_planificada_entrega) : '-';
         
         // Descripción siempre colapsada por defecto (2 líneas máximo)
         const descripcion = pedido.descripcion || '-';
@@ -791,25 +792,77 @@ function activarEdicionComentario(idPedido) {
 }
 
 // Formatear fecha para mostrar (YYYY-MM-DD a DD/MM/YYYY)
+// Parsea manualmente para evitar problemas de zona horaria
 function formatearFechaParaMostrar(fecha) {
     if (!fecha) return '';
-    const date = new Date(fecha);
-    if (isNaN(date.getTime())) return '';
-    const dia = String(date.getDate()).padStart(2, '0');
-    const mes = String(date.getMonth() + 1).padStart(2, '0');
-    const año = date.getFullYear();
-    return dia + '/' + mes + '/' + año;
+    try {
+        // Si viene como string YYYY-MM-DD, parsear directamente
+        if (typeof fecha === 'string') {
+            const match = fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                const año = match[1];
+                const mes = match[2];
+                const dia = match[3];
+                return dia + '/' + mes + '/' + año;
+            }
+            // Si tiene formato ISO con T, extraer solo la parte de fecha
+            const matchISO = fecha.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+            if (matchISO) {
+                const año = matchISO[1];
+                const mes = matchISO[2];
+                const dia = matchISO[3];
+                return dia + '/' + mes + '/' + año;
+            }
+        }
+        // Si es un objeto Date, usar componentes locales
+        if (fecha instanceof Date) {
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const año = fecha.getFullYear();
+            return dia + '/' + mes + '/' + año;
+        }
+        return fecha;
+    } catch (e) {
+        console.error('Error al formatear fecha para mostrar:', e);
+        return '';
+    }
 }
 
 // Formatear fecha para input (YYYY-MM-DD a DD-MM-YYYY) - para el date picker
+// Parsea manualmente para evitar problemas de zona horaria
 function formatearFechaParaInput(fecha) {
     if (!fecha) return '';
-    const date = new Date(fecha);
-    if (isNaN(date.getTime())) return '';
-    const dia = String(date.getDate()).padStart(2, '0');
-    const mes = String(date.getMonth() + 1).padStart(2, '0');
-    const año = date.getFullYear();
-    return dia + '-' + mes + '-' + año;
+    try {
+        // Si viene como string YYYY-MM-DD, parsear directamente
+        if (typeof fecha === 'string') {
+            const match = fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                const año = match[1];
+                const mes = match[2];
+                const dia = match[3];
+                return dia + '-' + mes + '-' + año;
+            }
+            // Si tiene formato ISO con T, extraer solo la parte de fecha
+            const matchISO = fecha.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+            if (matchISO) {
+                const año = matchISO[1];
+                const mes = matchISO[2];
+                const dia = matchISO[3];
+                return dia + '-' + mes + '-' + año;
+            }
+        }
+        // Si es un objeto Date, usar componentes locales
+        if (fecha instanceof Date) {
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const año = fecha.getFullYear();
+            return dia + '-' + mes + '-' + año;
+        }
+        return fecha;
+    } catch (e) {
+        console.error('Error al formatear fecha para input:', e);
+        return '';
+    }
 }
 
 // Formatear input de fecha mientras se escribe (DD-MM-YYYY)
@@ -837,13 +890,23 @@ async function actualizarFechaPedido(idPedido, fechaTexto) {
         return;
     }
     
-    const dia = partes[0];
-    const mes = partes[1];
+    const dia = partes[0].padStart(2, '0');
+    const mes = partes[1].padStart(2, '0');
     const año = partes[2];
     
-    // Validar fecha
-    const fecha = new Date(año, mes - 1, dia);
-    if (fecha.getDate() != dia || fecha.getMonth() != mes - 1 || fecha.getFullYear() != año) {
+    // Validar fecha usando componentes locales (sin problemas de zona horaria)
+    const diaNum = parseInt(dia, 10);
+    const mesNum = parseInt(mes, 10);
+    const añoNum = parseInt(año, 10);
+    
+    if (diaNum < 1 || diaNum > 31 || mesNum < 1 || mesNum > 12 || añoNum < 1900 || añoNum > 2100) {
+        alert('Fecha inválida');
+        return;
+    }
+    
+    // Validar que la fecha sea válida (ej: no 31 de febrero)
+    const fecha = new Date(añoNum, mesNum - 1, diaNum);
+    if (fecha.getDate() != diaNum || fecha.getMonth() != (mesNum - 1) || fecha.getFullYear() != añoNum) {
         alert('Fecha inválida');
         return;
     }
@@ -865,7 +928,8 @@ async function actualizarFechaPedido(idPedido, fechaTexto) {
             throw new Error('Error al actualizar la fecha');
         }
         
-        // No es necesario recargar toda la tabla, el texto visible ya se actualizó desde el date picker
+        // Recargar la tabla para mostrar la fecha correcta desde la base de datos
+        cargarPedidos();
     } catch (error) {
         console.error('Error al actualizar fecha:', error);
         alert('Error al actualizar la fecha. Por favor, intente nuevamente.');
