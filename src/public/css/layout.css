@@ -443,6 +443,10 @@ a.tab.active {
     box-sizing: border-box !important;
     padding: 0 !important;
     margin: 0 !important;
+    margin-top: 24px !important;
+    /* Espacio entre el header y las tarjetas */
+    padding-bottom: 8px !important;
+    /* Espacio inferior mínimo para que la última tarjeta no se corte */
     position: relative !important;
     z-index: 1 !important;
 }
