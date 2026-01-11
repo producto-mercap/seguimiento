@@ -722,6 +722,45 @@ input[type="date"] {
     background: #bdc1c6;
 }
 
+/* Dropdowns de filtros (Cliente, Categoría, Estado) - mismo estilo que custom-dropdown */
+.filter-dropdown {
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    border-radius: 8px !important;
+    background: white !important;
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    z-index: 10000 !important;
+    position: fixed !important;
+    min-width: 200px !important;
+}
+
+.filter-dropdown > div,
+.filter-dropdown > label {
+    border: none !important;
+    outline: none !important;
+}
+
+/* Scrollbar personalizado para dropdowns de filtros */
+.filter-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.filter-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb {
+    background: #dadce0;
+    border-radius: 3px;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #bdc1c6;
+}
+
 /* Date Picker Styles */
 .date-input-wrapper {
     position: relative;

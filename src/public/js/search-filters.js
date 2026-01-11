@@ -189,6 +189,8 @@ function toggleFilterClientes(buttonElement) {
                 dropdown.style.left = rect.left + 'px';
                 dropdown.style.zIndex = '10000';
                 dropdown.style.background = 'white';
+                dropdown.style.borderRadius = '8px';
+                dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
             }
             dropdown.style.display = 'block';
         }
@@ -216,6 +218,8 @@ function toggleFilterCategorias(buttonElement) {
                 dropdown.style.left = rect.left + 'px';
                 dropdown.style.zIndex = '10000';
                 dropdown.style.background = 'white';
+                dropdown.style.borderRadius = '8px';
+                dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
             }
             dropdown.style.display = 'block';
         }
@@ -243,6 +247,8 @@ function toggleFilterEstados(buttonElement) {
                 dropdown.style.left = rect.left + 'px';
                 dropdown.style.zIndex = '10000';
                 dropdown.style.background = 'white';
+                dropdown.style.borderRadius = '8px';
+                dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
             }
             dropdown.style.display = 'block';
         }
