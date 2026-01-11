@@ -316,8 +316,37 @@ async function seleccionarEstadoPedido(dropdownId, idPedido, nuevoEstado, elemen
         const updateData = await updateResponse.json();
         
         if (updateData.success) {
-            // Actualizar botón visualmente
-            const button = document.querySelector(`#${dropdownId}`).previousElementSibling;
+            // Actualizar el estado en el array de pedidos para mantener consistencia
+            const pedidoIndex = pedidosActuales.findIndex(p => p.id === idPedido);
+            if (pedidoIndex !== -1) {
+                pedidosActuales[pedidoIndex].estado = nuevoEstado;
+            }
+            
+            // Buscar el botón de manera más robusta
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) {
+                console.error('No se encontró el dropdown:', dropdownId);
+                // Recargar la tabla como fallback
+                cargarPedidos();
+                return;
+            }
+            
+            // Buscar el botón como hermano anterior del dropdown
+            let button = dropdown.previousElementSibling;
+            
+            // Si no está como hermano, buscar en el contenedor padre
+            if (!button || button.tagName !== 'BUTTON') {
+                const parent = dropdown.parentElement;
+                if (parent) {
+                    button = parent.querySelector('button[onclick*="' + dropdownId + '"]');
+                }
+            }
+            
+            // Si aún no se encuentra, buscar por el onclick que contiene el dropdownId
+            if (!button || button.tagName !== 'BUTTON') {
+                button = document.querySelector('button[onclick*="' + dropdownId + '"]');
+            }
+            
             if (button) {
                 const opciones = [
                     { valor: 'Pendiente', label: 'Pendiente' },
@@ -326,13 +355,31 @@ async function seleccionarEstadoPedido(dropdownId, idPedido, nuevoEstado, elemen
                     { valor: 'Realizado', label: 'Realizado' }
                 ];
                 const textoMostrado = opciones.find(o => o.valor === nuevoEstado)?.label || nuevoEstado;
+                
+                // Actualizar texto
                 button.textContent = textoMostrado;
+                
+                // Actualizar colores de fondo y texto
                 button.style.background = getEstadoBackgroundColor(nuevoEstado);
                 button.style.color = getEstadoTextColor(nuevoEstado);
+                
+                // Actualizar clases CSS del estado
+                // Remover todas las clases de estado anteriores
+                button.classList.remove('estado-pendiente', 'estado-en-curso', 'estado-bloqueado', 'estado-realizado');
+                // Agregar la nueva clase de estado
+                const nuevaClaseEstado = getEstadoClass(nuevoEstado);
+                if (nuevaClaseEstado) {
+                    button.classList.add(nuevaClaseEstado);
+                }
+            } else {
+                console.warn('No se encontró el botón para actualizar, recargando tabla...');
+                // Si no se encuentra el botón, recargar la tabla completa
+                cargarPedidos();
+                return;
             }
             
             // Cerrar dropdown
-            document.getElementById(dropdownId).style.display = 'none';
+            dropdown.style.display = 'none';
         } else {
             alert('Error al actualizar el estado: ' + (updateData.error || 'Error desconocido'));
         }
