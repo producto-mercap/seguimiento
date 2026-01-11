@@ -409,8 +409,11 @@ function renderizarTablaProyectos(datos, contenido) {
 
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaInicioCorta + '</div>';
         tablaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinCorta + '</div>';
+        // Campo WIN con funcionalidad de expandir/colapsar similar a mantenimiento
         const winValue = item.win || '';
-        tablaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" rows="1" onchange="actualizarProyecto(' + item.id_proyecto + ', \'win\', this.value); ajustarAlturaTextarea(this);">' + winValue + '</textarea></div>';
+        const winId = 'win-' + item.id_proyecto;
+        const winClase = 'win-colapsada'; // Siempre colapsada por defecto
+        tablaHTML += '<div class="modern-table-cell item-text win-cell ' + winClase + '" id="' + winId + '" onclick="habilitarEdicionWinProyectos(' + item.id_proyecto + ')" style="cursor: pointer; user-select: none;" title="Click para expandir">' + winValue + '</div>';
 
         tablaHTML += '</div>';
 
@@ -428,11 +431,14 @@ function renderizarTablaProyectos(datos, contenido) {
         }
     });
 
-    // Cerrar divs: modern-table, modern-table-wrapper, proyectos-scroll-wrapper, proyectos-table-container
-    tablaHTML += '</div></div></div></div>';
-
-    // Agregar scrollbar fija en la parte inferior (fuera del contenedor de la tabla)
+    // Cerrar divs: modern-table, modern-table-wrapper
+    tablaHTML += '</div></div>';
+    
+    // Agregar scrollbar al final de la tabla (dentro del scroll-wrapper, antes de cerrar proyectos-table-container)
     tablaHTML += '<div class="fixed-scrollbar-container" id="fixed-scrollbar"><div class="fixed-scrollbar-content" id="fixed-scrollbar-content"></div></div>';
+    
+    // Cerrar proyectos-scroll-wrapper y proyectos-table-container
+    tablaHTML += '</div></div>';
 
     contenido.innerHTML = tablaHTML;
 
@@ -447,14 +453,7 @@ function renderizarTablaProyectos(datos, contenido) {
         ajustarScrollHorizontal();
         // Inicializar drag scroll para la tabla de proyectos
         inicializarDragScrollTabla();
-        // Ajustar altura de todos los textareas WIN
-        document.querySelectorAll('.win-textarea').forEach(textarea => {
-            ajustarAlturaTextarea(textarea);
-            // Agregar listener para ajustar altura mientras escribe
-            textarea.addEventListener('input', function() {
-                ajustarAlturaTextarea(this);
-            });
-        });
+        // Ya no necesitamos ajustar altura de textareas WIN porque ahora usamos divs con colapsar/expandir
     }, 100);
 }
 
@@ -491,17 +490,20 @@ function configurarScrollbarFija() {
 
     // Verificar si se necesita scroll horizontal
     const wrapperWidth = tableWrapper.clientWidth;
-    const needsScroll = tableWidth > wrapperWidth;
+    let needsScrollHorizontal = tableWidth > wrapperWidth;
 
-    if (!needsScroll) {
+    if (!needsScrollHorizontal) {
         fixedScrollbar.style.display = 'none';
         return;
     }
 
-    // Ajustar el ancho y posición de la scrollbar fija para que coincida con la tabla
-    const tableRect = tableWrapper.getBoundingClientRect();
-    fixedScrollbar.style.left = tableRect.left + 'px';
-    fixedScrollbar.style.width = tableRect.width + 'px';
+    // Mostrar la scrollbar si se necesita scroll horizontal
+    fixedScrollbar.style.display = 'block';
+
+    // La scrollbar ahora está al final de la tabla, no necesita posicionamiento fijo
+    // Solo asegurar que tenga el mismo ancho que el wrapper
+    fixedScrollbar.style.width = '100%';
+    fixedScrollbar.style.left = 'auto';
     fixedScrollbar.style.right = 'auto';
 
     // Sincronizar scroll
@@ -531,27 +533,31 @@ function configurarScrollbarFija() {
 
     // Función para actualizar la posición y visibilidad de la scrollbar fija
     function actualizarVisibilidadScrollbar() {
-        if (!scrollWrapper || !tableWrapper) {
-            fixedScrollbar.style.display = 'block';
+        if (!tableWrapper) {
             return;
         }
 
-        const tableWrapperRect = tableWrapper.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
+        // Re-verificar si se necesita scroll horizontal (por si cambió el tamaño)
+        const currentTableWidth = table.scrollWidth;
+        const currentWrapperWidth = tableWrapper.clientWidth;
+        needsScrollHorizontal = currentTableWidth > currentWrapperWidth;
 
-        // Actualizar la posición de la scrollbar fija para que coincida con la tabla
-        // incluso cuando se hace scroll vertical
-        fixedScrollbar.style.left = tableWrapperRect.left + 'px';
-        fixedScrollbar.style.width = tableWrapperRect.width + 'px';
-        fixedScrollbar.style.right = 'auto';
+        // Actualizar el ancho del contenido de la scrollbar si cambió
+        fixedContent.style.width = currentTableWidth + 'px';
 
-        // Mostrar la scrollbar fija si la parte inferior de la tabla NO está visible en el viewport
-        // (es decir, si el usuario tiene que hacer scroll para ver la scrollbar de la tabla)
-        if (tableWrapperRect.bottom > viewportHeight - 50) {
-            fixedScrollbar.style.display = 'block';
-        } else {
+        // Mostrar u ocultar la scrollbar basándose solo en si se necesita scroll horizontal
+        if (!needsScrollHorizontal) {
             fixedScrollbar.style.display = 'none';
+            return;
         }
+
+        // Mostrar la scrollbar si se necesita scroll horizontal
+        fixedScrollbar.style.display = 'block';
+
+        // La scrollbar está al final de la tabla, solo necesita tener el mismo ancho
+        fixedScrollbar.style.width = '100%';
+        fixedScrollbar.style.left = 'auto';
+        fixedScrollbar.style.right = 'auto';
     }
 
     // Actualizar visibilidad y posición al hacer scroll
@@ -646,8 +652,11 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
 
     filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaInicioSubCorta + '</div>';
     filaHTML += '<div class="modern-table-cell" style="font-size: 11px; text-align: center; justify-content: center; color: var(--text-secondary);">' + fechaFinSubCorta + '</div>';
+    // Campo WIN con funcionalidad de expandir/colapsar similar a mantenimiento
     const subproyectoWinValue = subproyecto.win || '';
-    filaHTML += '<div class="modern-table-cell"><textarea class="modern-input win-textarea" rows="1" onchange="actualizarProyecto(' + subproyecto.id_proyecto + ', \'win\', this.value); ajustarAlturaTextarea(this);">' + subproyectoWinValue + '</textarea></div>';
+    const subproyectoWinId = 'win-' + subproyecto.id_proyecto;
+    const subproyectoWinClase = 'win-colapsada'; // Siempre colapsada por defecto
+    filaHTML += '<div class="modern-table-cell item-text win-cell ' + subproyectoWinClase + '" id="' + subproyectoWinId + '" onclick="habilitarEdicionWinProyectos(' + subproyecto.id_proyecto + ')" style="cursor: pointer; user-select: none;" title="Click para expandir">' + subproyectoWinValue + '</div>';
     filaHTML += '</div>';
 
     return filaHTML;
@@ -826,6 +835,8 @@ function habilitarEdicionWin(idProyecto) {
     if (winElement.classList.contains('win-colapsada')) {
         winElement.classList.remove('win-colapsada');
         winElement.classList.add('win-expandida');
+        // Cambiar cursor a text cuando está expandido
+        winElement.style.cursor = 'text';
     }
     
     // Habilitar edición (tanto si estaba colapsada como expandida)
@@ -895,7 +906,109 @@ async function guardarWinMantenimiento(idProyecto, nuevoWin) {
         winElement.innerHTML = textoFinal;
         winElement.classList.add('win-colapsada');
         winElement.classList.remove('win-expandida');
-        winElement.setAttribute('title', 'Click para editar');
+        // Restaurar cursor a pointer cuando está colapsado
+        winElement.style.cursor = 'pointer';
+        winElement.setAttribute('title', 'Click para expandir');
+    } catch (error) {
+        console.error('Error al guardar WIN:', error);
+        alert('Error al guardar el WIN');
+        textarea.focus();
+    }
+}
+
+// Habilitar edición de WIN en proyectos (similar a mantenimiento)
+function habilitarEdicionWinProyectos(idProyecto) {
+    const winElement = document.getElementById('win-' + idProyecto);
+    if (!winElement) return;
+    
+    // Si ya está en modo edición, no hacer nada
+    if (winElement.querySelector('textarea')) return;
+    
+    // Si está colapsada, expandir y habilitar edición
+    if (winElement.classList.contains('win-colapsada')) {
+        winElement.classList.remove('win-colapsada');
+        winElement.classList.add('win-expandida');
+        // Cambiar cursor a text cuando está expandido
+        winElement.style.cursor = 'text';
+    }
+    
+    // Habilitar edición (tanto si estaba colapsada como expandida)
+    const textoActual = winElement.textContent.trim();
+    const winOriginal = textoActual;
+    
+    // Crear textarea para edición
+    const textarea = document.createElement('textarea');
+    textarea.className = 'modern-input win-textarea win-edit-input';
+    textarea.value = textoActual;
+    textarea.rows = 1;
+    textarea.style.cssText = 'width: 100%; box-sizing: border-box; padding: 0; border: none; background: transparent; resize: none; overflow-y: auto; min-height: 20px; height: auto; font-size: 14px; font-family: \'Google Sans\', \'Roboto\', sans-serif; color: var(--text-primary); line-height: 1.5;';
+    textarea.style.border = '1px solid var(--primary-color)';
+    textarea.style.borderRadius = '4px';
+    textarea.style.padding = '4px 8px';
+    textarea.style.background = 'white';
+    textarea.style.boxShadow = '0 0 0 2px rgba(26, 115, 232, 0.1)';
+    
+    // Guardar al perder el foco
+    textarea.addEventListener('blur', function() {
+        guardarWinProyectos(idProyecto, textarea.value.trim());
+    });
+    
+    // Guardar al presionar Enter (sin Shift)
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            textarea.blur();
+        }
+        // Esc para cancelar
+        if (e.key === 'Escape') {
+            textarea.value = winOriginal;
+            textarea.blur();
+        }
+    });
+    
+    // Reemplazar contenido del div con el textarea
+    winElement.innerHTML = '';
+    winElement.appendChild(textarea);
+    winElement.classList.remove('win-colapsada', 'win-expandida');
+    // Mantener cursor text después de remover la clase win-expandida (para que el CSS no lo sobrescriba)
+    // Usar setProperty con important para sobrescribir las reglas CSS con !important
+    winElement.style.setProperty('cursor', 'text', 'important');
+    
+    // Ajustar altura del textarea
+    ajustarAlturaTextarea(textarea);
+    
+    // Enfocar el textarea sin seleccionar todo el texto
+    setTimeout(() => {
+        textarea.focus();
+        // Mover el cursor al final del texto sin seleccionar
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 10);
+}
+
+// Guardar WIN de proyectos
+async function guardarWinProyectos(idProyecto, nuevoWin) {
+    const winElement = document.getElementById('win-' + idProyecto);
+    if (!winElement) return;
+    
+    const textarea = winElement.querySelector('textarea');
+    if (!textarea) return;
+    
+    try {
+        // Usar la función existente actualizarProyecto (puede estar en window o en el scope global)
+        const actualizarFunc = typeof actualizarProyecto !== 'undefined' ? actualizarProyecto : (typeof window !== 'undefined' && window.actualizarProyecto ? window.actualizarProyecto : null);
+        if (!actualizarFunc) {
+            throw new Error('Función actualizarProyecto no encontrada');
+        }
+        await actualizarFunc(idProyecto, 'win', nuevoWin);
+        
+        // Restaurar el div con el nuevo texto
+        const textoFinal = nuevoWin || '';
+        winElement.innerHTML = textoFinal;
+        winElement.classList.add('win-colapsada');
+        winElement.classList.remove('win-expandida');
+        // Restaurar cursor a pointer cuando está colapsado
+        winElement.style.cursor = 'pointer';
+        winElement.setAttribute('title', 'Click para expandir');
     } catch (error) {
         console.error('Error al guardar WIN:', error);
         alert('Error al guardar el WIN');

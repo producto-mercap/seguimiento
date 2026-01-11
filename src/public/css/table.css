@@ -93,17 +93,17 @@
 /* Usar clase editable-cell para identificar celdas editables */
 /* Máxima especificidad para sobrescribir todos los estilos de filas y otros elementos */
 #contenido .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos .modern-table-row .modern-table-cell.editable-cell,
-#contenido .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos .modern-table-row .modern-table-cell.win-cell,
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos .modern-table-row .modern-table-cell.win-cell:not(.win-expandida),
 #contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.editable-cell,
-#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.win-cell,
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.win-cell:not(.win-expandida),
 #contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.editable-cell,
-#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.win-cell {
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.win-cell:not(.win-expandida) {
     cursor: pointer !important;
 }
 
 /* Asegurar que el cursor pointer se aplique incluso cuando se hace hover sobre la celda editable */
 #contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.editable-cell:hover,
-#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.win-cell:hover {
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.win-cell:not(.win-expandida):hover {
     cursor: pointer !important;
 }
 
@@ -132,7 +132,7 @@
 
 /* Asegurar que las celdas editables dentro de las filas tengan pointer (mayor especificidad) */
 #contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.editable-cell,
-#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.win-cell {
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.win-cell:not(.win-expandida) {
     cursor: pointer !important;
 }
 
@@ -148,28 +148,25 @@
     cursor: inherit !important;
 }
 
-/* Scrollbar fija en la parte inferior - SIN fondo, más grande */
+/* Scrollbar al final de la tabla - SIN fondo, más grande */
 .fixed-scrollbar-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    position: relative;
+    width: 100%;
     height: 24px;
     /* Más alto para mejor visibilidad */
     background: transparent;
     /* SIN fondo blanco */
-    border-top: none;
-    /* Sin borde superior */
+    border-top: 1px solid var(--border-color);
+    /* Borde superior sutil para separar de la tabla */
     box-shadow: none;
     /* Sin sombra */
-    z-index: 1000;
+    z-index: 10;
     overflow-x: auto;
     overflow-y: hidden;
     display: none;
     /* Oculto por defecto, se muestra con JS cuando es necesario */
-    /* Mantener la posición fija incluso al hacer scroll vertical */
-    will-change: transform;
-    /* Optimizar el rendimiento */
+    margin-top: 0;
+    /* Sin margen superior */
 }
 
 .fixed-scrollbar-content {
@@ -745,9 +742,95 @@
     /* Ocupar todo el espacio disponible en la columna del grid (controlado por 1fr) */
     box-sizing: border-box;
     /* El ancho es controlado por el grid con 1fr, no por el contenido del texto */
+    cursor: text !important; /* Cursor de edición cuando está expandido - !important para sobrescribir estilo inline */
 }
 
 .modern-table.mantenimiento .modern-table-row .modern-table-cell.win-cell:hover {
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+}
+
+/* Estilos para WIN en proyectos (externos e internos) - siempre limitada a 2 líneas por defecto */
+.modern-table.proyectos .modern-table-row .modern-table-cell.win-cell,
+.modern-table.proyectos-internos .modern-table-row .modern-table-cell.win-cell {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    max-height: 3em; /* 2 líneas * 1.5 line-height */
+    transition: max-height 0.3s ease;
+    word-wrap: break-word;
+    white-space: normal;
+    /* Asegurar que siempre respete el límite de 2 líneas */
+    min-height: 1.5em;
+    min-width: 0;
+    /* Permitir que se reduzca si es necesario */
+    max-width: 100%;
+    /* Limitar al ancho de la columna del grid - no exceder el contenedor */
+    width: 100%;
+    /* Ocupar todo el espacio disponible en la columna del grid (controlado por 1fr) */
+    box-sizing: border-box;
+    /* El ancho es controlado por el grid con 1fr, no por el contenido del texto */
+}
+
+/* Cuando está en modo edición, permitir que el textarea ocupe todo el espacio */
+.modern-table.proyectos .modern-table-row .modern-table-cell.win-cell:has(.win-edit-input),
+.modern-table.proyectos-internos .modern-table-row .modern-table-cell.win-cell:has(.win-edit-input) {
+    display: block;
+    max-height: none;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+}
+
+.modern-table.proyectos .modern-table-row .modern-table-cell.win-cell .win-edit-input,
+.modern-table.proyectos-internos .modern-table-row .modern-table-cell.win-cell .win-edit-input {
+    width: 100%;
+    min-height: 40px;
+    max-height: 200px;
+    resize: vertical;
+}
+
+.modern-table.proyectos .modern-table-row .modern-table-cell.win-cell.win-colapsada,
+.modern-table.proyectos-internos .modern-table-row .modern-table-cell.win-cell.win-colapsada {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+    max-height: 3em; /* 2 líneas * 1.5 line-height */
+    transition: max-height 0.3s ease;
+}
+
+.modern-table.proyectos .modern-table-row .modern-table-cell.win-cell.win-expandida,
+.modern-table.proyectos-internos .modern-table-row .modern-table-cell.win-cell.win-expandida,
+/* Regla con máxima especificidad para sobrescribir las reglas de proyectos-wrapper */
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos .modern-table-row .modern-table-cell.win-cell.win-expandida,
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-row .modern-table-cell.win-cell.win-expandida,
+#contenido .modern-table-wrapper.proyectos-wrapper .modern-table-cell.win-cell.win-expandida {
+    display: block;
+    overflow: visible;
+    max-height: none;
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-word;
+    transition: max-height 0.3s ease;
+    -webkit-line-clamp: unset;
+    min-width: 0;
+    /* Permitir que se reduzca si es necesario */
+    max-width: 100%;
+    /* Limitar al ancho de la columna del grid - no exceder el contenedor */
+    width: 100%;
+    /* Ocupar todo el espacio disponible en la columna del grid (controlado por 1fr) */
+    box-sizing: border-box;
+    /* El ancho es controlado por el grid con 1fr, no por el contenido del texto */
+    cursor: text !important; /* Cursor de edición cuando está expandido - !important para sobrescribir todas las reglas anteriores */
+}
+
+.modern-table.proyectos .modern-table-row .modern-table-cell.win-cell:hover,
+.modern-table.proyectos-internos .modern-table-row .modern-table-cell.win-cell:hover {
     background: rgba(0, 0, 0, 0.02);
     border-radius: 4px;
 }
