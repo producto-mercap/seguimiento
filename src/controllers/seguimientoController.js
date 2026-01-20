@@ -884,9 +884,18 @@ async function sincronizarEpics(req, res) {
         });
     } catch (error) {
         console.error('Error al sincronizar epics:', error);
-        res.status(500).json({
+        
+        // Determinar el código de estado HTTP apropiado
+        let statusCode = 500;
+        if (error.message.includes('403 Forbidden')) {
+            statusCode = 403;
+        } else if (error.message.includes('404 Not Found')) {
+            statusCode = 404;
+        }
+        
+        res.status(statusCode).json({
             success: false,
-            error: 'Error al sincronizar epics: ' + error.message
+            error: error.message || 'Error al sincronizar epics'
         });
     }
 }

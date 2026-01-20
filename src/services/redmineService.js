@@ -401,6 +401,14 @@ async function obtenerEpics(projectId) {
         });
 
         if (!response.ok) {
+            // Manejo específico para 403 Forbidden
+            if (response.status === 403) {
+                throw new Error(`403 Forbidden: El token de Redmine no tiene permisos para acceder al proyecto "${projectId}". Verifica que el proyecto existe y que el token tiene los permisos necesarios.`);
+            }
+            // Manejo específico para 404 Not Found
+            if (response.status === 404) {
+                throw new Error(`404 Not Found: El proyecto "${projectId}" no existe en Redmine.`);
+            }
             throw new Error(`Error al obtener epics: ${response.status} ${response.statusText}`);
         }
 
