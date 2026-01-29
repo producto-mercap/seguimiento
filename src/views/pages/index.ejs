@@ -30,36 +30,51 @@
             <div class="main-content">
                 <div class="content-area">
                     <div class="seguimiento-wrapper">
-                        <% if (productoActual) { %>
-                            <div class="seguimiento-container">
-                                <!-- Título -->
-                                <div class="seguimiento-header">
-                                    <h1
-                                        style="font-size: 32px; font-weight: 500; color: rgba(245, 112, 41, 1); margin: 0; font-family: 'Google Sans', 'Roboto', sans-serif;">
-                                        Seguimiento<% if (equipoNombre) { %> - <%= equipoNombre %>
-                                                <% } %>
-                                    </h1>
+                        <div class="seguimiento-container">
+                            <!-- Título: con equipo o "Todos los equipos" -->
+                            <div class="seguimiento-header">
+                                <h1
+                                    style="font-size: 32px; font-weight: 500; color: rgba(245, 112, 41, 1); margin: 0; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                    <% if (productoActual && equipoNombre) { %>Seguimiento - <%= equipoNombre %>
+                                    <% } else if (!productoActual) { %>Proyectos
+                                    <% } else { %>Seguimiento<% } %>
+                                </h1>
+                            </div>
+                            <% if (productoActual) { %>
+                            <!-- Tabs solo cuando hay producto/equipo -->
+                            <div class="tabs seguimiento-tabs">
+                                <div style="display: flex;">
+                                    <% if (typeof tieneMantenimiento !=='undefined' && tieneMantenimiento) { %>
+                                        <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=mantenimiento"
+                                            class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>">
+                                            Mantenimiento
+                                        </a>
+                                    <% } %>
+                                    <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=proyectos"
+                                        class="tab <%= tipoActual !== 'mantenimiento' ? 'active' : '' %>">
+                                        Proyectos
+                                    </a>
                                 </div>
-                                <!-- Tabs -->
-                                <div class="tabs seguimiento-tabs">
-                                    <div style="display: flex;">
-                                        <% if (typeof tieneMantenimiento !=='undefined' && tieneMantenimiento) { %>
-                                            <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=mantenimiento"
-                                                class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>">
-                                                Mantenimiento
-                                            </a>
-                                            <% } %>
-                                                <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=proyectos"
-                                                    class="tab <%= tipoActual !== 'mantenimiento' ? 'active' : '' %>">
-                                                    Proyectos
-                                                </a>
+                            </div>
+                            <% } %>
+                            <!-- Filtros y buscador: proyectos (con o sin producto) + filtro Equipo cuando todos los equipos -->
+                            <% if (!productoActual || tipoActual !== 'mantenimiento') { %>
+                            <div id="filtrosProyectos" class="seguimiento-filtros">
+                                <div class="seguimiento-filtros-inner">
+                                    <% if (!productoActual) { %>
+                                    <!-- Filtro Equipo (solo en vista todos los equipos) -->
+                                    <button class="filter-btn" onclick="toggleFilterEquipos(this)"
+                                        title="Filtrar por Equipo">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                            fill="currentColor" style="width: 18px; height: 18px;">
+                                            <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+                                        </svg>
+                                        <span style="margin-left: 6px; font-size: 13px;">Equipo</span>
+                                    </button>
+                                    <div class="filter-dropdown" id="filterEquipos" style="display: none;">
                                     </div>
-                                </div>
-                                <!-- Filtros y buscador para proyectos -->
-                                <% if (tipoActual !=='mantenimiento' ) { %>
-                                    <div id="filtrosProyectos" class="seguimiento-filtros">
-                                        <div class="seguimiento-filtros-inner">
-                                            <!-- Filtro Cliente -->
+                                    <% } %>
+                                    <!-- Filtro Cliente -->
                                             <button class="filter-btn" onclick="toggleFilterClientes(this)"
                                                 title="Filtrar por Cliente">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -193,7 +208,7 @@
                                                         </div>
                                                     </form>
                                                 </div>
-                                                <% if (tipoActual !=='mantenimiento' ) { %>
+                                                <% if (productoActual && tipoActual !== 'mantenimiento') { %>
                                                     <button onclick="sincronizar()" id="btnSincronizar"
                                                         style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #dfe1e5; background: white; cursor: pointer; transition: all 0.2s; margin-left: 8px; flex-shrink: 0;"
                                                         onmouseover="this.style.background='#f1f3f4'"
@@ -206,7 +221,7 @@
                                                                 d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
                                                         </svg>
                                                     </button>
-                                                    <% } %>
+                                                <% } %>
                                             </div>
                                         </div>
 
@@ -224,25 +239,25 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <% } %>
 
-                                        <!-- Chips de filtros aplicados -->
-                                        <div id="filtrosAplicados"
-                                            style="display: none; padding: 12px 16px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; align-items: center;">
-                                        </div>
-                                        <% } %>
-
-                                            <div id="contenido" class="table-container">
-                                                <div class="empty-state">
-                                                    <div class="spinner"></div>
-                                                    <div class="empty-state-text">Cargando datos...</div>
-                                                </div>
-                                            </div>
+                                    <!-- Chips de filtros aplicados -->
+                                    <div id="filtrosAplicados"
+                                        style="display: none; padding: 12px 16px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                    </div>
                             </div>
+                            <% } %>
 
-                            <!-- Contenedor para Gantt de Equipo -->
-                            <div id="team-gantt-container" class="gantt-container"
-                                style="display:none; margin-top: 40px; margin-bottom: 40px;"></div>
+                            <div id="contenido" class="table-container">
+                                <div class="empty-state">
+                                    <div class="spinner"></div>
+                                    <div class="empty-state-text">Cargando datos...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor para Gantt de Equipo -->
+                        <div id="team-gantt-container" class="gantt-container"
+                            style="display:none; margin-top: 40px; margin-bottom: 40px;"></div>
                     </div>
                 </div>
             </div>
@@ -253,18 +268,21 @@
         // Variables de contexto desde el servidor
         const productoActual = '<%= productoActual || '' %>';
         const equipoActual = '<%= equipoActual || '' %>';
-        const tipoActual = '<%= tipoActual || 'mantenimiento' %>';
+        // Sin producto = vista "Todos los equipos" (tabla + gantt de proyectos)
+        const tipoActual = '<%= productoActual ? (tipoActual || "mantenimiento") : "proyectos" %>';
         const categoriaActual = '<%= categoriaActual || '' %>';
         const productosEquiposData = <%- JSON.stringify(productosEquipos || []) %>;
+        const vistaTodosEquipos = !productoActual;
 
         // Variables de estado global
         let busquedaActual = '';
         let filtrosClientes = [];
         let filtrosCategorias = [];
         let filtrosEstados = [];
+        let filtrosEquipos = [];
         let datosTablaActual = [];
         let datosOriginales = [];
-        let ordenActual = { columna: 'cliente', direccion: 'desc' };
+        let ordenActual = (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos) ? { columna: 'equipo', direccion: 'asc' } : { columna: 'cliente', direccion: 'desc' };
         const ordenEstados = ['sin comenzar', 'en curso', 'Testing', 'Entregado', 'Cerrado', 'Rework', 'Bloqueado'];
     </script>
 
@@ -289,7 +307,7 @@
                     cargarClientesParaFiltro();
                 }
             } else {
-                mostrarDashboard();
+                cargarDatosTodosEquipos();
             }
         });
     </script>

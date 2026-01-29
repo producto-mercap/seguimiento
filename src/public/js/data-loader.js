@@ -3,7 +3,129 @@
  * Seguimiento de Proyectos
  */
 
-// Función para mostrar dashboard cuando no hay producto seleccionado
+/**
+ * Cargar proyectos de todos los equipos (vista principal sin producto seleccionado).
+ * Primero muestra la tabla y luego carga el Gantt para mejor performance.
+ */
+async function cargarDatosTodosEquipos() {
+    const contenido = document.getElementById('contenido');
+    if (!contenido) return;
+
+    contenido.className = 'table-container proyectos-container';
+    contenido.style.background = '';
+    contenido.style.borderRadius = '';
+    contenido.style.boxShadow = '';
+    contenido.style.overflow = '';
+    contenido.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="empty-state-text">Cargando proyectos...</div></div>';
+
+    const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
+    let params = 'incluirCerrados=' + (incluirCerrados ? 'true' : 'false');
+    if (typeof busquedaActual !== 'undefined' && busquedaActual) {
+        params += '&busqueda=' + encodeURIComponent(busquedaActual);
+    }
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const response = await fetch('/api/proyectos?' + params, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage = 'Error del servidor';
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.error || errorMessage;
+            } catch (e) {
+                errorMessage = 'Error HTTP ' + response.status;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || 'Error al obtener los datos');
+        if (!result.data) throw new Error('No se recibieron datos del servidor');
+
+        let datos = result.data;
+        if (!incluirCerrados) {
+            datos = datos.filter(d => (d.estado || '').toLowerCase() !== 'cerrado');
+        }
+
+        // Excluir proyectos cuyo "equipo" no está mapeado (ej. "32", "39" son IDs sin nombre en productosEquiposData)
+        if (typeof obtenerNombreEquipoSolo === 'function') {
+            datos = datos.filter(function (item) {
+                if (!item.equipo) return true;
+                const nombre = obtenerNombreEquipoSolo(item.equipo);
+                return nombre !== String(item.equipo);
+            });
+        }
+
+        datosOriginales = datos;
+        datosTablaActual = [...datos];
+
+        if (typeof actualizarFiltroClientesDesdeTabla === 'function') {
+            actualizarFiltroClientesDesdeTabla();
+        }
+        if (typeof actualizarFiltroEquiposDesdeTabla === 'function') {
+            actualizarFiltroEquiposDesdeTabla();
+        }
+
+        // Aplicar filtros en cliente
+        let datosFiltrados = [...datos];
+        if (typeof filtrosClientes !== 'undefined' && filtrosClientes.length > 0) {
+            datosFiltrados = datosFiltrados.filter(d => filtrosClientes.includes(d.cliente));
+        }
+        if (typeof filtrosCategorias !== 'undefined' && filtrosCategorias.length > 0) {
+            datosFiltrados = datosFiltrados.filter(d => filtrosCategorias.includes(d.categoria));
+        }
+        if (typeof filtrosEstados !== 'undefined' && filtrosEstados.length > 0) {
+            datosFiltrados = datosFiltrados.filter(d => filtrosEstados.includes(d.estado));
+        }
+        if (typeof filtrosEquipos !== 'undefined' && filtrosEquipos.length > 0) {
+            datosFiltrados = datosFiltrados.filter(d => d.equipo && filtrosEquipos.includes(String(d.equipo)));
+        }
+
+        if (typeof actualizarFiltrosAplicados === 'function') {
+            actualizarFiltrosAplicados();
+        }
+
+        // 1) Renderizar tabla primero (respuesta rápida)
+        if (typeof renderizarTabla === 'function') {
+            renderizarTabla(datosFiltrados);
+        }
+
+        const contadorEl = document.getElementById('contadorProyectos');
+        if (contadorEl) {
+            contadorEl.textContent = 'Total proyectos: ' + datosFiltrados.length;
+        }
+
+        // 2) Cargar Gantt después (mejor performance)
+        const ganttContainer = document.getElementById('team-gantt-container');
+        if (ganttContainer) ganttContainer.style.display = 'none';
+        if (typeof renderizarGanttEquipo === 'function' && datosFiltrados.length > 0) {
+            setTimeout(async () => {
+                await renderizarGanttEquipo(datosFiltrados);
+                if (ganttContainer) ganttContainer.style.display = 'block';
+            }, 150);
+        }
+    } catch (error) {
+        console.error('Error al cargar proyectos de todos los equipos:', error);
+        contenido.innerHTML = '<div class="empty-state">' +
+            '<div class="empty-state-icon">❌</div>' +
+            '<div class="empty-state-text">Error al cargar proyectos</div>' +
+            '<div class="empty-state-subtext">' + (error.message || '') + '</div>' +
+            '<button class="button" onclick="cargarDatosTodosEquipos()" style="margin-top: 16px;">Reintentar</button>' +
+            '</div>';
+        datosTablaActual = [];
+        datosOriginales = [];
+        const contadorEl = document.getElementById('contadorProyectos');
+        if (contadorEl) contadorEl.textContent = 'Total proyectos: 0';
+        const ganttContainer = document.getElementById('team-gantt-container');
+        if (ganttContainer) ganttContainer.style.display = 'none';
+    }
+}
+
+// Función para mostrar dashboard cuando no hay producto seleccionado (ya no se usa; reemplazada por tabla+gantt)
 async function mostrarDashboard() {
     const contenido = document.getElementById('contenido');
 
@@ -205,8 +327,78 @@ function actualizarFiltroClientesDesdeTabla() {
             }).join('');
             filterCategorias.innerHTML = html;
         }
+
+        if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos) {
+            actualizarFiltroEquiposDesdeTabla();
+        }
     } catch (error) {
         console.error('Error al actualizar filtro de clientes y categorías:', error);
+    }
+}
+
+function obtenerNombreEquipo(idEquipo) {
+    if (!idEquipo || !productosEquiposData) return null;
+    const id = String(idEquipo);
+    for (let i = 0; i < productosEquiposData.length; i++) {
+        const item = productosEquiposData[i];
+        const equipos = item.equipos || [];
+        for (let j = 0; j < equipos.length; j++) {
+            if (String(equipos[j].id_equipo_redmine) === id) {
+                const prod = item.producto === 'OMS' ? 'Order Management' : item.producto;
+                return prod + ' - ' + (equipos[j].equipo || id);
+            }
+        }
+    }
+    return id;
+}
+
+/** Solo el nombre del equipo (sin "Producto - "). Para mostrar en tabla truncado. */
+function obtenerNombreEquipoSolo(idEquipo) {
+    if (!idEquipo || !productosEquiposData) return null;
+    const id = String(idEquipo);
+    for (let i = 0; i < productosEquiposData.length; i++) {
+        const item = productosEquiposData[i];
+        const equipos = item.equipos || [];
+        for (let j = 0; j < equipos.length; j++) {
+            if (String(equipos[j].id_equipo_redmine) === id) {
+                return equipos[j].equipo || id;
+            }
+        }
+    }
+    return id;
+}
+
+function actualizarFiltroEquiposDesdeTabla() {
+    const filterEquipos = document.getElementById('filterEquipos');
+    if (!filterEquipos) return;
+    try {
+        const equiposEnDatos = [...new Set(datosTablaActual.map(p => p.equipo).filter(e => e))].map(String);
+        const listaEquipos = [];
+        (productosEquiposData || []).forEach(item => {
+            (item.equipos || []).forEach(equipo => {
+                const id = String(equipo.id_equipo_redmine || '');
+                if (id && equiposEnDatos.includes(id)) {
+                    const label = (item.producto === 'OMS' ? 'Order Management' : item.producto) + ' - ' + (equipo.equipo || id);
+                    if (!listaEquipos.find(e => e.id === id)) {
+                        listaEquipos.push({ id: id, label: label });
+                    }
+                }
+            });
+        });
+        listaEquipos.sort((a, b) => (a.label || '').localeCompare(b.label || ''));
+        let html = '<div style="padding: 8px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">';
+        html += '<button onclick="seleccionarTodosEquipos()" style="background: none; border: none; color: var(--primary-color); font-size: 13px; font-weight: 500; cursor: pointer; padding: 4px 8px;">Todos</button>';
+        html += '<button onclick="deseleccionarTodosEquipos()" style="background: none; border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; padding: 4px 8px;">Borrar todos</button>';
+        html += '</div>';
+        listaEquipos.forEach(eq => {
+            const checked = (typeof filtrosEquipos !== 'undefined' && filtrosEquipos.includes(eq.id)) ? 'checked' : '';
+            html += '<label style="display: flex; align-items: center; padding: 10px 16px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'white\'">';
+            html += '<input type="checkbox" class="filter-checkbox-equipo" value="' + (eq.id || '').replace(/"/g, '&quot;') + '" ' + checked + ' style="margin-right: 8px; cursor: pointer;" onchange="aplicarFiltrosProyectos()" />';
+            html += '<span style="font-size: 13px;">' + (eq.label || eq.id).replace(/</g, '&lt;') + '</span></label>';
+        });
+        filterEquipos.innerHTML = html;
+    } catch (error) {
+        console.error('Error al actualizar filtro de equipos:', error);
     }
 }
 

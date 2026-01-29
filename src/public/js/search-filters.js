@@ -13,12 +13,15 @@ function buscar(event) {
     if (searchInput) {
         const valor = searchInput.value.trim();
         busquedaActual = valor;
-        // Si el valor está vacío, limpiar la búsqueda
         if (!valor) {
             limpiarBusqueda();
             return;
         }
-        cargarDatos();
+        if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+            cargarDatosTodosEquipos();
+        } else {
+            cargarDatos();
+        }
     }
 }
 
@@ -132,6 +135,8 @@ function limpiarBusqueda() {
         // Detectar si estamos en proyectos internos o proyectos normales
         if (typeof cargarDatosProyectosInternos === 'function' && window.location.pathname.includes('proyectos-internos')) {
             cargarDatosProyectosInternos();
+        } else if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+            cargarDatosTodosEquipos();
         } else if (typeof cargarDatos === 'function') {
             cargarDatos();
         } else {
@@ -172,9 +177,11 @@ function toggleFilterClientes(buttonElement) {
     const dropdown = document.getElementById('filterClientes');
     const estadosDropdown = document.getElementById('filterEstados');
     const categoriasDropdown = document.getElementById('filterCategorias');
+    const equiposDropdown = document.getElementById('filterEquipos');
 
     if (estadosDropdown) estadosDropdown.style.display = 'none';
     if (categoriasDropdown) categoriasDropdown.style.display = 'none';
+    if (equiposDropdown) equiposDropdown.style.display = 'none';
 
     if (dropdown) {
         const isVisible = dropdown.style.display === 'block';
@@ -187,7 +194,7 @@ function toggleFilterClientes(buttonElement) {
                 dropdown.style.position = 'fixed';
                 dropdown.style.top = (rect.bottom + 4) + 'px';
                 dropdown.style.left = rect.left + 'px';
-                dropdown.style.zIndex = '10000';
+                dropdown.style.zIndex = '100002';
                 dropdown.style.background = 'white';
                 dropdown.style.borderRadius = '8px';
                 dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
@@ -201,9 +208,11 @@ function toggleFilterCategorias(buttonElement) {
     const dropdown = document.getElementById('filterCategorias');
     const clientesDropdown = document.getElementById('filterClientes');
     const estadosDropdown = document.getElementById('filterEstados');
+    const equiposDropdown = document.getElementById('filterEquipos');
 
     if (clientesDropdown) clientesDropdown.style.display = 'none';
     if (estadosDropdown) estadosDropdown.style.display = 'none';
+    if (equiposDropdown) equiposDropdown.style.display = 'none';
 
     if (dropdown) {
         const isVisible = dropdown.style.display === 'block';
@@ -216,7 +225,7 @@ function toggleFilterCategorias(buttonElement) {
                 dropdown.style.position = 'fixed';
                 dropdown.style.top = (rect.bottom + 4) + 'px';
                 dropdown.style.left = rect.left + 'px';
-                dropdown.style.zIndex = '10000';
+                dropdown.style.zIndex = '100002';
                 dropdown.style.background = 'white';
                 dropdown.style.borderRadius = '8px';
                 dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
@@ -230,9 +239,11 @@ function toggleFilterEstados(buttonElement) {
     const dropdown = document.getElementById('filterEstados');
     const clientesDropdown = document.getElementById('filterClientes');
     const categoriasDropdown = document.getElementById('filterCategorias');
+    const equiposDropdown = document.getElementById('filterEquipos');
 
     if (clientesDropdown) clientesDropdown.style.display = 'none';
     if (categoriasDropdown) categoriasDropdown.style.display = 'none';
+    if (equiposDropdown) equiposDropdown.style.display = 'none';
 
     if (dropdown) {
         const isVisible = dropdown.style.display === 'block';
@@ -245,7 +256,38 @@ function toggleFilterEstados(buttonElement) {
                 dropdown.style.position = 'fixed';
                 dropdown.style.top = (rect.bottom + 4) + 'px';
                 dropdown.style.left = rect.left + 'px';
-                dropdown.style.zIndex = '10000';
+                dropdown.style.zIndex = '100002';
+                dropdown.style.background = 'white';
+                dropdown.style.borderRadius = '8px';
+                dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            }
+            dropdown.style.display = 'block';
+        }
+    }
+}
+
+function toggleFilterEquipos(buttonElement) {
+    const dropdown = document.getElementById('filterEquipos');
+    const clientesDropdown = document.getElementById('filterClientes');
+    const categoriasDropdown = document.getElementById('filterCategorias');
+    const estadosDropdown = document.getElementById('filterEstados');
+
+    if (clientesDropdown) clientesDropdown.style.display = 'none';
+    if (categoriasDropdown) categoriasDropdown.style.display = 'none';
+    if (estadosDropdown) estadosDropdown.style.display = 'none';
+
+    if (dropdown) {
+        const isVisible = dropdown.style.display === 'block';
+        if (isVisible) {
+            dropdown.style.display = 'none';
+        } else {
+            const button = buttonElement || document.querySelector('button[onclick*="toggleFilterEquipos"]');
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = (rect.bottom + 4) + 'px';
+                dropdown.style.left = rect.left + 'px';
+                dropdown.style.zIndex = '100002';
                 dropdown.style.background = 'white';
                 dropdown.style.borderRadius = '8px';
                 dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
@@ -260,17 +302,19 @@ document.addEventListener('click', (e) => {
     const filterClientes = document.getElementById('filterClientes');
     const filterCategorias = document.getElementById('filterCategorias');
     const filterEstados = document.getElementById('filterEstados');
+    const filterEquipos = document.getElementById('filterEquipos');
 
     if (filterClientes && !e.target.closest('#filterClientes') && !e.target.closest('button[onclick*="toggleFilterClientes"]')) {
         filterClientes.style.display = 'none';
     }
-
     if (filterCategorias && !e.target.closest('#filterCategorias') && !e.target.closest('button[onclick*="toggleFilterCategorias"]')) {
         filterCategorias.style.display = 'none';
     }
-
     if (filterEstados && !e.target.closest('#filterEstados') && !e.target.closest('button[onclick*="toggleFilterEstados"]')) {
         filterEstados.style.display = 'none';
+    }
+    if (filterEquipos && !e.target.closest('#filterEquipos') && !e.target.closest('button[onclick*="toggleFilterEquipos"]')) {
+        filterEquipos.style.display = 'none';
     }
 });
 
@@ -278,24 +322,33 @@ function aplicarFiltrosProyectos() {
     filtrosClientes = Array.from(document.querySelectorAll('.filter-checkbox-cliente:checked')).map(cb => cb.value);
     filtrosCategorias = Array.from(document.querySelectorAll('.filter-checkbox-categoria:checked')).map(cb => cb.value);
     filtrosEstados = Array.from(document.querySelectorAll('.filter-checkbox-estado:checked')).map(cb => cb.value);
+    if (typeof filtrosEquipos !== 'undefined') {
+        filtrosEquipos = Array.from(document.querySelectorAll('.filter-checkbox-equipo:checked')).map(cb => cb.value);
+    }
 
-    // Cerrar dropdowns al aplicar filtros
     const filterClientes = document.getElementById('filterClientes');
     const filterCategorias = document.getElementById('filterCategorias');
     const filterEstados = document.getElementById('filterEstados');
+    const filterEquipos = document.getElementById('filterEquipos');
     if (filterClientes) filterClientes.style.display = 'none';
     if (filterCategorias) filterCategorias.style.display = 'none';
     if (filterEstados) filterEstados.style.display = 'none';
+    if (filterEquipos) filterEquipos.style.display = 'none';
 
     actualizarFiltrosAplicados();
-    cargarDatos();
+    if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+        cargarDatosTodosEquipos();
+    } else {
+        cargarDatos();
+    }
 }
 
 function actualizarFiltrosAplicados() {
     const filtrosAplicados = document.getElementById('filtrosAplicados');
     if (!filtrosAplicados) return;
 
-    const tieneFiltros = filtrosClientes.length > 0 || filtrosCategorias.length > 0 || filtrosEstados.length > 0;
+    const tieneFiltros = filtrosClientes.length > 0 || filtrosCategorias.length > 0 || filtrosEstados.length > 0 ||
+        (typeof filtrosEquipos !== 'undefined' && filtrosEquipos.length > 0);
 
     if (!tieneFiltros) {
         filtrosAplicados.style.display = 'none';
@@ -307,21 +360,24 @@ function actualizarFiltrosAplicados() {
     let html = '';
 
     filtrosClientes.forEach(cliente => {
-        html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #e8f0fe; color: var(--primary-color); padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Cliente: ' + cliente + '</span><button onclick="removerFiltroCliente(\'' + cliente.replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
+        html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #e8f0fe; color: var(--primary-color); padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Cliente: ' + (cliente || '').replace(/</g, '&lt;') + '</span><button onclick="removerFiltroCliente(\'' + (cliente || '').replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
     });
-
     filtrosCategorias.forEach(categoria => {
-        html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #e6f4ea; color: #1e8e3e; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Categoría: ' + categoria + '</span><button onclick="removerFiltroCategoria(\'' + categoria.replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: #1e8e3e;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
+        html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #e6f4ea; color: #1e8e3e; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Categoría: ' + (categoria || '').replace(/</g, '&lt;') + '</span><button onclick="removerFiltroCategoria(\'' + (categoria || '').replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: #1e8e3e;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
     });
-
     filtrosEstados.forEach(estado => {
-        html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #fef7e0; color: #f9ab00; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Estado: ' + estado + '</span><button onclick="removerFiltroEstado(\'' + estado.replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: #f9ab00;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
+        html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #fef7e0; color: #f9ab00; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Estado: ' + (estado || '').replace(/</g, '&lt;') + '</span><button onclick="removerFiltroEstado(\'' + (estado || '').replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: #f9ab00;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
     });
+    if (typeof filtrosEquipos !== 'undefined' && filtrosEquipos.length > 0) {
+        filtrosEquipos.forEach(equipoId => {
+            const label = (typeof obtenerNombreEquipo === 'function' && obtenerNombreEquipo(equipoId)) || equipoId;
+            html += '<div class="filter-chip" style="display: inline-flex; align-items: center; background: #f3e8fd; color: #7c4dff; padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px; margin: 0 4px 4px 0;"><span>Equipo: ' + (label || '').replace(/</g, '&lt;') + '</span><button onclick="removerFiltroEquipo(\'' + String(equipoId || '').replace(/'/g, "\\'") + '\')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: #7c4dff;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>';
+        });
+    }
 
     if (tieneFiltros) {
         html += '<button onclick="limpiarFiltrosProyectos()" style="background: rgb(241, 243, 244); border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 16px; transition: background 0.2s;" onmouseover="this.style.background=\'#e8eaed\'" onmouseout="this.style.background=\'rgb(241, 243, 244)\'">Borrar filtros</button>';
     }
-
     filtrosAplicados.innerHTML = html;
 }
 
@@ -353,9 +409,37 @@ function limpiarFiltrosProyectos() {
     filtrosClientes = [];
     filtrosCategorias = [];
     filtrosEstados = [];
-    document.querySelectorAll('.filter-checkbox-cliente, .filter-checkbox-categoria, .filter-checkbox-estado').forEach(cb => cb.checked = false);
+    if (typeof filtrosEquipos !== 'undefined') filtrosEquipos = [];
+    document.querySelectorAll('.filter-checkbox-cliente, .filter-checkbox-categoria, .filter-checkbox-estado, .filter-checkbox-equipo').forEach(cb => cb.checked = false);
     actualizarFiltrosAplicados();
-    cargarDatos();
+    if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+        cargarDatosTodosEquipos();
+    } else {
+        cargarDatos();
+    }
+}
+
+function removerFiltroEquipo(equipoId) {
+    if (typeof filtrosEquipos === 'undefined') return;
+    filtrosEquipos = filtrosEquipos.filter(e => String(e) !== String(equipoId));
+    const checkbox = document.querySelector('.filter-checkbox-equipo[value="' + String(equipoId).replace(/"/g, '&quot;') + '"]');
+    if (checkbox) checkbox.checked = false;
+    actualizarFiltrosAplicados();
+    if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+        cargarDatosTodosEquipos();
+    } else {
+        cargarDatos();
+    }
+}
+
+function seleccionarTodosEquipos() {
+    document.querySelectorAll('.filter-checkbox-equipo').forEach(cb => cb.checked = true);
+    aplicarFiltrosProyectos();
+}
+
+function deseleccionarTodosEquipos() {
+    document.querySelectorAll('.filter-checkbox-equipo').forEach(cb => cb.checked = false);
+    aplicarFiltrosProyectos();
 }
 
 function seleccionarTodosClientes() {
@@ -426,8 +510,11 @@ function ordenarPor(columna) {
         if (typeof filtrosEstados !== 'undefined' && filtrosEstados.length > 0) {
             datosFiltrados = datosFiltrados.filter(d => filtrosEstados.includes(d.estado));
         }
+        // Aplicar filtros de equipos (vista todos los equipos)
+        if (typeof filtrosEquipos !== 'undefined' && filtrosEquipos.length > 0) {
+            datosFiltrados = datosFiltrados.filter(d => d.equipo && filtrosEquipos.includes(String(d.equipo)));
+        }
 
-        // Renderizar tabla con datos filtrados (el ordenamiento se hace en renderizarTablaProyectos)
         if (typeof renderizarTabla === 'function') {
             renderizarTabla(datosFiltrados);
             if (typeof renderizarGanttEquipo === 'function' && typeof tipoActual !== 'undefined' && tipoActual !== 'mantenimiento') {
@@ -436,12 +523,18 @@ function ordenarPor(columna) {
                 }, 100);
             }
         } else {
-            // Si no hay función renderizarTabla, hacer petición al servidor como fallback
-            cargarDatos();
+            if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+                cargarDatosTodosEquipos();
+            } else {
+                cargarDatos();
+            }
         }
     } else {
-        // Si no hay datos en memoria, hacer petición al servidor
-        cargarDatos();
+        if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+            cargarDatosTodosEquipos();
+        } else {
+            cargarDatos();
+        }
     }
 }
 

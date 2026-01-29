@@ -50,7 +50,8 @@
     box-shadow: 0 4px 6px rgba(32,33,36,.28);
     max-height: 400px;
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 100001;
+    /* Por encima de la tabla para que las sugerencias no queden detrás */
     margin-top: -1px;
     display: none;
 }

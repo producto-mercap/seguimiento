@@ -204,6 +204,11 @@ function renderizarTablaProyectos(datos, contenido) {
         } else if (ordenActual.columna === 'categoria') {
             valorA = (a.categoria || '').toLowerCase();
             valorB = (b.categoria || '').toLowerCase();
+        } else if (ordenActual.columna === 'equipo') {
+            const labelA = (typeof obtenerNombreEquipoSolo === 'function' && a.equipo) ? (obtenerNombreEquipoSolo(a.equipo) || '').toLowerCase() : String(a.equipo || '').toLowerCase();
+            const labelB = (typeof obtenerNombreEquipoSolo === 'function' && b.equipo) ? (obtenerNombreEquipoSolo(b.equipo) || '').toLowerCase() : String(b.equipo || '').toLowerCase();
+            valorA = labelA;
+            valorB = labelB;
         } else if (ordenActual.columna === 'estado') {
             const indexA = ordenEstados.indexOf((a.estado || '').toLowerCase());
             const indexB = ordenEstados.indexOf((b.estado || '').toLowerCase());
@@ -262,11 +267,15 @@ function renderizarTablaProyectos(datos, contenido) {
 
     // Crear estructura con scrollbar fija inferior (estilo Google Sheets)
     let tablaHTML = '<div class="proyectos-table-container"><div class="proyectos-scroll-wrapper">';
-    tablaHTML += '<div class="modern-table-wrapper proyectos-wrapper"><div class="modern-table proyectos"><div class="modern-table-header">';
+    const tableClass = (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos) ? 'modern-table proyectos con-equipo' : 'modern-table proyectos';
+    tablaHTML += '<div class="modern-table-wrapper proyectos-wrapper"><div class="' + tableClass + '"><div class="modern-table-header">';
     const flechaAsc = '▲';
     const flechaDesc = '▼';
 
     tablaHTML += '<div class="modern-table-cell header-cell" style="width: 30px;"></div>';
+    if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos) {
+        tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'equipo\')" style="cursor: pointer; user-select: none; min-width: 140px;' + (ordenActual.columna === 'equipo' ? ' color: var(--primary-color);' : '') + '">Equipo' + (ordenActual.columna === 'equipo' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
+    }
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'cliente\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'cliente' ? ' color: var(--primary-color);' : '') + '">Cliente' + (ordenActual.columna === 'cliente' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'proyecto\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'proyecto' ? ' color: var(--primary-color);' : '') + '">Proyecto' + (ordenActual.columna === 'proyecto' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'categoria\')" style="cursor: pointer; user-select: none;' + (ordenActual.columna === 'categoria' ? ' color: var(--primary-color);' : '') + '">Categoría' + (ordenActual.columna === 'categoria' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
@@ -278,8 +287,8 @@ function renderizarTablaProyectos(datos, contenido) {
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'plazos\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'plazos' ? ' color: var(--primary-color);' : '') + '">Plazos' + (ordenActual.columna === 'plazos' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" style="text-align: center; justify-content: center;">Accionables</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_inicio\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'fecha_inicio' ? ' color: var(--primary-color);' : '') + '">Fecha Inicio' + (ordenActual.columna === 'fecha_inicio' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
-    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_fin\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center;' + (ordenActual.columna === 'fecha_fin' ? ' color: var(--primary-color);' : '') + '">Fecha Fin' + (ordenActual.columna === 'fecha_fin' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
-    tablaHTML += '<div class="modern-table-cell header-cell" style="flex: 1; display: flex; align-items: center; gap: 6px;">';
+    tablaHTML += '<div class="modern-table-cell header-cell" onclick="ordenarPor(\'fecha_fin\')" style="cursor: pointer; user-select: none; text-align: center; justify-content: center; min-width: 75px;' + (ordenActual.columna === 'fecha_fin' ? ' color: var(--primary-color);' : '') + '">Fecha Fin' + (ordenActual.columna === 'fecha_fin' ? ' ' + (ordenActual.direccion === 'asc' ? flechaAsc : flechaDesc) : '') + '</div>';
+    tablaHTML += '<div class="modern-table-cell header-cell win-header-cell" style="display: flex; align-items: center; gap: 6px; min-width: 380px; max-width: 380px;">';
     tablaHTML += '<span>WIN</span>';
     tablaHTML += '<div class="win-info-icon" style="position: relative; display: inline-flex; align-items: center; cursor: help; z-index: 99999;" onmouseenter="const icon = this; const tooltip = icon.querySelector(\'.win-tooltip\'); if (tooltip) { const rect = icon.getBoundingClientRect(); tooltip.style.top = (rect.top - tooltip.offsetHeight - 8) + \'px\'; tooltip.style.left = rect.left + (rect.width / 2) + \'px\'; tooltip.style.transform = \'translateX(-50%)\'; }">';
     tablaHTML += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368; opacity: 0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'">';
@@ -340,8 +349,11 @@ function renderizarTablaProyectos(datos, contenido) {
             tablaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
         }
 
+        if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos) {
+            const equipoLabel = (typeof obtenerNombreEquipoSolo === 'function' && item.equipo) ? obtenerNombreEquipoSolo(item.equipo) : (item.equipo || '-');
+            tablaHTML += '<div class="modern-table-cell item-text equipo-cell" style="min-width: 140px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + (equipoLabel || '-').replace(/"/g, '&quot;') + '">' + (equipoLabel || '-').replace(/</g, '&lt;') + '</div>';
+        }
         tablaHTML += '<div class="modern-table-cell item-text">' + abreviarCliente(item.cliente || '-') + '</div>';
-        // Celda del proyecto - editable (clickeable para abrir modal)
         tablaHTML += '<div class="modern-table-cell item-text editable-cell" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + item.id_proyecto + '); event.stopPropagation();" data-item="' + itemDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">' + nombreProyecto + '</a></div>';
         tablaHTML += '<div class="modern-table-cell item-text">' + abreviarCategoria(item.categoria) + '</div>';
 

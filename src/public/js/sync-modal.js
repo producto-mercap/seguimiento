@@ -342,11 +342,5 @@ async function confirmarEliminarPedido() {
     }
 }
 
-// Cerrar modal al hacer clic fuera
-document.addEventListener('click', (e) => {
-    const modal = document.getElementById('modalPedido');
-    if (modal && e.target === modal) {
-        cerrarModalPedido();
-    }
-});
+// El modal de pedido solo se cierra con Cancelar, Guardar o X (no al hacer clic fuera)
 

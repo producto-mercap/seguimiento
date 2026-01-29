@@ -349,6 +349,9 @@
     flex-wrap: wrap;
     width: 100%;
     justify-content: space-between;
+    position: relative;
+    z-index: 200;
+    /* Muy por encima del table-container (z-index 0) y del header sticky (z-index 1) */
 }
 
 .seguimiento-filtros-inner {

@@ -345,8 +345,8 @@
     box-sizing: border-box;
     position: sticky;
     top: 0;
-    z-index: 10;
-    /* Por encima de las filas */
+    z-index: 1;
+    /* Solo por encima de las filas de la tabla; bajo los desplegables de filtros (z-index 100+) */
     background: rgba(230, 235, 239, 1);
     /* Mismo color que el header base */
     /* Nota: sticky solo funciona dentro de su contenedor con scroll */
@@ -919,7 +919,28 @@
     overflow: visible;
 }
 
-/* Columna Proyecto (índice 3) - RESPONSIVE: mínimo 300px, se expande */
+/* Con columna Equipo (vista "Todos los equipos"): Equipo a la izquierda de Cliente, 16 columnas para evitar solapamiento Fecha Fin / WIN */
+.modern-table.proyectos.con-equipo .modern-table-header,
+.modern-table.proyectos.con-equipo .modern-table-row {
+    grid-template-columns: 30px 140px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
+    /* 16 columnas: vacío, Equipo, Cliente, Proyecto, ..., Fecha Inicio, Fecha Fin, WIN */
+    min-width: 1904px;
+}
+
+/* Fecha Fin (15) y WIN (16) con ancho fijo para no solaparse */
+.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell:nth-child(15),
+.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(15) {
+    min-width: 75px !important;
+    max-width: 75px !important;
+}
+.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell.win-header-cell,
+.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell:nth-child(16),
+.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(16) {
+    min-width: 380px !important;
+    max-width: 380px !important;
+}
+
+/* Columna Proyecto (índice 3 sin Equipo, índice 4 con Equipo) - RESPONSIVE: mínimo 300px, se expande */
 .modern-table.proyectos .modern-table-header>.modern-table-cell:nth-child(3),
 .modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(3) {
     grid-column: 3;
@@ -933,9 +954,12 @@
 
 /* NOTA: No agregar estilos específicos para Accionables (columna 10) - usar solo el grid-template-columns */
 
-/* Forzar ancho de la columna WIN (posición 14, última columna) */
+/* Forzar ancho de la columna WIN (posición 14 sin Equipo, 15 con Equipo; última columna) */
 .modern-table.proyectos .modern-table-header>.modern-table-cell:nth-child(14),
 .modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(14),
+.modern-table.proyectos .modern-table-header>.modern-table-cell.win-header-cell,
+.modern-table.proyectos.con-equipo .modern-table-header>.modern-table-cell:nth-child(16),
+.modern-table.proyectos.con-equipo .modern-table-row>.modern-table-cell:nth-child(16),
 .modern-table.proyectos .modern-table-header>.modern-table-cell:last-child,
 .modern-table.proyectos .modern-table-row>.modern-table-cell:last-child {
     min-width: 380px !important;
@@ -945,6 +969,7 @@
 
 /* Asegurar que el textarea WIN ocupe todo el ancho de su celda */
 .modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(14) .win-textarea,
+.modern-table.proyectos.con-equipo .modern-table-row>.modern-table-cell:nth-child(16) .win-textarea,
 .modern-table.proyectos .modern-table-row>.modern-table-cell:last-child .win-textarea {
     width: 100% !important;
     min-width: 100% !important;
@@ -976,9 +1001,16 @@
     overflow: visible;
 }
 
-/* Columna Proyecto - RESPONSIVE: mínimo 300px, se expande en pantallas grandes */
+.modern-table.proyectos.con-equipo {
+    min-width: 1904px;
+    /* 1764 + 140 (columna Equipo) */
+}
+
+/* Columna Proyecto - RESPONSIVE: mínimo 300px, se expande en pantallas grandes (3ª sin Equipo, 4ª con Equipo) */
 .modern-table.proyectos .modern-table-header>.modern-table-cell:nth-child(3),
-.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(3) {
+.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(3),
+.modern-table.proyectos.con-equipo .modern-table-header>.modern-table-cell:nth-child(4),
+.modern-table.proyectos.con-equipo .modern-table-row>.modern-table-cell:nth-child(4) {
     min-width: 300px;
     /* Mínimo 300px */
     /* NO max-width ni width fijo - permite expansión con 1fr */
@@ -990,7 +1022,8 @@
 }
 
 /* Asegurar que los enlaces dentro de la columna Proyecto también se corten */
-.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(3) a {
+.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(3) a,
+.modern-table.proyectos.con-equipo .modern-table-row>.modern-table-cell:nth-child(4) a {
     display: block;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -1153,10 +1186,10 @@
     /* Permitir que expanda */
     margin-top: 0;
     /* Sin margen superior - el seguimiento-container ya tiene margen inferior */
-    position: static;
-    /* Posición estática para mantener flujo normal del documento */
+    position: relative;
+    /* Necesario para que z-index aplique y quede por debajo de los filtros */
     z-index: 0;
-    /* Z-index menor que seguimiento-container */
+    /* Por debajo de .seguimiento-filtros (z-index 100) para que los desplegables no queden tapados */
     display: block;
     /* Display block para mantener flujo normal */
 }

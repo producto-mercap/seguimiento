@@ -96,9 +96,70 @@ async function renderizarGanttEquipo(proyectos) {
     const idGantt = 'team_gantt';
 
     // Filtrar proyectos válidos (que tengan fechas)
-    const proyectosValidos = proyectos.filter(p => {
+    let proyectosValidos = proyectos.filter(p => {
         return (p.fecha_inicio || p.fecha_inicio_epics) && (p.fecha_fin || p.fecha_fin_epics);
     });
+
+    // Ordenar con el mismo criterio que la tabla (por equipo por defecto en vista todos los equipos)
+    if (typeof ordenActual !== 'undefined' && ordenActual && proyectosValidos.length > 1) {
+        proyectosValidos = [...proyectosValidos];
+        proyectosValidos.sort((a, b) => {
+            let valorA, valorB;
+            if (ordenActual.columna === 'cliente') {
+                valorA = (a.cliente || '').toLowerCase();
+                valorB = (b.cliente || '').toLowerCase();
+            } else if (ordenActual.columna === 'proyecto') {
+                valorA = (a.nombre_proyecto || '').toLowerCase();
+                valorB = (b.nombre_proyecto || '').toLowerCase();
+            } else if (ordenActual.columna === 'categoria') {
+                valorA = (a.categoria || '').toLowerCase();
+                valorB = (b.categoria || '').toLowerCase();
+            } else if (ordenActual.columna === 'equipo') {
+                valorA = (typeof obtenerNombreEquipoSolo === 'function' && a.equipo) ? (obtenerNombreEquipoSolo(a.equipo) || '').toLowerCase() : String(a.equipo || '').toLowerCase();
+                valorB = (typeof obtenerNombreEquipoSolo === 'function' && b.equipo) ? (obtenerNombreEquipoSolo(b.equipo) || '').toLowerCase() : String(b.equipo || '').toLowerCase();
+            } else if (ordenActual.columna === 'estado' && typeof ordenEstados !== 'undefined') {
+                const indexA = ordenEstados.indexOf((a.estado || '').toLowerCase());
+                const indexB = ordenEstados.indexOf((b.estado || '').toLowerCase());
+                valorA = indexA === -1 ? 999 : indexA;
+                valorB = indexB === -1 ? 999 : indexB;
+                if (valorA === valorB) {
+                    valorA = (a.cliente || '').toLowerCase();
+                    valorB = (b.cliente || '').toLowerCase();
+                }
+            } else if (ordenActual.columna === 'overall') {
+                const ordenOverall = { 'verde': 1, 'amarillo': 2, 'rojo': 3, '': 4 };
+                valorA = ordenOverall[a.overall] || 4;
+                valorB = ordenOverall[b.overall] || 4;
+            } else if (ordenActual.columna === 'alcance') {
+                const ordenAlcance = { 'verde': 1, 'amarillo': 2, 'rojo': 3, '': 4 };
+                valorA = ordenAlcance[a.alcance] || 4;
+                valorB = ordenAlcance[b.alcance] || 4;
+            } else if (ordenActual.columna === 'costo') {
+                const ordenCosto = { 'verde': 1, 'amarillo': 2, 'rojo': 3, '': 4 };
+                valorA = ordenCosto[a.costo] || 4;
+                valorB = ordenCosto[b.costo] || 4;
+            } else if (ordenActual.columna === 'plazos') {
+                const ordenPlazos = { 'verde': 1, 'amarillo': 2, 'rojo': 3, '': 4 };
+                valorA = ordenPlazos[a.plazos] || 4;
+                valorB = ordenPlazos[b.plazos] || 4;
+            } else if (ordenActual.columna === 'avance') {
+                valorA = parseInt(a.avance) || 0;
+                valorB = parseInt(b.avance) || 0;
+            } else if (ordenActual.columna === 'fecha_inicio') {
+                valorA = a.fecha_inicio || '';
+                valorB = b.fecha_inicio || '';
+            } else if (ordenActual.columna === 'fecha_fin') {
+                valorA = a.fecha_fin || '';
+                valorB = b.fecha_fin || '';
+            } else {
+                valorA = (typeof obtenerNombreEquipoSolo === 'function' && a.equipo) ? (obtenerNombreEquipoSolo(a.equipo) || '').toLowerCase() : String(a.equipo || '').toLowerCase();
+                valorB = (typeof obtenerNombreEquipoSolo === 'function' && b.equipo) ? (obtenerNombreEquipoSolo(b.equipo) || '').toLowerCase() : String(b.equipo || '').toLowerCase();
+            }
+            if (valorA < valorB) return ordenActual.direccion === 'asc' ? -1 : 1;
+            if (valorA > valorB) return ordenActual.direccion === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
 
     if (proyectosValidos.length === 0) {
         container.style.display = 'none';
@@ -224,7 +285,10 @@ async function renderizarGanttEquipo(proyectos) {
         html += '</button>';
 
         const nombreTruncado = truncarNombreGantt(p.nombre_proyecto);
-        html += '<span class="gantt-row-name" title="' + (p.nombre_proyecto || '').replace(/"/g, '&quot;') + '">' + nombreTruncado + '</span>';
+        const nombreEquipo = (typeof obtenerNombreEquipoSolo === 'function' && p.equipo) ? obtenerNombreEquipoSolo(p.equipo) : '';
+        const labelTexto = nombreEquipo ? (nombreEquipo + ' · ' + (p.nombre_proyecto || '')) : (p.nombre_proyecto || '');
+        const labelMostrado = nombreEquipo ? (nombreEquipo + ' · ' + nombreTruncado) : nombreTruncado;
+        html += '<span class="gantt-row-name" title="' + (labelTexto || '').replace(/"/g, '&quot;') + '">' + (labelMostrado || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
         html += '</div>';
 
         // Subproyectos Rows (Children) - si tiene subproyectos

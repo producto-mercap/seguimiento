@@ -722,7 +722,7 @@ input[type="date"] {
     background: #bdc1c6;
 }
 
-/* Dropdowns de filtros (Cliente, Categoría, Estado) - mismo estilo que custom-dropdown */
+/* Dropdowns de filtros (Cliente, Categoría, Estado, Equipo) - por encima de la tabla */
 .filter-dropdown {
     border: none !important;
     outline: none !important;
@@ -732,7 +732,7 @@ input[type="date"] {
     max-height: 400px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    z-index: 10000 !important;
+    z-index: 100002 !important;
     position: fixed !important;
     min-width: 200px !important;
 }

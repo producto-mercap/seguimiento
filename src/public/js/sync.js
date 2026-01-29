@@ -3,20 +3,27 @@
  * Sync - Seguimiento de Proyectos
  */
 
-// Cargar equipos disponibles
+// Equipos hardcodeados que siempre aparecen en Solicitante y Responsable
+const EQUIPOS_HARDCODEADOS = ['QA', 'Operaciones', 'Producto'];
+
+// Cargar equipos disponibles (API + hardcodeados)
 async function cargarEquipos() {
     try {
         const response = await fetch('/api/sync/equipos');
         const data = await response.json();
         
-        if (data.success) {
-            equiposDisponibles = data.data;
-            actualizarDropdownsEquipos();
+        if (data.success && Array.isArray(data.data)) {
+            const deApi = data.data.filter(e => !EQUIPOS_HARDCODEADOS.includes(e));
+            equiposDisponibles = [...EQUIPOS_HARDCODEADOS, ...deApi];
         } else {
-            console.error('Error al cargar equipos:', data.error);
+            equiposDisponibles = [...EQUIPOS_HARDCODEADOS];
+            if (!data.success) console.error('Error al cargar equipos:', data.error);
         }
+        actualizarDropdownsEquipos();
     } catch (error) {
         console.error('Error al cargar equipos:', error);
+        equiposDisponibles = [...EQUIPOS_HARDCODEADOS];
+        actualizarDropdownsEquipos();
     }
 }
 
