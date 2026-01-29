@@ -19,6 +19,12 @@
     100% { transform: rotate(360deg); }
 }
 
+/* Skeleton loading (vista previa Gantt/tabla en menú principal) */
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 /* Empty state */
 .empty-state {
     text-align: center;

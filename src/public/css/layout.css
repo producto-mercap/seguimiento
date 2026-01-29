@@ -354,6 +354,12 @@
     /* Muy por encima del table-container (z-index 0) y del header sticky (z-index 1) */
 }
 
+/* Gantt por debajo de la barra de filtros para que los desplegables (Equipo, Cliente, etc.) queden al frente */
+#team-gantt-container {
+    position: relative;
+    z-index: 0;
+}
+
 .seguimiento-filtros-inner {
     display: flex;
     align-items: center;

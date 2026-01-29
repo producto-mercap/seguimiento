@@ -516,11 +516,17 @@ function ordenarPor(columna) {
         }
 
         if (typeof renderizarTabla === 'function') {
-            renderizarTabla(datosFiltrados);
-            if (typeof renderizarGanttEquipo === 'function' && typeof tipoActual !== 'undefined' && tipoActual !== 'mantenimiento') {
-                setTimeout(async () => {
+            // Menú principal (vistaTodosEquipos): Gantt primero, luego tabla. Páginas de equipo: tabla primero, luego Gantt.
+            if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof renderizarGanttEquipo === 'function' && tipoActual !== 'mantenimiento' && datosFiltrados.length > 0) {
+                (async () => {
                     await renderizarGanttEquipo(datosFiltrados);
-                }, 100);
+                    renderizarTabla(datosFiltrados);
+                })();
+            } else if (typeof renderizarGanttEquipo === 'function' && tipoActual !== 'mantenimiento') {
+                renderizarTabla(datosFiltrados);
+                setTimeout(async () => { await renderizarGanttEquipo(datosFiltrados); }, 100);
+            } else {
+                renderizarTabla(datosFiltrados);
             }
         } else {
             if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {

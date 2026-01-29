@@ -3,12 +3,55 @@
  * Seguimiento de Proyectos
  */
 
+/** Skeleton Gantt (vista previa mientras carga) - solo menú principal */
+function getSkeletonGanttHTML() {
+    const rows = 6;
+    let html = '<div class="gantt-skeleton" style="padding:16px;background:#fafbfc;border-radius:8px;border:1px solid #e8eaed;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+    html += '<div style="height:24px;width:180px;background:linear-gradient(90deg,#e8eaed 25%,#f1f3f4 50%,#e8eaed 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:4px;"></div>';
+    html += '<div style="display:flex;gap:8px;"><div style="height:32px;width:70px;background:#e8eaed;border-radius:4px;"></div><div style="height:32px;width:70px;background:#e8eaed;border-radius:4px;"></div></div></div>';
+    html += '<div style="display:flex;border-top:1px solid #e8eaed;">';
+    html += '<div style="width:200px;padding:12px 0;border-right:1px solid #e8eaed;">';
+    for (let i = 0; i < rows; i++) {
+        html += '<div style="height:36px;margin:4px 12px;background:linear-gradient(90deg,#e8eaed 25%,#f1f3f4 50%,#e8eaed 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:4px;animation-delay:' + (i * 0.05) + 's;"></div>';
+    }
+    html += '</div><div style="flex:1;padding:12px 0;overflow:hidden;">';
+    for (let i = 0; i < rows; i++) {
+        const w = 40 + Math.random() * 30;
+        html += '<div style="height:36px;margin:4px 0;display:flex;align-items:center;"><div style="height:24px;width:' + w + '%;max-width:280px;background:linear-gradient(90deg,#e8eaed 25%,#f1f3f4 50%,#e8eaed 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:4px;animation-delay:' + (i * 0.05) + 's;"></div></div>';
+    }
+    html += '</div></div></div>';
+    return html;
+}
+
+/** Skeleton tabla (vista previa mientras carga) - solo menú principal */
+function getSkeletonTablaHTML() {
+    const rows = 8;
+    let html = '<div class="table-skeleton" style="background:#fff;border-radius:8px;border:1px solid #e8eaed;overflow:hidden;">';
+    html += '<div style="display:flex;height:40px;background:#f8f9fa;border-bottom:1px solid #e8eaed;padding:0 12px;align-items:center;gap:8px;">';
+    for (let c = 0; c < 6; c++) {
+        html += '<div style="height:14px;flex:1;min-width:60px;max-width:120px;background:#e8eaed;border-radius:4px;"></div>';
+    }
+    html += '</div>';
+    for (let r = 0; r < rows; r++) {
+        html += '<div style="display:flex;height:44px;border-bottom:1px solid #f1f3f4;padding:0 12px;align-items:center;gap:8px;">';
+        for (let c = 0; c < 6; c++) {
+            const w = 60 + (c === 1 ? 40 : 0);
+            html += '<div style="height:14px;flex:1;min-width:50px;max-width:' + w + 'px;background:linear-gradient(90deg,#f1f3f4 25%,#e8eaed 50%,#f1f3f4 75%);background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:4px;animation-delay:' + (r * 0.04 + c * 0.02) + 's;"></div>';
+        }
+        html += '</div>';
+    }
+    html += '</div>';
+    return html;
+}
+
 /**
  * Cargar proyectos de todos los equipos (vista principal sin producto seleccionado).
- * Primero muestra la tabla y luego carga el Gantt para mejor performance.
+ * Primero carga y muestra el Gantt, luego la tabla. Gantt y tabla se renderizan en paralelo para mejor performance.
  */
 async function cargarDatosTodosEquipos() {
     const contenido = document.getElementById('contenido');
+    const ganttContainer = document.getElementById('team-gantt-container');
     if (!contenido) return;
 
     contenido.className = 'table-container proyectos-container';
@@ -16,7 +59,11 @@ async function cargarDatosTodosEquipos() {
     contenido.style.borderRadius = '';
     contenido.style.boxShadow = '';
     contenido.style.overflow = '';
-    contenido.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="empty-state-text">Cargando proyectos...</div></div>';
+    contenido.innerHTML = getSkeletonTablaHTML();
+    if (ganttContainer) {
+        ganttContainer.style.display = 'block';
+        ganttContainer.innerHTML = getSkeletonGanttHTML();
+    }
 
     const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
     let params = 'incluirCerrados=' + (incluirCerrados ? 'true' : 'false');
@@ -89,25 +136,25 @@ async function cargarDatosTodosEquipos() {
             actualizarFiltrosAplicados();
         }
 
-        // 1) Renderizar tabla primero (respuesta rápida)
-        if (typeof renderizarTabla === 'function') {
-            renderizarTabla(datosFiltrados);
-        }
-
         const contadorEl = document.getElementById('contadorProyectos');
         if (contadorEl) {
             contadorEl.textContent = 'Total proyectos: ' + datosFiltrados.length;
         }
 
-        // 2) Cargar Gantt después (mejor performance)
-        const ganttContainer = document.getElementById('team-gantt-container');
-        if (ganttContainer) ganttContainer.style.display = 'none';
-        if (typeof renderizarGanttEquipo === 'function' && datosFiltrados.length > 0) {
-            setTimeout(async () => {
-                await renderizarGanttEquipo(datosFiltrados);
-                if (ganttContainer) ganttContainer.style.display = 'block';
-            }, 150);
+        // Gantt y tabla en paralelo: tabla se empieza a renderizar mientras carga el Gantt (mejor performance)
+        const tablePromise = typeof renderizarTabla === 'function'
+            ? Promise.resolve().then(function () { renderizarTabla(datosFiltrados); })
+            : Promise.resolve();
+
+        if (ganttContainer && typeof renderizarGanttEquipo === 'function' && datosFiltrados.length > 0) {
+            await renderizarGanttEquipo(datosFiltrados);
+            ganttContainer.style.display = 'block';
+        } else if (ganttContainer) {
+            ganttContainer.style.display = 'none';
+            ganttContainer.innerHTML = '';
         }
+
+        await tablePromise;
     } catch (error) {
         console.error('Error al cargar proyectos de todos los equipos:', error);
         contenido.innerHTML = '<div class="empty-state">' +
@@ -404,7 +451,18 @@ function actualizarFiltroEquiposDesdeTabla() {
 
 async function cargarDatos() {
     const contenido = document.getElementById('contenido');
-    contenido.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="empty-state-text">Cargando datos...</div></div>';
+    const ganttContainer = document.getElementById('team-gantt-container');
+
+    // Vista previa (skeleton) en pestaña Proyectos; spinner en Mantenimiento
+    if (typeof tipoActual !== 'undefined' && tipoActual !== 'mantenimiento') {
+        contenido.innerHTML = getSkeletonTablaHTML();
+        if (ganttContainer) {
+            ganttContainer.style.display = 'block';
+            ganttContainer.innerHTML = getSkeletonGanttHTML();
+        }
+    } else {
+        contenido.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="empty-state-text">Cargando datos...</div></div>';
+    }
 
     try {
         if (typeof productoActual === 'undefined' || !productoActual) {
@@ -603,6 +661,11 @@ async function cargarDatos() {
             const contadorProyectos = document.getElementById('contadorProyectos');
             if (contadorProyectos) {
                 contadorProyectos.textContent = 'total proyectos: 0';
+            }
+            const ganttContainerErr = document.getElementById('team-gantt-container');
+            if (ganttContainerErr) {
+                ganttContainerErr.style.display = 'none';
+                ganttContainerErr.innerHTML = '';
             }
         }
 

@@ -247,17 +247,28 @@
                             </div>
                             <% } %>
 
+                            <% if (!productoActual) { %>
+                            <!-- Vista general: Gantt arriba, tabla abajo -->
+                            <div id="team-gantt-container" class="gantt-container"
+                                style="display:none; margin-bottom: 40px;"></div>
+                            <div id="contenido" class="table-container" style="margin-top: 24px;">
+                                <div class="empty-state">
+                                    <div class="spinner"></div>
+                                    <div class="empty-state-text">Cargando datos...</div>
+                                </div>
+                            </div>
+                            <% } else { %>
+                            <!-- Vista equipo: tabla arriba, Gantt abajo -->
                             <div id="contenido" class="table-container">
                                 <div class="empty-state">
                                     <div class="spinner"></div>
                                     <div class="empty-state-text">Cargando datos...</div>
                                 </div>
                             </div>
+                            <div id="team-gantt-container" class="gantt-container"
+                                style="display:none; margin-top: 40px; margin-bottom: 40px;"></div>
+                            <% } %>
                         </div>
-
-                        <!-- Contenedor para Gantt de Equipo -->
-                        <div id="team-gantt-container" class="gantt-container"
-                            style="display:none; margin-top: 40px; margin-bottom: 40px;"></div>
                     </div>
                 </div>
             </div>
