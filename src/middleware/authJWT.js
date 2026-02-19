@@ -32,17 +32,16 @@ function verifyToken(token) {
  * Verifica si el usuario tiene un token válido en las cookies
  */
 function requireAuthJWT(req, res, next) {
-    // Extraer token de las cookies
-    const cookieHeader = req.headers.cookie || '';
-    const tokenMatch = cookieHeader.match(/auth_token=([^;]+)/);
-    const token = tokenMatch ? tokenMatch[1] : null;
-    
-    if (!token) {
-        if (process.env.DEBUG_SESSIONS === 'true' || process.env.NODE_ENV === 'production') {
+    try {
+        // Extraer token de las cookies
+        const cookieHeader = req.headers.cookie || '';
+        const tokenMatch = cookieHeader.match(/auth_token=([^;]+)/);
+        const token = tokenMatch ? tokenMatch[1] : null;
+        
+        if (!token) {
             console.log('❌ No hay token JWT - Redirigiendo a /login');
+            return res.redirect('/login');
         }
-        return res.redirect('/login');
-    }
     
     // Verificar token
     const verification = verifyToken(token);
@@ -61,12 +60,16 @@ function requireAuthJWT(req, res, next) {
         console.log('✅ Token JWT válido - Autenticado', verification.data.isAdmin ? '(Admin)' : '(Usuario)');
     }
     
-    // Agregar información de autenticación al request
-    req.authenticated = true;
-    req.authData = verification.data;
-    req.isAdmin = verification.data.isAdmin || false;
-    
-    next();
+        // Agregar información de autenticación al request
+        req.authenticated = true;
+        req.authData = verification.data;
+        req.isAdmin = verification.data.isAdmin || false;
+        
+        next();
+    } catch (error) {
+        console.error('Error en middleware de autenticación:', error);
+        return res.redirect('/login');
+    }
 }
 
 /**

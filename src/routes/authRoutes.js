@@ -47,6 +47,12 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
     const { password } = req.body;
     
+    // Debug: Log de lo que se recibe
+    console.log('🔍 Intento de login recibido');
+    console.log('   Password recibida:', password ? '***' : 'undefined');
+    console.log('   LOGIN_PASSWORD configurada:', LOGIN_PASSWORD ? 'Sí' : 'No');
+    console.log('   LOGIN_PASSWORD valor:', LOGIN_PASSWORD);
+    
     // Validar que LOGIN_PASSWORD esté configurada antes de comparar
     if (!LOGIN_PASSWORD) {
         console.error('❌ LOGIN_PASSWORD no está configurada');
@@ -61,6 +67,8 @@ router.post('/', (req, res) => {
     
     // Verificar si es usuario normal
     const isUser = password === LOGIN_PASSWORD;
+    
+    console.log('   Comparación - isAdmin:', isAdmin, 'isUser:', isUser);
     
     if (isAdmin || isUser) {
         // Generar token JWT con flag de admin

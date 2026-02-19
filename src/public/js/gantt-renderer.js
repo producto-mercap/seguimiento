@@ -183,8 +183,12 @@ async function renderizarGanttEquipo(proyectos) {
                 const epicsResponse = await fetch('/api/epics/' + p.id_proyecto + '?es_proyecto_padre=false');
                 const epicsData = await epicsResponse.json();
                 if (epicsData.success && epicsData.data) {
-                    // Filtrar epics que tengan fechas
-                    const epicsConFechas = epicsData.data.filter(epic => epic.cf_21 && epic.cf_22);
+                    // Filtrar epics que tengan fechas (usar start_date/due_date nativos o cf_21/cf_22 como fallback)
+                    const epicsConFechas = epicsData.data.filter(epic => {
+                        const fechaInicio = epic.start_date || epic.cf_21;
+                        const fechaFin = epic.due_date || epic.cf_22;
+                        return fechaInicio && fechaFin;
+                    });
                     if (epicsConFechas.length > 0) {
                         ganttEpicsCache[p.id_proyecto] = epicsConFechas;
                     }
@@ -413,8 +417,9 @@ async function renderizarGanttEquipo(proyectos) {
         if (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0) {
             const displayStyle = ganttExpanded[p.id_proyecto] === true ? 'flex' : 'none';
             ganttEpicsCache[p.id_proyecto].forEach(epic => {
-                const epicFechaInicio = epic.cf_21 || null;
-                const epicFechaFin = epic.cf_22 || null;
+                // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
+                const epicFechaInicio = epic.start_date || epic.cf_21 || null;
+                const epicFechaFin = epic.due_date || epic.cf_22 || null;
                 if (epicFechaInicio && epicFechaFin) {
                     html += '<div class="gantt-timeline-row is-child epic-child-' + p.id_proyecto + '" style="display: ' + displayStyle + ';">';
                     html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
@@ -605,11 +610,12 @@ function prepararDatosGantt(esProyectoPadre, items, proyectoData) {
                 estado: item.estado || ''
             };
         } else {
+            // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
             return {
                 id: item.epic_id,
                 nombre: item.subject || 'Epic #' + item.epic_id,
-                fechaInicio: item.cf_21 || null,
-                fechaFin: item.cf_22 || null,
+                fechaInicio: item.start_date || item.cf_21 || null,
+                fechaFin: item.due_date || item.cf_22 || null,
                 estado: '' // Los epics no tienen estado en el sistema actual
             };
         }
@@ -1149,8 +1155,9 @@ function agregarEpicsAlGantt(idProyecto, epics, container, cached) {
 
     // Generar HTML para los epics en el timeline
     epics.forEach(epic => {
-        const epicFechaInicio = epic.cf_21 || null;
-        const epicFechaFin = epic.cf_22 || null;
+        // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
+        const epicFechaInicio = epic.start_date || epic.cf_21 || null;
+        const epicFechaFin = epic.due_date || epic.cf_22 || null;
         if (epicFechaInicio && epicFechaFin) {
             const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
             if (barraEpic) {

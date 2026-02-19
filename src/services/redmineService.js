@@ -443,8 +443,6 @@ function mapearEpic(epic) {
     const customFields = epic.custom_fields || [];
 
     const cf_23 = extraerCustomField(customFields, 23) || extraerCustomField(customFields, 'id_services');
-    const cf_21 = extraerCustomField(customFields, 21) || extraerCustomField(customFields, 'fecha planificada inicio');
-    const cf_22 = extraerCustomField(customFields, 22) || extraerCustomField(customFields, 'fecha planificada fin');
     const cf_15 = extraerCustomField(customFields, 15) || extraerCustomField(customFields, 'fecha real finalización');
 
     // Convertir fechas (asegurarse de que el formato sea YYYY-MM-DD o similar válido)
@@ -460,6 +458,11 @@ function mapearEpic(epic) {
         return null;
     };
 
+    // Usar campos nativos de Redmine: start_date y due_date
+    // Estos reemplazan a los custom fields cf_21 y cf_22
+    const start_date = parseDate(epic.start_date);
+    const due_date = parseDate(epic.due_date);
+
     return {
         epic_id: epic.id,
         subject: epic.subject || null,
@@ -469,9 +472,13 @@ function mapearEpic(epic) {
         proyecto_padre: epic.project?.id || null,
         nombre_proyecto_padre: epic.project?.name || null,
         cf_23: cf_23 || null,
-        cf_21: parseDate(cf_21),
-        cf_22: parseDate(cf_22),
-        cf_15: parseDate(cf_15)
+        // Usar campos nativos: start_date y due_date (guardados en cf_21 y cf_22 para compatibilidad con BD)
+        cf_21: start_date,  // start_date nativo de Redmine
+        cf_22: due_date,   // due_date nativo de Redmine
+        cf_15: parseDate(cf_15),
+        // También exponer los campos nativos directamente para uso en frontend
+        start_date: start_date,
+        due_date: due_date
     };
 }
 

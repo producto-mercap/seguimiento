@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Error' %> | Seguimiento de Proyectos</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .error-icon {
+            font-size: 72px;
+            margin-bottom: 24px;
+        }
+        .error-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        .error-message {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+        .error-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1 class="error-title"><%= typeof title !== 'undefined' ? title : 'Error' %></h1>
+        <div class="error-message">
+            <%= typeof error !== 'undefined' ? error : 'Ha ocurrido un error inesperado' %>
+        </div>
+        <div class="error-actions">
+            <a href="/" class="button">Volver al inicio</a>
+            <a href="javascript:history.back()" class="button button-secondary">Volver atrás</a>
+        </div>
+    </div>
+</body>
+</html>
+
+

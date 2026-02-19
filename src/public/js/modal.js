@@ -202,20 +202,22 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
                     // Obtener fechas de los epics del subproyecto
                     const epicsSub = epicsArrays[index] || [];
 
-                    // Extraer fechas de inicio de los epics (cf_21)
+                    // Extraer fechas de inicio de los epics (usar start_date nativo o cf_21 como fallback)
                     epicsSub.forEach(function (epic) {
-                        if (epic.cf_21 && epic.cf_21.trim() !== '') {
-                            fechasInicio.push(epic.cf_21);
+                        const fechaInicio = epic.start_date || epic.cf_21;
+                        if (fechaInicio && fechaInicio.trim() !== '') {
+                            fechasInicio.push(fechaInicio);
                         }
                     });
 
                     // Verificar si el subproyecto tiene fecha fin
                     let subproyectoTieneFechaFin = false;
 
-                    // Verificar en epics (cf_22)
+                    // Verificar en epics (usar due_date nativo o cf_22 como fallback)
                     epicsSub.forEach(function (epic) {
-                        if (epic.cf_22 && epic.cf_22.trim() !== '') {
-                            fechasFinPlanificada.push(epic.cf_22);
+                        const fechaFin = epic.due_date || epic.cf_22;
+                        if (fechaFin && fechaFin.trim() !== '') {
+                            fechasFinPlanificada.push(fechaFin);
                             subproyectoTieneFechaFin = true;
                         }
                     });
@@ -373,8 +375,9 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
                 if (epics.length === 0) {
                     epicsHTML = '<div class="epics-table-container"><div class="epics-table-empty">No hay epics sincronizados</div></div>';
                 } else {
-                    const fechasInicio = epics.map(e => e.cf_21).filter(f => f);
-                    const fechasFinPlanificada = epics.map(e => e.cf_22).filter(f => f);
+                    // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
+                    const fechasInicio = epics.map(e => e.start_date || e.cf_21).filter(f => f);
+                    const fechasFinPlanificada = epics.map(e => e.due_date || e.cf_22).filter(f => f);
                     const fechasFinReal = epics.map(e => e.cf_15).filter(f => f);
 
                     if (fechasInicio.length > 0) {
@@ -423,9 +426,9 @@ window.abrirModalDetalle = async function abrirModalDetalle(id_proyecto, mostrar
                             statusClass = 'status-open';
                         }
 
-                        // Formatear fechas
-                        const fechaInicio = epic.cf_21 ? formatearFecha(epic.cf_21) : '';
-                        const fechaFinPlan = epic.cf_22 ? formatearFecha(epic.cf_22) : '';
+                        // Formatear fechas (usar campos nativos start_date/due_date con fallback)
+                        const fechaInicio = (epic.start_date || epic.cf_21) ? formatearFecha(epic.start_date || epic.cf_21) : '';
+                        const fechaFinPlan = (epic.due_date || epic.cf_22) ? formatearFecha(epic.due_date || epic.cf_22) : '';
                         const fechaFinReal = epic.cf_15 ? formatearFecha(epic.cf_15) : '';
 
                         let html = '<tr>';

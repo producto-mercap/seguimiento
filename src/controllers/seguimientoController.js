@@ -18,7 +18,20 @@ async function index(req, res) {
         const categoriaActual = req.query.categoria || null;
 
         // Obtener productos con equipos
-        const productosEquipos = await ProductosEquiposModel.obtenerTodos();
+        let productosEquipos = [];
+        try {
+            productosEquipos = await ProductosEquiposModel.obtenerTodos();
+        } catch (dbError) {
+            console.error('Error al conectar con la base de datos:', dbError.message);
+            // Si no hay base de datos configurada, mostrar mensaje amigable
+            if (!process.env.DATABASE_URL || dbError.message.includes('ECONNREFUSED') || dbError.message.includes('connection')) {
+                return res.status(500).render('pages/error', {
+                    title: 'Base de Datos no Configurada',
+                    error: 'La base de datos no está configurada. Por favor, configura DATABASE_URL en el archivo .env'
+                });
+            }
+            throw dbError; // Re-lanzar si es otro tipo de error
+        }
 
         // Obtener nombre del equipo actual si existe
         let equipoNombre = null;

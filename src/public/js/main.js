@@ -212,8 +212,9 @@ async function actualizarEpicsEnModal(id_proyecto, datosSincronizacion) {
         let fechaFinReal = null;
         
         if (epics.length > 0) {
-            const fechasInicio = epics.map(e => e.cf_21).filter(f => f);
-            const fechasFinPlanificada = epics.map(e => e.cf_22).filter(f => f);
+            // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
+            const fechasInicio = epics.map(e => e.start_date || e.cf_21).filter(f => f);
+            const fechasFinPlanificada = epics.map(e => e.due_date || e.cf_22).filter(f => f);
             const fechasFinReal = epics.map(e => e.cf_15).filter(f => f);
             
             if (fechasInicio.length > 0) {
@@ -244,8 +245,9 @@ async function actualizarEpicsEnModal(id_proyecto, datosSincronizacion) {
             const estadoEpic = epic.status || '';
             const estadoLower = estadoEpic.toLowerCase();
             
-            const fechaInicio = epic.cf_21 ? formatearFecha(epic.cf_21) : '';
-            const fechaFinPlan = epic.cf_22 ? formatearFecha(epic.cf_22) : '';
+            // Usar campos nativos start_date/due_date con fallback
+            const fechaInicio = (epic.start_date || epic.cf_21) ? formatearFecha(epic.start_date || epic.cf_21) : '';
+            const fechaFinPlan = (epic.due_date || epic.cf_22) ? formatearFecha(epic.due_date || epic.cf_22) : '';
             const fechaFinRealEpic = epic.cf_15 ? formatearFecha(epic.cf_15) : '';
             
             // Formatear fecha para mostrar (DD/MM/YYYY)
