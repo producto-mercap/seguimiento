@@ -130,3 +130,4 @@ git remote set-url origin https://github.com/producto-mercap/seguimiento.git
 5. **Usa ramas** para features grandes antes de mergear a `main`
 
 
+
