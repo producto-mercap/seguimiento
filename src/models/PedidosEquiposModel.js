@@ -23,10 +23,9 @@ class PedidosEquiposModel {
                     // Si es array, buscar pedidos que contengan cualquiera de los equipos
                     // Manejar tanto JSONB como VARCHAR/text
                     // Usar LOWER() para comparación case-insensitive
-                    const condiciones = filtros.equipo_solicitante.map((_, i) => {
+                    const condiciones = filtros.equipo_solicitante.map((equipo, i) => {
+                        // Calcular placeholder basado en paramCount actual + índice
                         const placeholder = `$${paramCount + i}`;
-                        params.push(filtros.equipo_solicitante[i]);
-                        paramCount++;
                         // Usar un subquery que maneje ambos casos: JSONB array o texto simple
                         return `(
                             CASE 
@@ -37,6 +36,9 @@ class PedidosEquiposModel {
                             END
                         )`;
                     });
+                    // Agregar todos los parámetros al array después de calcular los placeholders
+                    params.push(...filtros.equipo_solicitante);
+                    paramCount += filtros.equipo_solicitante.length;
                     query += ` AND (${condiciones.join(' OR ')})`;
                 } else if (typeof filtros.equipo_solicitante === 'string') {
                     // Si es string, buscar pedidos que contengan ese equipo
@@ -60,10 +62,9 @@ class PedidosEquiposModel {
                     // Si es array, buscar pedidos que contengan cualquiera de los equipos
                     // Manejar tanto JSONB como VARCHAR/text
                     // Usar LOWER() para comparación case-insensitive
-                    const condiciones = filtros.equipo_responsable.map((_, i) => {
+                    const condiciones = filtros.equipo_responsable.map((equipo, i) => {
+                        // Calcular placeholder basado en paramCount actual + índice
                         const placeholder = `$${paramCount + i}`;
-                        params.push(filtros.equipo_responsable[i]);
-                        paramCount++;
                         // Usar un subquery que maneje ambos casos: JSONB array o texto simple
                         return `(
                             CASE 
@@ -74,6 +75,9 @@ class PedidosEquiposModel {
                             END
                         )`;
                     });
+                    // Agregar todos los parámetros al array después de calcular los placeholders
+                    params.push(...filtros.equipo_responsable);
+                    paramCount += filtros.equipo_responsable.length;
                     query += ` AND (${condiciones.join(' OR ')})`;
                 } else if (typeof filtros.equipo_responsable === 'string') {
                     // Si es string, buscar pedidos que contengan ese equipo

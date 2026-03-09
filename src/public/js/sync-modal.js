@@ -4,6 +4,7 @@
  */
 
 let pedidoEditando = null;
+let pedidoActual = null; // Guardar el pedido completo cuando se edita
 
 // Abrir modal para crear o editar pedido
 async function abrirModalPedido(id = null) {
@@ -22,6 +23,7 @@ async function abrirModalPedido(id = null) {
             const data = await response.json();
             
             if (data.success) {
+                pedidoActual = data.data; // Guardar el pedido completo para preservar campos como estado
                 mostrarFormularioPedido(data.data);
                 modalTitulo.textContent = 'Editar Pedido';
             } else {
@@ -35,6 +37,7 @@ async function abrirModalPedido(id = null) {
         }
     } else {
         // Modo creación: mostrar formulario vacío
+        pedidoActual = null; // Limpiar pedido actual en modo creación
         mostrarFormularioPedido(null);
         modalTitulo.textContent = 'Nuevo Pedido';
     }
@@ -259,6 +262,7 @@ function cerrarModalPedido() {
         document.body.style.overflow = '';
     }
     pedidoEditando = null;
+    pedidoActual = null; // Limpiar pedido actual al cerrar
 }
 
 // Actualizar tags de equipos cuando se selecciona/deselecciona un checkbox
@@ -350,13 +354,23 @@ async function guardarPedido(event) {
     const equiposSolicitantes = Array.from(checkboxesSolicitantes).map(cb => cb.value);
     const equiposResponsables = Array.from(checkboxesResponsables).map(cb => cb.value);
     
+    // Determinar el estado: preservar el actual si se está editando, usar 'Pendiente' solo al crear
+    const estadoFinal = (pedidoEditando && pedidoActual && pedidoActual.estado) 
+        ? pedidoActual.estado 
+        : 'Pendiente';
+    
+    // Determinar el comentario: preservar el actual si se está editando
+    const comentarioFinal = (pedidoEditando && pedidoActual && pedidoActual.comentario !== undefined) 
+        ? pedidoActual.comentario 
+        : null;
+    
     const formData = {
         equipo_solicitante: equiposSolicitantes,
         equipo_responsable: equiposResponsables,
         descripcion: document.getElementById('descripcion').value.trim(),
         fecha_planificada_entrega: fechaConvertida,
-        estado: 'Pendiente', // Estado por defecto al crear
-        comentario: null // Comentario por defecto al crear
+        estado: estadoFinal,
+        comentario: comentarioFinal
     };
 
     try {
