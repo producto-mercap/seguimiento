@@ -32,9 +32,84 @@ async function index(req, res) {
  */
 async function obtenerPedidos(req, res) {
     try {
+        // Parsear query string manualmente para manejar múltiples valores del mismo parámetro
+        // Express por defecto puede no parsear correctamente múltiples valores del mismo parámetro
+        let equipo_solicitante = null;
+        let equipo_responsable = null;
+        
+        // Parsear query string manualmente para obtener todos los valores
+        // Express puede no parsear correctamente múltiples valores del mismo parámetro
+        const url = require('url');
+        const fullUrl = req.originalUrl || req.url;
+        const parsedUrl = url.parse(fullUrl, true);
+        
+        // Intentar obtener de req.query primero (Express puede haber parseado algunos valores)
+        if (req.query.equipo_solicitante) {
+            if (Array.isArray(req.query.equipo_solicitante)) {
+                equipo_solicitante = req.query.equipo_solicitante.filter(e => e && String(e).trim() !== '');
+            } else {
+                equipo_solicitante = [req.query.equipo_solicitante].filter(e => e && String(e).trim() !== '');
+            }
+            if (equipo_solicitante.length === 0) {
+                equipo_solicitante = null;
+            }
+        }
+        
+        if (req.query.equipo_responsable) {
+            if (Array.isArray(req.query.equipo_responsable)) {
+                equipo_responsable = req.query.equipo_responsable.filter(e => e && String(e).trim() !== '');
+            } else {
+                equipo_responsable = [req.query.equipo_responsable].filter(e => e && String(e).trim() !== '');
+            }
+            if (equipo_responsable.length === 0) {
+                equipo_responsable = null;
+            }
+        }
+        
+        // Si no se encontraron valores en req.query, parsear manualmente la query string
+        // Esto es necesario porque Express puede no parsear correctamente múltiples valores del mismo parámetro
+        if ((!equipo_solicitante || !equipo_responsable)) {
+            const queryString = fullUrl.includes('?') ? fullUrl.split('?')[1] : '';
+            if (queryString) {
+                const params = {};
+                const pairs = queryString.split('&');
+                
+                for (const pair of pairs) {
+                    const equalIndex = pair.indexOf('=');
+                    if (equalIndex > 0) {
+                        const key = decodeURIComponent(pair.substring(0, equalIndex));
+                        const value = decodeURIComponent(pair.substring(equalIndex + 1));
+                        if (key) {
+                            if (!params[key]) {
+                                params[key] = [];
+                            }
+                            if (value) {
+                                params[key].push(value);
+                            }
+                        }
+                    }
+                }
+                
+                // Solo actualizar si no se encontró antes
+                if (!equipo_solicitante && params.equipo_solicitante && params.equipo_solicitante.length > 0) {
+                    equipo_solicitante = params.equipo_solicitante.filter(e => e && e.trim() !== '');
+                    if (equipo_solicitante.length === 0) {
+                        equipo_solicitante = null;
+                    }
+                }
+                
+                if (!equipo_responsable && params.equipo_responsable && params.equipo_responsable.length > 0) {
+                    equipo_responsable = params.equipo_responsable.filter(e => e && e.trim() !== '');
+                    if (equipo_responsable.length === 0) {
+                        equipo_responsable = null;
+                    }
+                }
+            }
+        }
+
         const filtros = {
-            equipo_solicitante: req.query.equipo_solicitante || null,
-            equipo_responsable: req.query.equipo_responsable || null,
+            equipo_solicitante: equipo_solicitante,
+            equipo_responsable: equipo_responsable,
             estados: req.query.estados ? (Array.isArray(req.query.estados) ? req.query.estados : [req.query.estados]) : null,
             fecha_desde: req.query.fecha_desde || null,
             fecha_hasta: req.query.fecha_hasta || null,
@@ -43,12 +118,20 @@ async function obtenerPedidos(req, res) {
             ordenDireccion: req.query.ordenDireccion || 'DESC'
         };
 
-        // Limpiar filtros nulos
+        // Limpiar filtros nulos o vacíos
         Object.keys(filtros).forEach(key => {
-            if (filtros[key] === null || filtros[key] === '') {
+            if (filtros[key] === null || filtros[key] === '' || 
+                (Array.isArray(filtros[key]) && filtros[key].length === 0)) {
                 delete filtros[key];
             }
         });
+
+        // Debug: Log de filtros para diagnóstico
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🔍 Filtros aplicados:', JSON.stringify(filtros, null, 2));
+            console.log('🔍 Query string original:', req.originalUrl || req.url);
+            console.log('🔍 req.query:', JSON.stringify(req.query, null, 2));
+        }
 
         const pedidos = await PedidosEquiposModel.obtenerTodos(filtros);
 
@@ -57,11 +140,12 @@ async function obtenerPedidos(req, res) {
             data: pedidos
         });
     } catch (error) {
-        console.error('Error al obtener pedidos:', error);
+        console.error('❌ Error al obtener pedidos:', error);
+        console.error('❌ Stack trace:', error.stack);
         res.status(500).json({
             success: false,
             error: 'Error al obtener pedidos',
-            message: error.message
+            message: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
         });
     }
 }
@@ -121,7 +205,7 @@ async function obtenerEquipos(req, res) {
  */
 async function crearPedido(req, res) {
     try {
-        const {
+        let {
             equipo_solicitante,
             equipo_responsable,
             descripcion,
@@ -130,8 +214,18 @@ async function crearPedido(req, res) {
             comentario
         } = req.body;
 
+        // Convertir strings a arrays si es necesario
+        if (equipo_solicitante && !Array.isArray(equipo_solicitante)) {
+            equipo_solicitante = [equipo_solicitante];
+        }
+        if (equipo_responsable && !Array.isArray(equipo_responsable)) {
+            equipo_responsable = [equipo_responsable];
+        }
+
         // Validaciones
-        if (!equipo_solicitante || !equipo_responsable || !descripcion || !fecha_planificada_entrega || !estado) {
+        if (!equipo_solicitante || equipo_solicitante.length === 0 || 
+            !equipo_responsable || equipo_responsable.length === 0 || 
+            !descripcion || !fecha_planificada_entrega || !estado) {
             return res.status(400).json({
                 success: false,
                 error: 'Faltan campos obligatorios'
@@ -187,7 +281,7 @@ async function actualizarPedido(req, res) {
         }
 
         // Permitir actualización parcial: usar valores del pedido actual si no se proporcionan
-        const {
+        let {
             equipo_solicitante = pedidoActual.equipo_solicitante,
             equipo_responsable = pedidoActual.equipo_responsable,
             descripcion = pedidoActual.descripcion,
@@ -195,6 +289,14 @@ async function actualizarPedido(req, res) {
             estado = pedidoActual.estado,
             comentario = pedidoActual.comentario
         } = req.body;
+
+        // Convertir strings a arrays si es necesario
+        if (equipo_solicitante && !Array.isArray(equipo_solicitante)) {
+            equipo_solicitante = [equipo_solicitante];
+        }
+        if (equipo_responsable && !Array.isArray(equipo_responsable)) {
+            equipo_responsable = [equipo_responsable];
+        }
 
         // Validaciones solo si se están actualizando esos campos
         if (req.body.estado !== undefined) {

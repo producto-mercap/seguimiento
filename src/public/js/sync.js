@@ -76,10 +76,18 @@ async function cargarPedidos() {
 
         const params = new URLSearchParams();
         if (filtrosAplicados.equipo_solicitante) {
-            params.append('equipo_solicitante', filtrosAplicados.equipo_solicitante);
+            if (Array.isArray(filtrosAplicados.equipo_solicitante)) {
+                filtrosAplicados.equipo_solicitante.forEach(equipo => params.append('equipo_solicitante', equipo));
+            } else {
+                params.append('equipo_solicitante', filtrosAplicados.equipo_solicitante);
+            }
         }
         if (filtrosAplicados.equipo_responsable) {
-            params.append('equipo_responsable', filtrosAplicados.equipo_responsable);
+            if (Array.isArray(filtrosAplicados.equipo_responsable)) {
+                filtrosAplicados.equipo_responsable.forEach(equipo => params.append('equipo_responsable', equipo));
+            } else {
+                params.append('equipo_responsable', filtrosAplicados.equipo_responsable);
+            }
         }
         if (filtrosAplicados.estados && filtrosAplicados.estados.length > 0) {
             filtrosAplicados.estados.forEach(estado => params.append('estados', estado));
@@ -87,25 +95,48 @@ async function cargarPedidos() {
         params.append('ordenPor', ordenActual.columna);
         params.append('ordenDireccion', ordenActual.direccion);
 
-        const response = await fetch(`/api/sync/pedidos?${params.toString()}`);
+        const url = `/api/sync/pedidos?${params.toString()}`;
+        console.log('📡 Cargando pedidos desde:', url);
+        
+        const response = await fetch(url);
+        
+        // Verificar si la respuesta es OK
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error HTTP:', response.status, errorText);
+            throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+        }
+        
         const data = await response.json();
+        console.log('📦 Respuesta recibida:', data);
 
         if (data.success) {
             pedidosOriginales = data.data;
             pedidosActuales = [...pedidosOriginales];
             renderizarTablaPedidos(pedidosActuales);
             actualizarContador();
-            } else {
-            console.error('Error al cargar pedidos:', data.error);
+        } else {
+            console.error('❌ Error en respuesta:', data.error, data.message);
             if (contenedor) {
-                contenedor.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error al cargar pedidos</div></div>';
+                contenedor.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-text">Error al cargar pedidos</div>
+                    <div class="empty-state-subtext" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                        ${data.error || data.message || 'Error desconocido'}
+                    </div>
+                </div>`;
             }
         }
     } catch (error) {
-        console.error('Error al cargar pedidos:', error);
+        console.error('❌ Error al cargar pedidos:', error);
+        console.error('❌ Stack:', error.stack);
         const contenedor = document.getElementById('contenidoSync');
         if (contenedor) {
-            contenedor.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error al cargar pedidos</div></div>';
+            contenedor.innerHTML = `<div class="empty-state">
+                <div class="empty-state-text">Error al cargar pedidos</div>
+                <div class="empty-state-subtext" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                    ${error.message || 'Error de conexión'}
+                </div>
+            </div>`;
         }
     }
 }
@@ -159,8 +190,12 @@ function renderizarTablaPedidos(pedidos) {
         const descripcionClase = 'descripcion-colapsada'; // Siempre colapsada por defecto
         
         html += '<div class="modern-table-row">';
-        html += '<div class="modern-table-cell item-text" style="display: flex; justify-content: center; align-items: center;">' + crearDropdownEquipoPedido(pedido.id, 'solicitante', pedido.equipo_solicitante) + '</div>';
-        html += '<div class="modern-table-cell item-text" style="display: flex; justify-content: center; align-items: center;">' + crearDropdownEquipoPedido(pedido.id, 'responsable', pedido.equipo_responsable) + '</div>';
+        // Convertir equipos a arrays si son strings
+        const equiposSolicitantes = Array.isArray(pedido.equipo_solicitante) ? pedido.equipo_solicitante : (pedido.equipo_solicitante ? [pedido.equipo_solicitante] : []);
+        const equiposResponsables = Array.isArray(pedido.equipo_responsable) ? pedido.equipo_responsable : (pedido.equipo_responsable ? [pedido.equipo_responsable] : []);
+        
+        html += '<div class="modern-table-cell item-text" style="display: flex; justify-content: flex-start; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 12px; min-height: 40px;">' + crearTagsEquipos(pedido.id, 'solicitante', equiposSolicitantes) + '</div>';
+        html += '<div class="modern-table-cell item-text" style="display: flex; justify-content: flex-start; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 12px; min-height: 40px;">' + crearTagsEquipos(pedido.id, 'responsable', equiposResponsables) + '</div>';
         html += '<div class="modern-table-cell item-text descripcion-cell ' + descripcionClase + '" id="' + descripcionId + '" onclick="habilitarEdicionDescripcion(' + pedido.id + ')" style="cursor: pointer; user-select: none;" title="Click para editar">' + descripcion + '</div>';
         html += '<div class="modern-table-cell" style="display: flex; justify-content: center; align-items: center;">' + crearDropdownEstadoPedido(pedido.id, pedido.estado || 'Pendiente') + '</div>';
         // Celda de fecha con date picker (estilo texto sin borde)
@@ -200,38 +235,127 @@ function renderizarTablaPedidos(pedidos) {
     });
 }
 
-// Crear dropdown de equipo para pedidos (solicitante o responsable)
-function crearDropdownEquipoPedido(idPedido, tipo, valorActual) {
+// Crear tags de equipos para pedidos (solicitante o responsable) con dropdown para agregar/quitar
+function crearTagsEquipos(idPedido, tipo, equiposArray) {
     const dropdownId = 'dropdown-equipo-' + tipo + '-' + idPedido;
-    // Obtener equipos desde la variable global o desde window
     const equipos = (typeof equiposDisponibles !== 'undefined' ? equiposDisponibles : (window.equiposDisponibles || []));
     
-    // Si no hay equipos cargados, mostrar solo el tag
-    if (equipos.length === 0) {
-        const bgColor = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.1)' : 'rgba(217, 119, 6, 0.1)';
-        const textColor = tipo === 'solicitante' ? 'rgb(26, 115, 232)' : 'rgb(217, 119, 6)';
-        const hoverBg = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.15)' : 'rgba(217, 119, 6, 0.15)';
-        return valorActual ? 
-            '<span style="display: inline-flex; align-items: center; padding: 4px 10px; background: ' + bgColor + '; color: ' + textColor + '; border-radius: 12px; font-size: 12px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; white-space: nowrap; cursor: pointer;" onmouseover="this.style.background=\'' + hoverBg + '\';" onmouseout="this.style.background=\'' + bgColor + '\';">' + valorActual + '</span>' : '-';
+    // Colores mejorados para mejor contraste y visibilidad
+    const bgColor = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.15)' : 'rgba(217, 119, 6, 0.15)';
+    const textColor = tipo === 'solicitante' ? 'rgb(26, 115, 232)' : 'rgb(217, 119, 6)';
+    const borderColor = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.3)' : 'rgba(217, 119, 6, 0.3)';
+    const hoverBg = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.25)' : 'rgba(217, 119, 6, 0.25)';
+    const buttonBg = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.1)' : 'rgba(217, 119, 6, 0.1)';
+    const buttonHoverBg = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.2)' : 'rgba(217, 119, 6, 0.2)';
+    
+    let html = '<div style="position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 28px; padding: 2px 0;">';
+    
+    // Mostrar tags de equipos actuales - mejorados para mejor visibilidad
+    if (equiposArray && equiposArray.length > 0) {
+        equiposArray.forEach((equipo, index) => {
+            const equipoEscapado = String(equipo).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            html += '<span class="equipo-tag-' + tipo + '" style="display: inline-flex; align-items: center; padding: 5px 12px; background: ' + bgColor + '; color: ' + textColor + '; border: 1px solid ' + borderColor + '; border-radius: 16px; font-size: 12px; font-weight: 600; font-family: \'Google Sans\', \'Roboto\', sans-serif; white-space: nowrap; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onmouseover="this.style.background=\'' + hoverBg + '\'; this.style.borderColor=\'' + textColor + '\'; this.style.transform=\'scale(1.05)\';" onmouseout="this.style.background=\'' + bgColor + '\'; this.style.borderColor=\'' + borderColor + '\'; this.style.transform=\'scale(1)\';" title="' + equipo + '">' + equipo + '</span>';
+        });
+    } else {
+        // Mostrar mensaje cuando no hay equipos asignados
+        html += '<span style="display: inline-flex; align-items: center; padding: 5px 12px; color: var(--text-secondary); font-size: 12px; font-style: italic; font-family: \'Google Sans\', \'Roboto\', sans-serif;">Sin equipos</span>';
     }
     
-    const equipoActual = valorActual || '';
-    const bgColor = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.1)' : 'rgba(217, 119, 6, 0.1)';
-    const textColor = tipo === 'solicitante' ? 'rgb(26, 115, 232)' : 'rgb(217, 119, 6)';
-    const hoverBg = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.15)' : 'rgba(217, 119, 6, 0.15)';
+    // Botón mejorado para agregar/quitar equipos
+    html += '<button type="button" onclick="event.stopPropagation(); toggleCustomDropdown(\'' + dropdownId + '\', this)" style="display: inline-flex; align-items: center; justify-content: center; padding: 5px 10px; background: ' + buttonBg + '; color: ' + textColor + '; border: 1px solid ' + borderColor + '; border-radius: 16px; font-size: 13px; font-weight: 600; cursor: pointer; min-width: 28px; height: 28px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onmouseover="this.style.background=\'' + buttonHoverBg + '\'; this.style.borderColor=\'' + textColor + '\'; this.style.transform=\'scale(1.1)\';" onmouseout="this.style.background=\'' + buttonBg + '\'; this.style.borderColor=\'' + borderColor + '\'; this.style.transform=\'scale(1)\';" title="' + (equiposArray && equiposArray.length > 0 ? 'Editar equipos' : 'Agregar equipos') + '">' + (equiposArray && equiposArray.length > 0 ? '✎' : '+') + '</button>';
     
-    let html = '<div style="position: relative; display: inline-block;">';
-    html += '<span class="equipo-tag-' + tipo + '" onclick="event.stopPropagation(); toggleCustomDropdown(\'' + dropdownId + '\', this)" style="display: inline-flex; align-items: center; padding: 4px 10px; background: ' + bgColor + '; color: ' + textColor + '; border-radius: 12px; font-size: 12px; font-weight: 500; font-family: \'Google Sans\', \'Roboto\', sans-serif; white-space: nowrap; cursor: pointer;" onmouseover="this.style.background=\'' + hoverBg + '\';" onmouseout="this.style.background=\'' + bgColor + '\';">' + (equipoActual || 'Seleccionar') + '</span>';
-    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10000; margin-top: 4px; overflow: hidden; min-width: 150px; max-height: 300px; overflow-y: auto;">';
+    // Dropdown mejorado con checkboxes
+    html += '<div id="' + dropdownId + '" class="custom-dropdown" style="display: none; position: absolute; top: 100%; left: 0; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; margin-top: 6px; overflow: hidden; min-width: 220px; max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color);">';
+    
+    // Header del dropdown
+    html += '<div style="padding: 10px 12px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); font-weight: 600; font-size: 13px; color: var(--text-primary);">Seleccionar equipos ' + (tipo === 'solicitante' ? 'solicitantes' : 'responsables') + '</div>';
     
     equipos.forEach(equipo => {
-        const isSelected = equipo === equipoActual;
-        // Escapar comillas simples y dobles para evitar errores en JavaScript
+        const isSelected = equiposArray && equiposArray.includes(equipo);
         const equipoEscapado = String(equipo).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        html += '<div onclick="event.stopPropagation(); seleccionarEquipoPedido(\'' + dropdownId + '\', ' + idPedido + ', \'' + tipo + '\', \'' + equipoEscapado + '\', this)" style="padding: 8px 12px; cursor: pointer; transition: background 0.2s; text-align: left; font-size: 13px; background: ' + (isSelected ? '#e8f0fe' : 'white') + '; color: ' + (isSelected ? 'var(--primary-color)' : 'var(--text-primary)') + '; white-space: nowrap;" onmouseover="this.style.background=\'#f1f3f4\'" onmouseout="this.style.background=\'' + (isSelected ? '#e8f0fe' : 'white') + '\'">' + equipo + '</div>';
+        const itemBg = isSelected ? (tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.1)' : 'rgba(217, 119, 6, 0.1)') : 'white';
+        const itemColor = isSelected ? (tipo === 'solicitante' ? 'rgb(26, 115, 232)' : 'rgb(217, 119, 6)') : 'var(--text-primary)';
+        html += '<label style="display: flex; align-items: center; padding: 10px 14px; cursor: pointer; transition: background 0.2s; font-size: 13px; background: ' + itemBg + '; color: ' + itemColor + '; border-bottom: 1px solid var(--border-color);" onmouseover="this.style.background=\'' + (isSelected ? (tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.15)' : 'rgba(217, 119, 6, 0.15)') : '#f5f5f5') + '\'" onmouseout="this.style.background=\'' + itemBg + '\'">';
+        html += '<input type="checkbox" ' + (isSelected ? 'checked' : '') + ' style="margin-right: 10px; cursor: pointer; width: 16px; height: 16px; accent-color: ' + textColor + ';" onchange="toggleEquipoPedido(' + idPedido + ', \'' + tipo + '\', \'' + equipoEscapado + '\', this.checked)" />';
+        html += '<span style="font-weight: ' + (isSelected ? '600' : '400') + ';">' + equipo + '</span>';
+        html += '</label>';
     });
+    
     html += '</div></div>';
     return html;
+}
+
+// Toggle equipo en pedido (agregar o quitar)
+async function toggleEquipoPedido(idPedido, tipo, equipo, agregar) {
+    try {
+        // Obtener pedido actual
+        const response = await fetch(`/api/sync/pedidos/${idPedido}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            alert('Error al obtener el pedido');
+            return;
+        }
+
+        const pedido = data.data;
+        
+        // Convertir equipos a arrays si son strings
+        let equiposSolicitantes = Array.isArray(pedido.equipo_solicitante) ? [...pedido.equipo_solicitante] : (pedido.equipo_solicitante ? [pedido.equipo_solicitante] : []);
+        let equiposResponsables = Array.isArray(pedido.equipo_responsable) ? [...pedido.equipo_responsable] : (pedido.equipo_responsable ? [pedido.equipo_responsable] : []);
+        
+        // Agregar o quitar el equipo
+        if (tipo === 'solicitante') {
+            if (agregar) {
+                if (!equiposSolicitantes.includes(equipo)) {
+                    equiposSolicitantes.push(equipo);
+                }
+            } else {
+                equiposSolicitantes = equiposSolicitantes.filter(e => e !== equipo);
+            }
+        } else {
+            if (agregar) {
+                if (!equiposResponsables.includes(equipo)) {
+                    equiposResponsables.push(equipo);
+                }
+            } else {
+                equiposResponsables = equiposResponsables.filter(e => e !== equipo);
+            }
+        }
+        
+        // Permitir asignar equipos libremente - la validación se hará solo al guardar el formulario completo
+        // No validamos aquí para permitir que el usuario complete los campos a su ritmo
+        
+        // Actualizar pedido
+        const updateResponse = await fetch(`/api/sync/pedidos/${idPedido}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                equipo_solicitante: equiposSolicitantes,
+                equipo_responsable: equiposResponsables,
+                descripcion: pedido.descripcion,
+                fecha_planificada_entrega: pedido.fecha_planificada_entrega,
+                estado: pedido.estado,
+                comentario: pedido.comentario || null
+            })
+        });
+        
+        const updateData = await updateResponse.json();
+        
+        if (updateData.success) {
+            // Recargar la tabla para mostrar los cambios
+            cargarPedidos();
+        } else {
+            alert('Error al actualizar el equipo: ' + (updateData.error || 'Error desconocido'));
+            // Revertir el checkbox
+            const checkbox = document.querySelector(`input[onchange*="toggleEquipoPedido(${idPedido}, '${tipo}', '${equipo}"]`);
+            if (checkbox) checkbox.checked = !agregar;
+        }
+    } catch (error) {
+        console.error('Error al actualizar equipo:', error);
+        alert('Error al actualizar el equipo');
+    }
 }
 
 // Crear dropdown de estado para pedidos
@@ -396,58 +520,11 @@ async function seleccionarEstadoPedido(dropdownId, idPedido, nuevoEstado, elemen
     }
 }
 
-// Seleccionar equipo de pedido (solicitante o responsable)
+// Función obsoleta - ahora se usa toggleEquipoPedido
+// Mantenida por compatibilidad pero no se usa
 async function seleccionarEquipoPedido(dropdownId, idPedido, tipo, nuevoEquipo, elemento) {
-    try {
-        // Obtener pedido actual
-        const response = await fetch(`/api/sync/pedidos/${idPedido}`);
-        const data = await response.json();
-        
-        if (!data.success) {
-            alert('Error al obtener el pedido');
-            return;
-        }
-
-        const pedido = data.data;
-        
-        // Determinar los valores de equipo solicitante y responsable
-        const equipoSolicitante = tipo === 'solicitante' ? nuevoEquipo : pedido.equipo_solicitante;
-        const equipoResponsable = tipo === 'responsable' ? nuevoEquipo : pedido.equipo_responsable;
-        
-        // Actualizar equipo
-        const updateResponse = await fetch(`/api/sync/pedidos/${idPedido}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                equipo_solicitante: equipoSolicitante,
-                equipo_responsable: equipoResponsable,
-                descripcion: pedido.descripcion,
-                fecha_planificada_entrega: pedido.fecha_planificada_entrega,
-                estado: pedido.estado,
-                comentario: pedido.comentario || null
-            })
-        });
-        
-        const updateData = await updateResponse.json();
-        
-        if (updateData.success) {
-            // Actualizar tag visualmente
-            const tag = document.querySelector(`#${dropdownId}`).previousElementSibling;
-            if (tag) {
-                tag.textContent = nuevoEquipo;
-            }
-            
-            // Cerrar dropdown
-            document.getElementById(dropdownId).style.display = 'none';
-        } else {
-            alert('Error al actualizar el equipo: ' + (updateData.error || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('Error al actualizar equipo:', error);
-        alert('Error al actualizar el equipo');
-    }
+    // Esta función ya no se usa, se reemplazó por toggleEquipoPedido
+    console.warn('seleccionarEquipoPedido está obsoleta, usar toggleEquipoPedido');
 }
 
 // Actualizar comentario de pedido
@@ -500,21 +577,13 @@ if (typeof ajustarAlturaTextarea === 'undefined') {
 
 // Aplicar filtros
 function aplicarFiltrosSync() {
-    // Obtener filtro de equipo solicitante (checkboxes)
+    // Obtener filtro de equipo solicitante (checkboxes) - mantener como array
     const checkboxesSolicitante = document.querySelectorAll('#filterEquipoSolicitante .filter-checkbox[data-filter="equipo_solicitante"]:checked');
     filtrosAplicados.equipo_solicitante = checkboxesSolicitante.length > 0 ? Array.from(checkboxesSolicitante).map(cb => cb.value) : null;
-    // Si solo hay uno seleccionado, usar string en lugar de array
-    if (filtrosAplicados.equipo_solicitante && filtrosAplicados.equipo_solicitante.length === 1) {
-        filtrosAplicados.equipo_solicitante = filtrosAplicados.equipo_solicitante[0];
-    }
 
-    // Obtener filtro de equipo responsable (checkboxes)
+    // Obtener filtro de equipo responsable (checkboxes) - mantener como array
     const checkboxesResponsable = document.querySelectorAll('#filterEquipoResponsable .filter-checkbox[data-filter="equipo_responsable"]:checked');
     filtrosAplicados.equipo_responsable = checkboxesResponsable.length > 0 ? Array.from(checkboxesResponsable).map(cb => cb.value) : null;
-    // Si solo hay uno seleccionado, usar string en lugar de array
-    if (filtrosAplicados.equipo_responsable && filtrosAplicados.equipo_responsable.length === 1) {
-        filtrosAplicados.equipo_responsable = filtrosAplicados.equipo_responsable[0];
-    }
 
     // Obtener filtros de estado (solo si hay checkboxes marcados explícitamente)
     const checkboxesEstados = document.querySelectorAll('#filterEstados .filter-checkbox:checked');

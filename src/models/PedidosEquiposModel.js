@@ -7,29 +7,48 @@ class PedidosEquiposModel {
      * @returns {Promise<Array>} - Array de pedidos
      */
     static async obtenerTodos(filtros = {}) {
+        let query = '';
+        let params = [];
         try {
-            let query = `
+            query = `
                 SELECT * FROM pedidos_equipos
                 WHERE 1=1
             `;
-            const params = [];
+            params = [];
             let paramCount = 1;
 
             // Filtro por equipo solicitante (puede ser string o array)
             if (filtros.equipo_solicitante) {
                 if (Array.isArray(filtros.equipo_solicitante) && filtros.equipo_solicitante.length > 0) {
                     // Si es array, buscar pedidos que contengan cualquiera de los equipos
-                    // Usar EXISTS con jsonb_array_elements para verificar si alguno de los valores está en el array
+                    // Manejar tanto JSONB como VARCHAR/text
+                    // Usar LOWER() para comparación case-insensitive
                     const condiciones = filtros.equipo_solicitante.map((_, i) => {
                         const placeholder = `$${paramCount + i}`;
                         params.push(filtros.equipo_solicitante[i]);
                         paramCount++;
-                        return `EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_solicitante) AS elem WHERE elem = ${placeholder})`;
+                        // Usar un subquery que maneje ambos casos: JSONB array o texto simple
+                        return `(
+                            CASE 
+                                WHEN equipo_solicitante::text ~ '^\\[.*\\]$' THEN
+                                    EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_solicitante::jsonb) AS elem WHERE LOWER(elem) = LOWER(${placeholder}))
+                                ELSE
+                                    LOWER(equipo_solicitante::text) = LOWER(${placeholder})
+                            END
+                        )`;
                     });
                     query += ` AND (${condiciones.join(' OR ')})`;
                 } else if (typeof filtros.equipo_solicitante === 'string') {
-                    // Si es string, buscar pedidos que contengan ese equipo en el array JSONB
-                    query += ` AND EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_solicitante) AS elem WHERE elem = $${paramCount})`;
+                    // Si es string, buscar pedidos que contengan ese equipo
+                    // Manejar tanto JSONB como VARCHAR/text
+                    query += ` AND (
+                        CASE 
+                            WHEN equipo_solicitante::text ~ '^\\[.*\\]$' THEN
+                                EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_solicitante::jsonb) AS elem WHERE LOWER(elem) = LOWER($${paramCount}))
+                            ELSE
+                                LOWER(equipo_solicitante::text) = LOWER($${paramCount})
+                        END
+                    )`;
                     params.push(filtros.equipo_solicitante);
                     paramCount++;
                 }
@@ -39,16 +58,34 @@ class PedidosEquiposModel {
             if (filtros.equipo_responsable) {
                 if (Array.isArray(filtros.equipo_responsable) && filtros.equipo_responsable.length > 0) {
                     // Si es array, buscar pedidos que contengan cualquiera de los equipos
+                    // Manejar tanto JSONB como VARCHAR/text
+                    // Usar LOWER() para comparación case-insensitive
                     const condiciones = filtros.equipo_responsable.map((_, i) => {
                         const placeholder = `$${paramCount + i}`;
                         params.push(filtros.equipo_responsable[i]);
                         paramCount++;
-                        return `EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_responsable) AS elem WHERE elem = ${placeholder})`;
+                        // Usar un subquery que maneje ambos casos: JSONB array o texto simple
+                        return `(
+                            CASE 
+                                WHEN equipo_responsable::text ~ '^\\[.*\\]$' THEN
+                                    EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_responsable::jsonb) AS elem WHERE LOWER(elem) = LOWER(${placeholder}))
+                                ELSE
+                                    LOWER(equipo_responsable::text) = LOWER(${placeholder})
+                            END
+                        )`;
                     });
                     query += ` AND (${condiciones.join(' OR ')})`;
                 } else if (typeof filtros.equipo_responsable === 'string') {
-                    // Si es string, buscar pedidos que contengan ese equipo en el array JSONB
-                    query += ` AND EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_responsable) AS elem WHERE elem = $${paramCount})`;
+                    // Si es string, buscar pedidos que contengan ese equipo
+                    // Manejar tanto JSONB como VARCHAR/text
+                    query += ` AND (
+                        CASE 
+                            WHEN equipo_responsable::text ~ '^\\[.*\\]$' THEN
+                                EXISTS (SELECT 1 FROM jsonb_array_elements_text(equipo_responsable::jsonb) AS elem WHERE LOWER(elem) = LOWER($${paramCount}))
+                            ELSE
+                                LOWER(equipo_responsable::text) = LOWER($${paramCount})
+                        END
+                    )`;
                     params.push(filtros.equipo_responsable);
                     paramCount++;
                 }
@@ -100,6 +137,12 @@ class PedidosEquiposModel {
                 query += ` ORDER BY ${ordenPor} ${ordenDireccion}`;
             }
 
+            // Debug: Log de query y params en desarrollo
+            if (process.env.NODE_ENV === 'development') {
+                console.log('📊 Query SQL:', query);
+                console.log('📊 Params:', params);
+            }
+            
             const result = await pool.query(query, params);
             // Convertir JSONB arrays a arrays JavaScript
             return result.rows.map(row => {
@@ -136,7 +179,12 @@ class PedidosEquiposModel {
                 };
             });
         } catch (error) {
-            console.error('Error al obtener pedidos:', error);
+            console.error('❌ Error al obtener pedidos:', error);
+            console.error('❌ Stack trace:', error.stack);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('❌ Query que falló:', query);
+                console.error('❌ Params que fallaron:', params);
+            }
             throw error;
         }
     }

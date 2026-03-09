@@ -127,13 +127,39 @@ function mostrarFormularioPedido(pedido) {
     const modalBody = document.getElementById('modalPedidoBody');
     if (!modalBody) return;
 
-    const equiposOptions = equiposDisponibles.map(equipo => 
-        `<option value="${equipo}" ${pedido && pedido.equipo_solicitante === equipo ? 'selected' : ''}>${equipo}</option>`
-    ).join('');
+    // Obtener equipos seleccionados (pueden ser arrays o strings)
+    const equiposSolicitantesSeleccionados = pedido && pedido.equipo_solicitante 
+        ? (Array.isArray(pedido.equipo_solicitante) ? pedido.equipo_solicitante : [pedido.equipo_solicitante])
+        : [];
+    const equiposResponsablesSeleccionados = pedido && pedido.equipo_responsable 
+        ? (Array.isArray(pedido.equipo_responsable) ? pedido.equipo_responsable : [pedido.equipo_responsable])
+        : [];
 
-    const equiposOptionsResponsable = equiposDisponibles.map(equipo => 
-        `<option value="${equipo}" ${pedido && pedido.equipo_responsable === equipo ? 'selected' : ''}>${equipo}</option>`
-    ).join('');
+    // Generar checkboxes para equipos solicitantes
+    const checkboxesSolicitantes = equiposDisponibles.map(equipo => {
+        const isSelected = equiposSolicitantesSeleccionados.includes(equipo);
+        return `
+            <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; transition: background 0.2s; border-radius: 4px;" 
+                onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" class="equipo-checkbox-solicitante" value="${equipo}" ${isSelected ? 'checked' : ''} 
+                    style="margin-right: 8px; cursor: pointer;" onchange="actualizarTagsEquipos('solicitante')" />
+                <span style="font-size: 14px;">${equipo}</span>
+            </label>
+        `;
+    }).join('');
+
+    // Generar checkboxes para equipos responsables
+    const checkboxesResponsables = equiposDisponibles.map(equipo => {
+        const isSelected = equiposResponsablesSeleccionados.includes(equipo);
+        return `
+            <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; transition: background 0.2s; border-radius: 4px;" 
+                onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" class="equipo-checkbox-responsable" value="${equipo}" ${isSelected ? 'checked' : ''} 
+                    style="margin-right: 8px; cursor: pointer;" onchange="actualizarTagsEquipos('responsable')" />
+                <span style="font-size: 14px;">${equipo}</span>
+            </label>
+        `;
+    }).join('');
 
     const fechaPlanificada = pedido && pedido.fecha_planificada_entrega ? 
         pedido.fecha_planificada_entrega : '';
@@ -145,26 +171,36 @@ function mostrarFormularioPedido(pedido) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <!-- Equipo Solicitante -->
                     <div style="position: relative;">
-                        <label style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Google Sans', 'Roboto', sans-serif;">Equipo Solicitante *</label>
-                        <select id="equipoSolicitante" name="equipo_solicitante" class="input" required 
-                            style="width: 100%; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; font-family: 'Google Sans', 'Roboto', sans-serif; background: white; transition: all 0.2s;"
-                            onfocus="this.style.borderColor='var(--primary-color)'; this.style.boxShadow='0 0 0 2px rgba(26, 115, 232, 0.1)'"
-                            onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none'">
-                            <option value="">Seleccionar equipo...</option>
-                            ${equiposOptions}
-                        </select>
+                        <label style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Google Sans', 'Roboto', sans-serif;">Equipos Solicitantes *</label>
+                        <div id="tagsContainerSolicitante" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 32px; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; background: white;">
+                            ${equiposSolicitantesSeleccionados.map(equipo => `
+                                <span class="equipo-tag" data-tipo="solicitante" data-equipo="${equipo}" style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgba(26, 115, 232, 0.1); color: rgb(26, 115, 232); border-radius: 12px; font-size: 12px; font-weight: 500; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                    ${equipo}
+                                    <button type="button" onclick="removerTagEquipo('solicitante', '${equipo}')" style="background: none; border: none; color: rgb(26, 115, 232); cursor: pointer; margin-left: 6px; padding: 0; display: flex; align-items: center; font-size: 14px; font-weight: bold;">×</button>
+                                </span>
+                            `).join('')}
+                            ${equiposSolicitantesSeleccionados.length === 0 ? '<span style="color: var(--text-secondary); font-size: 13px;">Seleccione equipos...</span>' : ''}
+                        </div>
+                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: white; padding: 4px;">
+                            ${checkboxesSolicitantes}
+                        </div>
                     </div>
 
                     <!-- Equipo Responsable -->
                     <div style="position: relative;">
-                        <label style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Google Sans', 'Roboto', sans-serif;">Equipo Responsable *</label>
-                        <select id="equipoResponsable" name="equipo_responsable" class="input" required 
-                            style="width: 100%; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; font-family: 'Google Sans', 'Roboto', sans-serif; background: white; transition: all 0.2s;"
-                            onfocus="this.style.borderColor='var(--primary-color)'; this.style.boxShadow='0 0 0 2px rgba(26, 115, 232, 0.1)'"
-                            onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none'">
-                            <option value="">Seleccionar equipo...</option>
-                            ${equiposOptionsResponsable}
-                        </select>
+                        <label style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Google Sans', 'Roboto', sans-serif;">Equipos Responsables *</label>
+                        <div id="tagsContainerResponsable" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 32px; padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; background: white;">
+                            ${equiposResponsablesSeleccionados.map(equipo => `
+                                <span class="equipo-tag" data-tipo="responsable" data-equipo="${equipo}" style="display: inline-flex; align-items: center; padding: 4px 10px; background: rgba(217, 119, 6, 0.1); color: rgb(217, 119, 6); border-radius: 12px; font-size: 12px; font-weight: 500; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                    ${equipo}
+                                    <button type="button" onclick="removerTagEquipo('responsable', '${equipo}')" style="background: none; border: none; color: rgb(217, 119, 6); cursor: pointer; margin-left: 6px; padding: 0; display: flex; align-items: center; font-size: 14px; font-weight: bold;">×</button>
+                                </span>
+                            `).join('')}
+                            ${equiposResponsablesSeleccionados.length === 0 ? '<span style="color: var(--text-secondary); font-size: 13px;">Seleccione equipos...</span>' : ''}
+                        </div>
+                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: white; padding: 4px;">
+                            ${checkboxesResponsables}
+                        </div>
                     </div>
                 </div>
 
@@ -225,16 +261,71 @@ function cerrarModalPedido() {
     pedidoEditando = null;
 }
 
+// Actualizar tags de equipos cuando se selecciona/deselecciona un checkbox
+function actualizarTagsEquipos(tipo) {
+    const containerId = tipo === 'solicitante' ? 'tagsContainerSolicitante' : 'tagsContainerResponsable';
+    const checkboxClass = tipo === 'solicitante' ? 'equipo-checkbox-solicitante' : 'equipo-checkbox-responsable';
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const checkboxes = document.querySelectorAll(`.${checkboxClass}:checked`);
+    const equiposSeleccionados = Array.from(checkboxes).map(cb => cb.value);
+
+    // Limpiar container
+    container.innerHTML = '';
+
+    if (equiposSeleccionados.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-secondary); font-size: 13px;">Seleccione equipos...</span>';
+    } else {
+        equiposSeleccionados.forEach(equipo => {
+            const bgColor = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.1)' : 'rgba(217, 119, 6, 0.1)';
+            const textColor = tipo === 'solicitante' ? 'rgb(26, 115, 232)' : 'rgb(217, 119, 6)';
+            const tag = document.createElement('span');
+            tag.className = 'equipo-tag';
+            tag.setAttribute('data-tipo', tipo);
+            tag.setAttribute('data-equipo', equipo);
+            tag.style.cssText = `display: inline-flex; align-items: center; padding: 4px 10px; background: ${bgColor}; color: ${textColor}; border-radius: 12px; font-size: 12px; font-weight: 500; font-family: 'Google Sans', 'Roboto', sans-serif;`;
+            tag.innerHTML = `${equipo}<button type="button" onclick="removerTagEquipo('${tipo}', '${equipo}')" style="background: none; border: none; color: ${textColor}; cursor: pointer; margin-left: 6px; padding: 0; display: flex; align-items: center; font-size: 14px; font-weight: bold;">×</button>`;
+            container.appendChild(tag);
+        });
+    }
+}
+
+// Remover tag de equipo
+function removerTagEquipo(tipo, equipo) {
+    const checkboxClass = tipo === 'solicitante' ? 'equipo-checkbox-solicitante' : 'equipo-checkbox-responsable';
+    const checkbox = document.querySelector(`.${checkboxClass}[value="${equipo}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+        actualizarTagsEquipos(tipo);
+    }
+}
+
 // Validar formulario
 function validarFormularioPedido() {
-    const equipoSolicitante = document.getElementById('equipoSolicitante').value;
-    const equipoResponsable = document.getElementById('equipoResponsable').value;
+    const checkboxesSolicitantes = document.querySelectorAll('.equipo-checkbox-solicitante:checked');
+    const checkboxesResponsables = document.querySelectorAll('.equipo-checkbox-responsable:checked');
     const descripcion = document.getElementById('descripcion').value.trim();
     const fechaPlanificada = document.getElementById('fechaPlanificada').value;
 
-    // Validar campos obligatorios
-    if (!equipoSolicitante || !equipoResponsable || !descripcion || !fechaPlanificada) {
-        alert('Por favor complete todos los campos obligatorios');
+    // Validar campos obligatorios con mensajes específicos
+    if (checkboxesSolicitantes.length === 0) {
+        alert('Por favor seleccione al menos un equipo solicitante');
+        return false;
+    }
+    
+    if (checkboxesResponsables.length === 0) {
+        alert('Por favor seleccione al menos un equipo responsable');
+        return false;
+    }
+    
+    if (!descripcion) {
+        alert('Por favor ingrese una descripción');
+        return false;
+    }
+    
+    if (!fechaPlanificada) {
+        alert('Por favor seleccione una fecha planificada');
         return false;
     }
 
@@ -253,9 +344,15 @@ async function guardarPedido(event) {
     const fechaInput = document.getElementById('fechaPlanificada').value;
     const fechaConvertida = convertirFechaParaAPI(fechaInput);
     
+    // Obtener equipos seleccionados como arrays
+    const checkboxesSolicitantes = document.querySelectorAll('.equipo-checkbox-solicitante:checked');
+    const checkboxesResponsables = document.querySelectorAll('.equipo-checkbox-responsable:checked');
+    const equiposSolicitantes = Array.from(checkboxesSolicitantes).map(cb => cb.value);
+    const equiposResponsables = Array.from(checkboxesResponsables).map(cb => cb.value);
+    
     const formData = {
-        equipo_solicitante: document.getElementById('equipoSolicitante').value,
-        equipo_responsable: document.getElementById('equipoResponsable').value,
+        equipo_solicitante: equiposSolicitantes,
+        equipo_responsable: equiposResponsables,
         descripcion: document.getElementById('descripcion').value.trim(),
         fecha_planificada_entrega: fechaConvertida,
         estado: 'Pendiente', // Estado por defecto al crear
