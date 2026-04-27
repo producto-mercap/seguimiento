@@ -1,5 +1,23 @@
 const { pool } = require('../config/database');
 
+/** Orden alfabético estable para arrays de equipos (persistencia y criterio único). */
+function ordenarEquiposAlfabeticamente(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return [];
+    return [...arr].map(String).sort((a, b) =>
+        a.localeCompare(b, 'es', { sensitivity: 'base' })
+    );
+}
+
+const COLUMNAS_ORDEN_PERMITIDAS = new Set([
+    'created_at',
+    'updated_at',
+    'id',
+    'descripcion',
+    'fecha_planificada_entrega',
+    'estado',
+    'comentario'
+]);
+
 class PedidosEquiposModel {
     /**
      * Obtener todos los pedidos con filtros opcionales
@@ -130,13 +148,31 @@ class PedidosEquiposModel {
                 paramCount++;
             }
 
-            // Ordenamiento
-            const ordenPor = filtros.ordenPor || 'created_at';
-            const ordenDireccion = filtros.ordenDireccion || 'DESC';
-            
-            // Para ordenar por equipos (que son arrays JSONB), usar el primer elemento del array
+            // Ordenamiento (sanitizar dirección; columnas permitidas para evitar inyección)
+            let ordenPor = filtros.ordenPor || 'created_at';
+            if (!COLUMNAS_ORDEN_PERMITIDAS.has(ordenPor) &&
+                ordenPor !== 'equipo_solicitante' &&
+                ordenPor !== 'equipo_responsable') {
+                ordenPor = 'created_at';
+            }
+            const ordenDireccion =
+                String(filtros.ordenDireccion || 'DESC').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+            /**
+             * Orden alfabético por el primer equipo en orden lexicográfico entre los asignados
+             * (no por posición en el JSON). Compatible con JSONB o texto legacy.
+             */
+            const exprOrdenEquipo = (col) => `(
+                CASE
+                    WHEN ${col}::text ~ '^\\[.*\\]$' THEN
+                        (SELECT MIN(LOWER(TRIM(elem)))
+                         FROM jsonb_array_elements_text(${col}::jsonb) AS elem)
+                    ELSE LOWER(TRIM(${col}::text))
+                END
+            )`;
+
             if (ordenPor === 'equipo_solicitante' || ordenPor === 'equipo_responsable') {
-                query += ` ORDER BY (${ordenPor}->>0) ${ordenDireccion} NULLS LAST`;
+                query += ` ORDER BY ${exprOrdenEquipo(ordenPor)} ${ordenDireccion} NULLS LAST`;
             } else {
                 query += ` ORDER BY ${ordenPor} ${ordenDireccion}`;
             }
@@ -261,13 +297,23 @@ class PedidosEquiposModel {
                 comentario
             } = datos;
 
-            // Convertir arrays a JSONB (si vienen como arrays, mantenerlos; si vienen como string, convertirlos a array)
-            const equiposSolicitantesJSON = Array.isArray(equipo_solicitante) 
-                ? JSON.stringify(equipo_solicitante) 
-                : (equipo_solicitante ? JSON.stringify([equipo_solicitante]) : '[]');
-            const equiposResponsablesJSON = Array.isArray(equipo_responsable) 
-                ? JSON.stringify(equipo_responsable) 
-                : (equipo_responsable ? JSON.stringify([equipo_responsable]) : '[]');
+            // Convertir arrays a JSONB; orden alfabético fijo entre equipos para criterio único
+            const sol = ordenarEquiposAlfabeticamente(
+                Array.isArray(equipo_solicitante)
+                    ? equipo_solicitante
+                    : equipo_solicitante
+                      ? [equipo_solicitante]
+                      : []
+            );
+            const resp = ordenarEquiposAlfabeticamente(
+                Array.isArray(equipo_responsable)
+                    ? equipo_responsable
+                    : equipo_responsable
+                      ? [equipo_responsable]
+                      : []
+            );
+            const equiposSolicitantesJSON = JSON.stringify(sol);
+            const equiposResponsablesJSON = JSON.stringify(resp);
 
             const query = `
                 INSERT INTO pedidos_equipos 
@@ -341,13 +387,22 @@ class PedidosEquiposModel {
                 comentario
             } = datos;
 
-            // Convertir arrays a JSONB (si vienen como arrays, mantenerlos; si vienen como string, convertirlos a array)
-            const equiposSolicitantesJSON = Array.isArray(equipo_solicitante) 
-                ? JSON.stringify(equipo_solicitante) 
-                : (equipo_solicitante ? JSON.stringify([equipo_solicitante]) : '[]');
-            const equiposResponsablesJSON = Array.isArray(equipo_responsable) 
-                ? JSON.stringify(equipo_responsable) 
-                : (equipo_responsable ? JSON.stringify([equipo_responsable]) : '[]');
+            const sol = ordenarEquiposAlfabeticamente(
+                Array.isArray(equipo_solicitante)
+                    ? equipo_solicitante
+                    : equipo_solicitante
+                      ? [equipo_solicitante]
+                      : []
+            );
+            const resp = ordenarEquiposAlfabeticamente(
+                Array.isArray(equipo_responsable)
+                    ? equipo_responsable
+                    : equipo_responsable
+                      ? [equipo_responsable]
+                      : []
+            );
+            const equiposSolicitantesJSON = JSON.stringify(sol);
+            const equiposResponsablesJSON = JSON.stringify(resp);
 
             const query = `
                 UPDATE pedidos_equipos

@@ -6,6 +6,10 @@
 let pedidoEditando = null;
 let pedidoActual = null; // Guardar el pedido completo cuando se edita
 
+function compararEquiposAlfabeticoSyncModal(a, b) {
+    return String(a).localeCompare(String(b), 'es', { sensitivity: 'base' });
+}
+
 // Abrir modal para crear o editar pedido
 async function abrirModalPedido(id = null) {
     const modal = document.getElementById('modalPedido');
@@ -131,15 +135,21 @@ function mostrarFormularioPedido(pedido) {
     if (!modalBody) return;
 
     // Obtener equipos seleccionados (pueden ser arrays o strings)
-    const equiposSolicitantesSeleccionados = pedido && pedido.equipo_solicitante 
+    const equiposSolicitantesSeleccionados = pedido && pedido.equipo_solicitante
         ? (Array.isArray(pedido.equipo_solicitante) ? pedido.equipo_solicitante : [pedido.equipo_solicitante])
+            .slice()
+            .sort(compararEquiposAlfabeticoSyncModal)
         : [];
-    const equiposResponsablesSeleccionados = pedido && pedido.equipo_responsable 
+    const equiposResponsablesSeleccionados = pedido && pedido.equipo_responsable
         ? (Array.isArray(pedido.equipo_responsable) ? pedido.equipo_responsable : [pedido.equipo_responsable])
+            .slice()
+            .sort(compararEquiposAlfabeticoSyncModal)
         : [];
 
+    const equiposModalOrdenados = [...equiposDisponibles].sort(compararEquiposAlfabeticoSyncModal);
+
     // Generar checkboxes para equipos solicitantes
-    const checkboxesSolicitantes = equiposDisponibles.map(equipo => {
+    const checkboxesSolicitantes = equiposModalOrdenados.map(equipo => {
         const isSelected = equiposSolicitantesSeleccionados.includes(equipo);
         return `
             <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; transition: background 0.2s; border-radius: 4px;" 
@@ -152,7 +162,7 @@ function mostrarFormularioPedido(pedido) {
     }).join('');
 
     // Generar checkboxes para equipos responsables
-    const checkboxesResponsables = equiposDisponibles.map(equipo => {
+    const checkboxesResponsables = equiposModalOrdenados.map(equipo => {
         const isSelected = equiposResponsablesSeleccionados.includes(equipo);
         return `
             <label style="display: flex; align-items: center; padding: 8px 12px; cursor: pointer; transition: background 0.2s; border-radius: 4px;" 
@@ -273,7 +283,9 @@ function actualizarTagsEquipos(tipo) {
     if (!container) return;
 
     const checkboxes = document.querySelectorAll(`.${checkboxClass}:checked`);
-    const equiposSeleccionados = Array.from(checkboxes).map(cb => cb.value);
+    const equiposSeleccionados = Array.from(checkboxes)
+        .map(cb => cb.value)
+        .sort(compararEquiposAlfabeticoSyncModal);
 
     // Limpiar container
     container.innerHTML = '';
@@ -351,8 +363,12 @@ async function guardarPedido(event) {
     // Obtener equipos seleccionados como arrays
     const checkboxesSolicitantes = document.querySelectorAll('.equipo-checkbox-solicitante:checked');
     const checkboxesResponsables = document.querySelectorAll('.equipo-checkbox-responsable:checked');
-    const equiposSolicitantes = Array.from(checkboxesSolicitantes).map(cb => cb.value);
-    const equiposResponsables = Array.from(checkboxesResponsables).map(cb => cb.value);
+    const equiposSolicitantes = Array.from(checkboxesSolicitantes)
+        .map(cb => cb.value)
+        .sort(compararEquiposAlfabeticoSyncModal);
+    const equiposResponsables = Array.from(checkboxesResponsables)
+        .map(cb => cb.value)
+        .sort(compararEquiposAlfabeticoSyncModal);
     
     // Determinar el estado: preservar el actual si se está editando, usar 'Pendiente' solo al crear
     const estadoFinal = (pedidoEditando && pedidoActual && pedidoActual.estado) 

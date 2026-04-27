@@ -6,6 +6,10 @@
 // Equipos hardcodeados que siempre aparecen en Solicitante y Responsable
 const EQUIPOS_HARDCODEADOS = ['QA', 'Operaciones', 'Producto'];
 
+function compararEquiposAlfabetico(a, b) {
+    return String(a).localeCompare(String(b), 'es', { sensitivity: 'base' });
+}
+
 // Cargar equipos disponibles (API + hardcodeados)
 async function cargarEquipos() {
     try {
@@ -13,16 +17,16 @@ async function cargarEquipos() {
         const data = await response.json();
         
         if (data.success && Array.isArray(data.data)) {
-            const deApi = data.data.filter(e => !EQUIPOS_HARDCODEADOS.includes(e));
-            equiposDisponibles = [...EQUIPOS_HARDCODEADOS, ...deApi];
+            const unicos = [...new Set([...EQUIPOS_HARDCODEADOS, ...data.data.map(String)])];
+            equiposDisponibles = unicos.sort(compararEquiposAlfabetico);
         } else {
-            equiposDisponibles = [...EQUIPOS_HARDCODEADOS];
+            equiposDisponibles = [...EQUIPOS_HARDCODEADOS].sort(compararEquiposAlfabetico);
             if (!data.success) console.error('Error al cargar equipos:', data.error);
         }
         actualizarDropdownsEquipos();
     } catch (error) {
         console.error('Error al cargar equipos:', error);
-        equiposDisponibles = [...EQUIPOS_HARDCODEADOS];
+        equiposDisponibles = [...EQUIPOS_HARDCODEADOS].sort(compararEquiposAlfabetico);
         actualizarDropdownsEquipos();
     }
 }
@@ -238,7 +242,8 @@ function renderizarTablaPedidos(pedidos) {
 // Crear tags de equipos para pedidos (solicitante o responsable) con dropdown para agregar/quitar
 function crearTagsEquipos(idPedido, tipo, equiposArray) {
     const dropdownId = 'dropdown-equipo-' + tipo + '-' + idPedido;
-    const equipos = (typeof equiposDisponibles !== 'undefined' ? equiposDisponibles : (window.equiposDisponibles || []));
+    const equiposRaw = (typeof equiposDisponibles !== 'undefined' ? equiposDisponibles : (window.equiposDisponibles || []));
+    const equipos = [...equiposRaw].sort(compararEquiposAlfabetico);
     
     // Colores mejorados para mejor contraste y visibilidad
     const bgColor = tipo === 'solicitante' ? 'rgba(26, 115, 232, 0.15)' : 'rgba(217, 119, 6, 0.15)';
@@ -250,10 +255,14 @@ function crearTagsEquipos(idPedido, tipo, equiposArray) {
     
     let html = '<div style="position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 28px; padding: 2px 0;">';
     
+    // Tags en orden alfabético (mismo criterio que orden en servidor / primer equipo)
+    const equiposOrdenados = (equiposArray && equiposArray.length > 0)
+        ? [...equiposArray].sort(compararEquiposAlfabetico)
+        : [];
+
     // Mostrar tags de equipos actuales - mejorados para mejor visibilidad
-    if (equiposArray && equiposArray.length > 0) {
-        equiposArray.forEach((equipo, index) => {
-            const equipoEscapado = String(equipo).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    if (equiposOrdenados.length > 0) {
+        equiposOrdenados.forEach((equipo) => {
             html += '<span class="equipo-tag-' + tipo + '" style="display: inline-flex; align-items: center; padding: 5px 12px; background: ' + bgColor + '; color: ' + textColor + '; border: 1px solid ' + borderColor + '; border-radius: 16px; font-size: 12px; font-weight: 600; font-family: \'Google Sans\', \'Roboto\', sans-serif; white-space: nowrap; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onmouseover="this.style.background=\'' + hoverBg + '\'; this.style.borderColor=\'' + textColor + '\'; this.style.transform=\'scale(1.05)\';" onmouseout="this.style.background=\'' + bgColor + '\'; this.style.borderColor=\'' + borderColor + '\'; this.style.transform=\'scale(1)\';" title="' + equipo + '">' + equipo + '</span>';
         });
     } else {
