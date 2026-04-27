@@ -51,7 +51,7 @@ async function index(req, res) {
             categoriasEquipo = await ProyectosExternosModel.obtenerCategoriasEquipo(equipo);
         }
 
-        // Verificar si hay proyectos de mantenimiento para este equipo/producto
+        // Verificar si hay mantenimiento (por producto solo o producto+equipo)
         let tieneMantenimiento = false;
         if (producto && equipo) {
             const filtrosMantenimiento = {
@@ -60,7 +60,6 @@ async function index(req, res) {
             };
             const mantenimientos = await MantenimientoModel.obtenerTodos(filtrosMantenimiento);
 
-            // También verificar proyectos de "On-Site"
             const filtrosOnSite = {
                 producto: producto,
                 equipo: equipo,
@@ -68,22 +67,36 @@ async function index(req, res) {
             };
             const proyectosOnSite = await ProyectosExternosModel.obtenerTodos(filtrosOnSite);
 
-            // Si hay al menos un proyecto de mantenimiento u on-site, mostrar la solapa
             tieneMantenimiento = mantenimientos.length > 0 || proyectosOnSite.length > 0;
+        } else if (producto && !equipo) {
+            const mantenimientosProd = await MantenimientoModel.obtenerTodos({ producto });
+            const filtrosOnSiteProd = {
+                producto,
+                categoria: 'On-Site'
+            };
+            const proyectosOnSiteProd = await ProyectosExternosModel.obtenerTodos(filtrosOnSiteProd);
+            tieneMantenimiento = mantenimientosProd.length > 0 || proyectosOnSiteProd.length > 0;
         }
 
-        // Si no hay tipo especificado o el tipo es 'mantenimiento' pero no hay proyectos de mantenimiento, redirigir a proyectos
+        // Si no hay tipo o es 'mantenimiento' pero no hay mantenimiento, redirigir a proyectos
         if (producto && equipo) {
-            // Si no hay tipo o es 'mantenimiento' pero no hay mantenimiento, determinar la primera solapa disponible
             if (!tipo || tipo === 'mantenimiento') {
                 if (tieneMantenimiento) {
-                    // Si hay mantenimiento y el tipo es 'mantenimiento' o no está especificado, usar mantenimiento
                     if (!tipo) {
                         tipo = 'mantenimiento';
                     }
                 } else {
-                    // Si no hay mantenimiento, redirigir a proyectos
                     return res.redirect(`/?producto=${encodeURIComponent(producto)}&equipo=${encodeURIComponent(equipo)}&tipo=proyectos`);
+                }
+            }
+        } else if (producto && !equipo) {
+            if (!tipo || tipo === 'mantenimiento') {
+                if (tieneMantenimiento) {
+                    if (!tipo) {
+                        tipo = 'mantenimiento';
+                    }
+                } else {
+                    return res.redirect(`/?producto=${encodeURIComponent(producto)}&tipo=proyectos`);
                 }
             }
         }
@@ -247,11 +260,22 @@ async function obtenerProyectos(req, res) {
 
         console.log(`✅ Proyectos obtenidos de BD: ${proyectos.length}`);
 
-        // Obtener subproyectos (proyectos con linea_servicio = 'Hereda' y proyecto_padre en los proyectos principales)
+        // Subproyectos: primera capa bajo proyectos principales, luego capas anidadas (hasta profundidad segura)
         const ids_proyectos = proyectos.map(p => p.id_proyecto);
-        const subproyectos = await ProyectosExternosModel.obtenerSubproyectos(ids_proyectos);
+        let subproyectos = await ProyectosExternosModel.obtenerSubproyectos(ids_proyectos);
+        const idsSubVistos = new Set();
+        subproyectos.forEach(s => { if (s.id_proyecto) idsSubVistos.add(s.id_proyecto); });
+        let frontera = subproyectos.map(s => s.id_proyecto).filter(Boolean);
+        for (let capa = 0; capa < 25 && frontera.length > 0; capa++) {
+            const masProfundos = await ProyectosExternosModel.obtenerSubproyectos(frontera);
+            const nuevos = masProfundos.filter(s => s.id_proyecto && !idsSubVistos.has(s.id_proyecto));
+            if (nuevos.length === 0) break;
+            nuevos.forEach(s => idsSubVistos.add(s.id_proyecto));
+            subproyectos = subproyectos.concat(nuevos);
+            frontera = nuevos.map(s => s.id_proyecto);
+        }
 
-        // Agrupar subproyectos por proyecto padre (usar comparación como string para evitar problemas de tipos)
+        // Agrupar subproyectos por proyecto padre (cualquier nivel)
         const subproyectosPorPadre = {};
         subproyectos.forEach(sub => {
             const proyectoPadreId = String(sub.proyecto_padre || '');
@@ -296,13 +320,40 @@ async function obtenerProyectos(req, res) {
 
         const proyectosConAccionablesMap = await AccionablesProyectoModel.verificarProyectosConAccionables(todosLosIdsProyectos);
 
-        // Agregar subproyectos y fechas agregadas (inicio mínimo / fin máximo) a cada proyecto padre
-        const proyectosConSubproyectosYFechas = proyectos.map(proyecto => {
+        const construirArbolSubproyectos = (parentIdStr) => {
+            const raw = subproyectosPorPadre[parentIdStr] || [];
+            return raw.map((sub) => {
+                const totalesSub = totalesPorProyecto[sub.id_proyecto] || {};
+                const inicioSub = totalesSub.fecha_inicio_minima || sub.fecha_inicio || null;
+                const finSub = totalesSub.fecha_fin_maxima || sub.fecha_fin || null;
+                const hijos = construirArbolSubproyectos(String(sub.id_proyecto));
+                return {
+                    ...sub,
+                    fecha_inicio: inicioSub || sub.fecha_inicio,
+                    fecha_fin: finSub || sub.fecha_fin,
+                    tiene_accionables: proyectosConAccionablesMap[sub.id_proyecto] || false,
+                    subproyectos: hijos,
+                    tiene_subproyectos: hijos.length > 0
+                };
+            });
+        };
+
+        const acumularCandidatosSubarbol = (nodos, candidatosInicio, candidatosFin) => {
+            (nodos || []).forEach((sub) => {
+                const totalesSub = totalesPorProyecto[sub.id_proyecto] || {};
+                const inicioSub = totalesSub.fecha_inicio_minima || sub.fecha_inicio || null;
+                const finSub = totalesSub.fecha_fin_maxima || sub.fecha_fin || null;
+                if (inicioSub) candidatosInicio.push(inicioSub);
+                if (finSub) candidatosFin.push(finSub);
+                acumularCandidatosSubarbol(sub.subproyectos, candidatosInicio, candidatosFin);
+            });
+        };
+
+        // Agregar subproyectos (árbol) y fechas agregadas (inicio mínimo / fin máximo) a cada proyecto padre
+        const proyectosConSubproyectosYFechas = proyectos.map((proyecto) => {
             const proyectoId = proyecto.id_proyecto;
             const proyectoIdStr = String(proyectoId);
-            const subproyectosDelProyecto = subproyectosPorPadre[proyectoIdStr] || [];
 
-            // Candidatos de fechas para calcular rango global
             const candidatosInicio = [];
             const candidatosFin = [];
 
@@ -314,23 +365,9 @@ async function obtenerProyectos(req, res) {
             if (proyecto.fecha_inicio) candidatosInicio.push(proyecto.fecha_inicio);
             if (proyecto.fecha_fin) candidatosFin.push(proyecto.fecha_fin);
 
-            // Enriquecer subproyectos con fechas de epics y acumular en candidatos
-            const subproyectosEnriquecidos = subproyectosDelProyecto.map(sub => {
-                const totalesSub = totalesPorProyecto[sub.id_proyecto] || {};
-                const inicioSub = totalesSub.fecha_inicio_minima || sub.fecha_inicio || null;
-                const finSub = totalesSub.fecha_fin_maxima || sub.fecha_fin || null;
+            const subArbol = construirArbolSubproyectos(proyectoIdStr);
+            acumularCandidatosSubarbol(subArbol, candidatosInicio, candidatosFin);
 
-                if (inicioSub) candidatosInicio.push(inicioSub);
-                if (finSub) candidatosFin.push(finSub);
-
-                return {
-                    ...sub,
-                    fecha_inicio: inicioSub || sub.fecha_inicio,
-                    fecha_fin: finSub || sub.fecha_fin
-                };
-            });
-
-            // Calcular inicio mínimo y fin máximo global
             let fechaInicioGlobal = proyecto.fecha_inicio || null;
             let fechaFinGlobal = proyecto.fecha_fin || null;
             if (candidatosInicio.length > 0) {
@@ -340,18 +377,12 @@ async function obtenerProyectos(req, res) {
                 fechaFinGlobal = candidatosFin.slice().sort().reverse()[0];
             }
 
-            // Agregar tiene_accionables a cada subproyecto
-            const subproyectosConAccionables = subproyectosEnriquecidos.map(sub => ({
-                ...sub,
-                tiene_accionables: proyectosConAccionablesMap[sub.id_proyecto] || false
-            }));
-
             return {
                 ...proyecto,
                 fecha_inicio: fechaInicioGlobal,
                 fecha_fin: fechaFinGlobal,
-                tiene_subproyectos: subproyectosConAccionables.length > 0,
-                subproyectos: subproyectosConAccionables,
+                tiene_subproyectos: subArbol.length > 0,
+                subproyectos: subArbol,
                 tiene_accionables: proyectosConAccionablesMap[proyectoId] || false
             };
         });

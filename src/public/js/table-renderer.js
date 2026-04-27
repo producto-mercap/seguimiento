@@ -127,7 +127,6 @@ function renderizarTabla(datos) {
 function renderizarTablaMantenimiento(datos, contenido) {
     let tablaHTML = '<div class="modern-table-wrapper mantenimiento-wrapper"><div class="modern-table mantenimiento"><div class="modern-table-header" style="position: relative;">';
     tablaHTML += '<div class="modern-table-cell header-cell">Cliente</div>';
-    tablaHTML += '<div class="modern-table-cell header-cell" style="text-align: center; justify-content: center;">Límite Horas</div>';
     tablaHTML += '<div class="modern-table-cell header-cell" style="text-align: center; justify-content: center;">Overall</div>';
     tablaHTML += '<div class="modern-table-cell header-cell">Demanda</div>';
     tablaHTML += '<div class="modern-table-cell header-cell">Estabilidad</div>';
@@ -168,7 +167,6 @@ function renderizarTablaMantenimiento(datos, contenido) {
             tablaHTML += '<div style="font-size: 11px; color: var(--text-secondary); line-height: 1.3;">' + nombreProyectoTruncado + '</div>';
         }
         tablaHTML += '</div>';
-        tablaHTML += '<div class="modern-table-cell item-text" style="text-align: center; justify-content: center;">' + (item.limite_horas || '-') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownOverall(item.id_proyecto, 'estado', item.estado || '', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownIconos(item.id_proyecto, 'demanda', item.demanda || '', 'demanda', '') + '</div>';
         tablaHTML += '<div class="modern-table-cell">' + crearDropdownIconos(item.id_proyecto, 'estabilidad', item.estabilidad || '', 'estabilidad', '') + '</div>';
@@ -635,6 +633,9 @@ function crearFilaSubproyectoHTML(id_proyecto, subproyecto) {
     let filaHTML = '';
     filaHTML += '<div class="modern-table-row proyecto-secundario-' + id_proyecto + ' subproyecto-row subproyectos-ocultos" data-id-proyecto="' + id_proyecto + '" data-id-subproyecto="' + subproyecto.id_proyecto + '" style="display: none;">';
     filaHTML += '<div class="modern-table-cell" style="width: 30px;"></div>';
+    if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos) {
+        filaHTML += '<div class="modern-table-cell item-text equipo-cell" style="min-width: 140px;"></div>';
+    }
     filaHTML += '<div class="modern-table-cell item-text"></div>';
     // Celda del subproyecto - editable (clickeable para abrir modal)
     filaHTML += '<div class="modern-table-cell item-text editable-cell" style="padding-left: 16px; font-style: italic; color: var(--text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;"><a href="javascript:void(0);" onclick="abrirModalDetalle(' + subproyecto.id_proyecto + '); event.stopPropagation();" data-item="' + subproyectoDataJson + '" style="color: var(--primary-color); text-decoration: none; cursor: pointer; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">' + nombreSubproyecto + '</a></div>';

@@ -31,38 +31,106 @@
                 <div class="content-area">
                     <div class="seguimiento-wrapper">
                         <div class="seguimiento-container">
-                            <!-- Título: con equipo o "Todos los equipos" -->
+                            <%
+                                const ordenProductosScope = ['Abbaco', 'Portfolio', 'Portfolio Cloud', 'Pepper', 'Unitrade', 'Trading Room', 'Order Management', 'OMS'];
+                                const productosScopeOrdenados = [...(productosEquipos || [])].sort((a, b) => {
+                                    const ia = ordenProductosScope.indexOf(a.producto);
+                                    const ib = ordenProductosScope.indexOf(b.producto);
+                                    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                                });
+                                let equiposDelProductoSeleccionado = [];
+                                if (productoActual && productosEquipos) {
+                                    const filaProd = productosEquipos.find(x => x.producto === productoActual);
+                                    equiposDelProductoSeleccionado = (filaProd && filaProd.equipos) ? filaProd.equipos : [];
+                                }
+                                const alcanceCompleto = !!(productoActual && equipoActual);
+                                const soloProductoSinEquipo = !!(productoActual && !equipoActual);
+                                const mostrarFiltrosProyectos = !productoActual || (productoActual && tipoActual !== 'mantenimiento');
+                            %>
                             <div class="seguimiento-header">
-                                <h1
-                                    style="font-size: 32px; font-weight: 500; color: rgba(245, 112, 41, 1); margin: 0; font-family: 'Google Sans', 'Roboto', sans-serif;">
-                                    <% if (productoActual && equipoNombre) { %>Seguimiento - <%= equipoNombre %>
-                                    <% } else if (!productoActual) { %>Proyectos
-                                    <% } else { %>Seguimiento<% } %>
+                                <h1 style="font-size: 32px; font-weight: 500; color: rgba(245, 112, 41, 1); margin: 0; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                    Seguimiento
                                 </h1>
+                                <% if (alcanceCompleto && equipoNombre) { %>
+                                <p style="margin: 8px 0 0 0; font-size: 15px; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                    <%= (productoActual === 'OMS' ? 'Order Management' : productoActual) %> · <%= equipoNombre %>
+                                </p>
+                                <% } else if (soloProductoSinEquipo) { %>
+                                <p style="margin: 8px 0 0 0; font-size: 15px; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                    <%= (productoActual === 'OMS' ? 'Order Management' : productoActual) %> · Todos los equipos
+                                </p>
+                                <% } %>
                             </div>
-                            <% if (productoActual) { %>
-                            <!-- Tabs solo cuando hay producto/equipo -->
+
+                            <!-- Alcance: producto y equipo (reemplaza la navegación por sidebar) -->
+                            <div class="seguimiento-scope-filtros" style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin: 20px 0 8px 0; padding: 16px; background: var(--bg-secondary, #f8f9fa); border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    <label for="seguimientoSelectProducto" style="font-size: 12px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;">Producto</label>
+                                    <select id="seguimientoSelectProducto" class="input" style="min-width: 220px; padding: 10px 12px; border-radius: 8px; font-size: 14px;">
+                                        <option value="">Vista general (todos los equipos)</option>
+                                        <% productosScopeOrdenados.forEach((item) => {
+                                            const prod = item.producto;
+                                            const lab = prod === 'OMS' ? 'Order Management' : prod;
+                                        %>
+                                        <option value="<%= prod.replace(/"/g, '&quot;') %>" <%= productoActual === prod ? 'selected' : '' %>><%= lab %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 6px;">
+                                    <label for="seguimientoSelectEquipo" style="font-size: 12px; font-weight: 600; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;">Equipo</label>
+                                    <select id="seguimientoSelectEquipo" class="input" style="min-width: 260px; padding: 10px 12px; border-radius: 8px; font-size: 14px;" <%= productoActual ? '' : 'disabled' %>>
+                                        <option value=""><%= productoActual ? 'Todos los equipos' : 'Elegí un producto primero' %></option>
+                                        <% equiposDelProductoSeleccionado.forEach((eq) => { %>
+                                        <option value="<%= String(eq.id_equipo_redmine).replace(/"/g, '&quot;') %>" <%= String(equipoActual || '') === String(eq.id_equipo_redmine) ? 'selected' : '' %>><%= eq.equipo %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="tabs seguimiento-tabs">
                                 <div style="display: flex;">
-                                    <% if (typeof tieneMantenimiento !=='undefined' && tieneMantenimiento) { %>
+                                    <% if (!productoActual || (typeof tieneMantenimiento !== 'undefined' && tieneMantenimiento)) { %>
+                                        <% if (!productoActual) { %>
+                                        <a href="/?tipo=mantenimiento"
+                                            class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>">
+                                            Mantenimiento
+                                        </a>
+                                        <% } else if (alcanceCompleto) { %>
                                         <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=mantenimiento"
                                             class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>">
                                             Mantenimiento
                                         </a>
+                                        <% } else { %>
+                                        <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&tipo=mantenimiento"
+                                            class="tab <%= tipoActual === 'mantenimiento' ? 'active' : '' %>">
+                                            Mantenimiento
+                                        </a>
+                                        <% } %>
                                     <% } %>
+                                    <% if (!productoActual) { %>
+                                    <a href="/?tipo=proyectos"
+                                        class="tab <%= tipoActual !== 'mantenimiento' ? 'active' : '' %>">
+                                        Proyectos
+                                    </a>
+                                    <% } else if (alcanceCompleto) { %>
                                     <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&equipo=<%= encodeURIComponent(equipoActual || '') %>&tipo=proyectos"
                                         class="tab <%= tipoActual !== 'mantenimiento' ? 'active' : '' %>">
                                         Proyectos
                                     </a>
+                                    <% } else { %>
+                                    <a href="/?producto=<%= encodeURIComponent(productoActual || '') %>&tipo=proyectos"
+                                        class="tab <%= tipoActual !== 'mantenimiento' ? 'active' : '' %>">
+                                        Proyectos
+                                    </a>
+                                    <% } %>
                                 </div>
                             </div>
-                            <% } %>
-                            <!-- Filtros y buscador: proyectos (con o sin producto) + filtro Equipo cuando todos los equipos -->
-                            <% if (!productoActual || tipoActual !== 'mantenimiento') { %>
+
+                            <% if (mostrarFiltrosProyectos) { %>
                             <div id="filtrosProyectos" class="seguimiento-filtros">
                                 <div class="seguimiento-filtros-inner">
-                                    <% if (!productoActual) { %>
-                                    <!-- Filtro Equipo (solo en vista todos los equipos) -->
+                                    <% if (!productoActual || soloProductoSinEquipo) { %>
+                                    <!-- Filtro Equipo: vista general o producto sin equipo (ninguno = todos los equipos del alcance) -->
                                     <button class="filter-btn" onclick="toggleFilterEquipos(this)"
                                         title="Filtrar por Equipo">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -248,17 +316,17 @@
                             <% } %>
 
                             <% if (!productoActual) { %>
-                            <!-- Vista general: Gantt arriba, tabla abajo -->
-                            <div id="team-gantt-container" class="gantt-container"
-                                style="display:none; margin-bottom: 40px;"></div>
-                            <div id="contenido" class="table-container" style="margin-top: 24px;">
+                            <!-- Vista general: mismo orden que vista por equipo (tabla primero; sin Gantt de home) -->
+                            <div id="contenido" class="table-container">
                                 <div class="empty-state">
                                     <div class="spinner"></div>
                                     <div class="empty-state-text">Cargando datos...</div>
                                 </div>
                             </div>
-                            <% } else { %>
-                            <!-- Vista equipo: tabla arriba, Gantt abajo -->
+                            <div id="team-gantt-container" class="gantt-container"
+                                style="display:none; margin-top: 40px; margin-bottom: 40px;"></div>
+                            <% } else if (productoActual) { %>
+                            <!-- Producto (con o sin equipo): tabla arriba, Gantt abajo si aplica -->
                             <div id="contenido" class="table-container">
                                 <div class="empty-state">
                                     <div class="spinner"></div>
@@ -279,11 +347,10 @@
         // Variables de contexto desde el servidor
         const productoActual = '<%= productoActual || '' %>';
         const equipoActual = '<%= equipoActual || '' %>';
-        // Sin producto = vista "Todos los equipos" (tabla + gantt de proyectos)
-        const tipoActual = '<%= productoActual ? (tipoActual || "mantenimiento") : "proyectos" %>';
+        const tipoActual = '<%= (typeof tipoActual !== "undefined" && tipoActual) ? tipoActual : "mantenimiento" %>';
         const categoriaActual = '<%= categoriaActual || '' %>';
         const productosEquiposData = <%- JSON.stringify(productosEquipos || []) %>;
-        const vistaTodosEquipos = !productoActual;
+        const vistaTodosEquipos = (!productoActual || (productoActual && !equipoActual)) && tipoActual !== 'mantenimiento';
 
         // Variables de estado global
         let busquedaActual = '';
@@ -310,15 +377,52 @@
 
     <!-- Inicialización -->
     <script>
-        // Cargar datos al iniciar
+        function initSeguimientoScopeSelects() {
+            const selP = document.getElementById('seguimientoSelectProducto');
+            const selE = document.getElementById('seguimientoSelectEquipo');
+            if (!selP || !selE) return;
+
+            function tipoPreservado() {
+                return (typeof tipoActual !== 'undefined' && tipoActual) ? tipoActual : 'mantenimiento';
+            }
+
+            selP.addEventListener('change', function () {
+                const p = selP.value;
+                const t = encodeURIComponent(tipoPreservado());
+                if (!p) {
+                    window.location.href = '/?tipo=' + t;
+                    return;
+                }
+                window.location.href = '/?producto=' + encodeURIComponent(p) + '&tipo=' + t;
+            });
+
+            selE.addEventListener('change', function () {
+                const p = selP.value;
+                const e = selE.value;
+                const t = encodeURIComponent(tipoPreservado());
+                if (!p) return;
+                if (!e) {
+                    window.location.href = '/?producto=' + encodeURIComponent(p) + '&tipo=' + t;
+                    return;
+                }
+                window.location.href = '/?producto=' + encodeURIComponent(p) + '&equipo=' + encodeURIComponent(e) + '&tipo=' + t;
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            initSeguimientoScopeSelects();
             if (productoActual) {
                 cargarDatos();
                 if (tipoActual !== 'mantenimiento') {
                     cargarClientesParaFiltro();
                 }
-            } else {
-                cargarDatosTodosEquipos();
+            } else if (!productoActual) {
+                if (tipoActual === 'mantenimiento') {
+                    cargarDatos();
+                } else {
+                    cargarDatosTodosEquipos();
+                    cargarClientesParaFiltro();
+                }
             }
         });
     </script>

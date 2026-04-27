@@ -8,7 +8,7 @@ let ganttExpanded = {};
 let ganttZoom = 'months'; // 'weeks', 'months', 'quarters'
 let ganttDataCache = {}; // Cache para re-renderizar al cambiar zoom
 let ganttTooltipElement = null; // Elemento del tooltip
-let ganttEpicsCache = {}; // Cache de epics cargados por proyecto
+let ganttEpicsCache = {}; // Cache de epics cargados por proyecto (solo hojas del árbol: sin subproyectos)
 
 // Constantes
 const GANTT_CONFIG = {
@@ -86,6 +86,124 @@ function renderizarGanttChart(idProyecto, esProyectoPadre, items, proyectoData) 
     inicializarComportamientoGantt(idProyecto, minDate, maxDate);
 }
 
+function refreshTeamGanttRowVisibility(container) {
+    if (!container) return;
+    container.querySelectorAll('[data-gantt-ancestors]').forEach(function (row) {
+        const a = row.getAttribute('data-gantt-ancestors');
+        const ok = !a || a.split(',').every(function (id) {
+            return ganttExpanded[String(id.trim())] === true;
+        });
+        row.style.display = ok ? 'flex' : 'none';
+    });
+}
+
+function toggleGanttNodeExpand(nodeId) {
+    const k = String(nodeId);
+    ganttExpanded[k] = !(ganttExpanded[k] === true);
+    const container = document.getElementById('team-gantt-container');
+    if (!container) return;
+    refreshTeamGanttRowVisibility(container);
+    const btn = container.querySelector('.gantt-node-toggle[data-node-id="' + k + '"]');
+    if (btn) {
+        if (ganttExpanded[k]) btn.classList.remove('collapsed');
+        else btn.classList.add('collapsed');
+    }
+}
+
+function renderTeamSubtreeSidebarHTML(sp, ancestorIds, depth) {
+    let html = '';
+    const chain = ancestorIds.length ? ancestorIds.join(',') : '';
+    const ancAttr = chain ? ' data-gantt-ancestors="' + chain + '"' : '';
+    const padLeft = 24 + depth * 14;
+    const subs = sp.subproyectos || [];
+    const epicsHijo = ganttEpicsCache[sp.id_proyecto] || [];
+    const tieneMas = subs.length > 0 || epicsHijo.length > 0;
+    const spNom = truncarNombreGantt(sp.nombre_proyecto);
+    const spTit = (sp.nombre_proyecto || '').replace(/"/g, '&quot;');
+
+    html += '<div class="gantt-sidebar-row is-child"' + ancAttr + ' style="padding-left: ' + padLeft + 'px;">';
+    if (tieneMas) {
+        const exp = ganttExpanded[String(sp.id_proyecto)] === true;
+        html += '<button type="button" class="gantt-toggle-btn gantt-node-toggle' + (exp ? '' : ' collapsed') + '" data-node-id="' + sp.id_proyecto + '" onclick="event.stopPropagation(); toggleGanttNodeExpand(\'' + sp.id_proyecto + '\')">';
+        html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>';
+    } else {
+        html += '<span style="display:inline-block;width:28px;flex-shrink:0;"></span>';
+    }
+    html += '<span class="gantt-row-name" title="' + spTit + '">' + (spNom || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+    html += '</div>';
+
+    const nextAnc = ancestorIds.concat(String(sp.id_proyecto));
+    subs.forEach(function (ch) {
+        html += renderTeamSubtreeSidebarHTML(ch, nextAnc, depth + 1);
+    });
+
+    const epicAncCsv = nextAnc.join(',');
+    epicsHijo.forEach(function (epic) {
+        const fi = epic.start_date || epic.cf_21;
+        const ff = epic.due_date || epic.cf_22;
+        if (!fi || !ff) return;
+        const epicNom = truncarNombreGantt(epic.subject || 'Epic #' + epic.epic_id);
+        const epicTit = ((epic.subject || 'Epic #' + epic.epic_id) || '').replace(/"/g, '&quot;');
+        html += '<div class="gantt-sidebar-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + epicAncCsv + '" style="padding-left: ' + (padLeft + 14) + 'px;">';
+        html += '<span style="display:inline-block;width:28px;flex-shrink:0;"></span>';
+        html += '<span class="gantt-row-name" title="' + epicTit + '">' + (epicNom || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
+    });
+
+    return html;
+}
+
+function renderTeamSubtreeTimelineHTML(sp, ancestorIds, depth, timelineCols, baseCellWidth) {
+    let html = '';
+    const chain = ancestorIds.length ? ancestorIds.join(',') : '';
+    const ancAttr = chain ? ' data-gantt-ancestors="' + chain + '"' : '';
+    const subs = sp.subproyectos || [];
+    const epicsHijo = ganttEpicsCache[sp.id_proyecto] || [];
+
+    const fiSp = sp.fecha_inicio_epics || sp.fecha_inicio;
+    const ffSp = sp.fecha_fin_epics || sp.fecha_fin;
+    html += '<div class="gantt-timeline-row is-child"' + ancAttr + '>';
+    html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
+    if (fiSp && ffSp) {
+        const barraSp = calcularBarraGantt(fiSp, ffSp, timelineCols, ganttZoom, baseCellWidth);
+        if (barraSp) {
+            const estadoSubproyecto = sp.estado || '-';
+            const estadoFormateado = formatearEstado(estadoSubproyecto);
+            const nombreEsc = (sp.nombre_proyecto || '').replace(/'/g, "\\'");
+            html += '<div class="gantt-bar bar-child" style="left: ' + barraSp.left + 'px; width: ' + barraSp.width + 'px;"' +
+                ' onmouseenter="mostrarTooltipGantt(event, \'' + nombreEsc + '\', \'' + formatearFechaGantt(fiSp) + '\', \'' + formatearFechaGantt(ffSp) + '\', \'' + estadoFormateado.replace(/'/g, "\\'") + '\')"' +
+                ' onmouseleave="ocultarTooltipGantt()">';
+            html += '<span class="gantt-bar-label">' + (sp.nombre_proyecto || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
+        }
+    }
+    html += '</div>';
+
+    const nextAnc = ancestorIds.concat(String(sp.id_proyecto));
+    subs.forEach(function (ch) {
+        html += renderTeamSubtreeTimelineHTML(ch, nextAnc, depth + 1, timelineCols, baseCellWidth);
+    });
+
+    const epicAncCsv = nextAnc.join(',');
+    epicsHijo.forEach(function (epic) {
+        const epicFechaInicio = epic.start_date || epic.cf_21 || null;
+        const epicFechaFin = epic.due_date || epic.cf_22 || null;
+        if (!epicFechaInicio || !epicFechaFin) return;
+        html += '<div class="gantt-timeline-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + epicAncCsv + '">';
+        html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
+        const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
+        if (barraEpic) {
+            const epicNombre = epic.subject || 'Epic #' + epic.epic_id;
+            const epicNombreEsc = (epicNombre || '').replace(/'/g, "\\'");
+            html += '<div class="gantt-bar bar-child" style="left: ' + barraEpic.left + 'px; width: ' + barraEpic.width + 'px;"' +
+                ' onmouseenter="mostrarTooltipGantt(event, \'' + epicNombreEsc + '\', \'' + formatearFechaGantt(epicFechaInicio) + '\', \'' + formatearFechaGantt(epicFechaFin) + '\', \'-\')"' +
+                ' onmouseleave="ocultarTooltipGantt()">';
+            html += '<span class="gantt-bar-label">' + (epicNombre || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
+        }
+        html += '</div>';
+    });
+
+    return html;
+}
+
 /**
  * Renderiza el Gantt Chart a nivel de equipo (lista de proyectos)
  */
@@ -94,6 +212,7 @@ async function renderizarGanttEquipo(proyectos) {
     if (!container) return;
 
     const idGantt = 'team_gantt';
+    ganttEpicsCache = {};
 
     // Filtrar proyectos válidos (que tengan fechas)
     let proyectosValidos = proyectos.filter(p => {
@@ -174,41 +293,69 @@ async function renderizarGanttEquipo(proyectos) {
         proyectos: proyectosValidos
     };
 
-    // Precargar epics de proyectos que no tienen subproyectos (en paralelo)
-    const proyectosSinSubproyectos = proyectosValidos.filter(p => !p.subproyectos || p.subproyectos.length === 0);
-    if (proyectosSinSubproyectos.length > 0) {
-        // Cargar epics en paralelo para todos los proyectos
-        const epicsPromises = proyectosSinSubproyectos.map(async (p) => {
+    function flattenSubproyectosParaFechas(nodes) {
+        let out = [];
+        (nodes || []).forEach(function (sp) {
+            out.push({
+                id: sp.id_proyecto,
+                nombre: sp.nombre_proyecto,
+                fechaInicio: sp.fecha_inicio_epics || sp.fecha_inicio,
+                fechaFin: sp.fecha_fin_epics || sp.fecha_fin,
+                estado: sp.estado || ''
+            });
+            out = out.concat(flattenSubproyectosParaFechas(sp.subproyectos));
+        });
+        return out;
+    }
+
+    function collectLeafProjectIds(proyecto) {
+        const ids = [];
+        function walk(node) {
+            const subs = node.subproyectos || [];
+            if (!subs.length) {
+                if (node.id_proyecto != null) ids.push(node.id_proyecto);
+            } else {
+                subs.forEach(walk);
+            }
+        }
+        walk(proyecto);
+        return ids;
+    }
+
+    // Epics: solo en proyectos/subproyectos hoja (sin hijos en el árbol)
+    const idsHojaParaEpics = [];
+    proyectosValidos.forEach(function (p) {
+        collectLeafProjectIds(p).forEach(function (id) {
+            if (!idsHojaParaEpics.includes(id)) idsHojaParaEpics.push(id);
+        });
+    });
+    if (idsHojaParaEpics.length > 0) {
+        const epicsPromises = idsHojaParaEpics.map(async function (idProy) {
             try {
-                const epicsResponse = await fetch('/api/epics/' + p.id_proyecto + '?es_proyecto_padre=false');
+                const epicsResponse = await fetch('/api/epics/' + idProy + '?es_proyecto_padre=false');
                 const epicsData = await epicsResponse.json();
                 if (epicsData.success && epicsData.data) {
-                    // Filtrar epics que tengan fechas (usar start_date/due_date nativos o cf_21/cf_22 como fallback)
-                    const epicsConFechas = epicsData.data.filter(epic => {
+                    const epicsConFechas = epicsData.data.filter(function (epic) {
                         const fechaInicio = epic.start_date || epic.cf_21;
                         const fechaFin = epic.due_date || epic.cf_22;
                         return fechaInicio && fechaFin;
                     });
                     if (epicsConFechas.length > 0) {
-                        ganttEpicsCache[p.id_proyecto] = epicsConFechas;
+                        ganttEpicsCache[idProy] = epicsConFechas;
                     }
                 }
             } catch (error) {
-                console.error('Error al precargar epics del proyecto ' + p.id_proyecto + ':', error);
+                console.error('Error al precargar epics del proyecto ' + idProy + ':', error);
             }
         });
-        
-        // Esperar a que se carguen todos los epics antes de continuar
         await Promise.all(epicsPromises);
     }
 
-    // Preparar items del Gantt (Proyectos como padres, subproyectos como hijos)
-    // Aplanamos la estructura para el cálculo de fechas, pero mantenemos jerarquía para renderizado
+    // Items para rango de fechas: raíz + todo el árbol de subproyectos aplanado
     let allGanttItems = [];
     let itemsPorProyecto = {};
 
-    proyectosValidos.forEach(p => {
-        // Item del Proyecto (Padre)
+    proyectosValidos.forEach(function (p) {
         const proyectoItem = {
             id: p.id_proyecto,
             nombre: p.nombre_proyecto || 'Sin nombre',
@@ -220,17 +367,10 @@ async function renderizarGanttEquipo(proyectos) {
         };
         allGanttItems.push(proyectoItem);
 
-        // Items de Subproyectos (Hijos)
         if (p.subproyectos && p.subproyectos.length > 0) {
-            const subItems = p.subproyectos.map(sp => ({
-                id: sp.id_proyecto,
-                parentId: p.id_proyecto,
-                nombre: sp.nombre_proyecto,
-                fechaInicio: sp.fecha_inicio_epics || sp.fecha_inicio,
-                fechaFin: sp.fecha_fin_epics || sp.fecha_fin,
-                estado: sp.estado || ''
-            })).filter(i => i.fechaInicio && i.fechaFin);
-
+            const subItems = flattenSubproyectosParaFechas(p.subproyectos).filter(function (i) {
+                return i.fechaInicio && i.fechaFin;
+            });
             itemsPorProyecto[p.id_proyecto] = subItems;
             allGanttItems = allGanttItems.concat(subItems);
         }
@@ -258,7 +398,7 @@ async function renderizarGanttEquipo(proyectos) {
     html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368; opacity: 0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'">';
     html += '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>';
     html += '</svg>';
-    html += '<div class="win-tooltip">Cronograma de proyectos a partir del Inicio/Fin planificado de sus epics</div>';
+    html += '<div class="win-tooltip">Desplegá cada proyecto y subproyecto para ver su cronograma y, en la última capa, los epics con fechas.</div>';
     html += '</div>';
     html += '</div>';
     html += '<div class="gantt-controls">';
@@ -276,17 +416,18 @@ async function renderizarGanttEquipo(proyectos) {
     html += '<div class="gantt-sidebar-header">PROYECTO</div>';
 
     // Renderizar Rows en Sidebar
-    proyectosValidos.forEach(p => {
-        // Proyecto Row
-        html += '<div class="gantt-sidebar-row is-parent" style="cursor: pointer;" onclick="if(this.querySelector(\'.gantt-toggle-btn\')) this.querySelector(\'.gantt-toggle-btn\').click()">';
+    proyectosValidos.forEach(function (p) {
+        const tieneHijosOEpicsRaiz = (p.subproyectos && p.subproyectos.length > 0) ||
+            (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0);
 
-        const tieneHijos = itemsPorProyecto[p.id_proyecto] && itemsPorProyecto[p.id_proyecto].length > 0;
-        const tieneEpicsCargados = ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0;
+        html += '<div class="gantt-sidebar-row is-parent" style="cursor: pointer;" onclick="var b=this.querySelector(\'.gantt-toggle-btn:not(.gantt-node-toggle)\'); if(b) b.click();">';
 
-        // Botón expandir para TODOS los proyectos (no solo los que tienen subproyectos)
-        html += '<button class="gantt-toggle-btn' + (ganttExpanded[p.id_proyecto] === true ? '' : ' collapsed') + '" onclick="event.stopPropagation(); toggleGanttExpand(\'' + p.id_proyecto + '\', true)">'; // Default collapsed
-        html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>';
-        html += '</button>';
+        if (tieneHijosOEpicsRaiz) {
+            html += '<button type="button" class="gantt-toggle-btn' + (ganttExpanded[p.id_proyecto] === true ? '' : ' collapsed') + '" onclick="event.stopPropagation(); toggleGanttExpand(\'' + p.id_proyecto + '\', true)">';
+            html += '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>';
+        } else {
+            html += '<span style="display:inline-block;width:28px;flex-shrink:0;"></span>';
+        }
 
         const nombreTruncado = truncarNombreGantt(p.nombre_proyecto);
         const nombreEquipo = (typeof obtenerNombreEquipoSolo === 'function' && p.equipo) ? obtenerNombreEquipoSolo(p.equipo) : '';
@@ -295,25 +436,21 @@ async function renderizarGanttEquipo(proyectos) {
         html += '<span class="gantt-row-name" title="' + (labelTexto || '').replace(/"/g, '&quot;') + '">' + (labelMostrado || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
         html += '</div>';
 
-        // Subproyectos Rows (Children) - si tiene subproyectos
-        if (tieneHijos) {
-            const displayStyle = ganttExpanded[p.id_proyecto] === true ? 'flex' : 'none';
-            itemsPorProyecto[p.id_proyecto].forEach(sp => {
-                const spNombre = truncarNombreGantt(sp.nombre);
-                html += '<div class="gantt-sidebar-row is-child project-child-' + p.id_proyecto + '" style="display: ' + displayStyle + ';">';
-                html += '<span class="gantt-row-name" title="' + (sp.nombre || '').replace(/"/g, '&quot;') + '">' + spNombre + '</span>';
-                html += '</div>';
+        if (p.subproyectos && p.subproyectos.length > 0) {
+            (p.subproyectos || []).forEach(function (sp) {
+                html += renderTeamSubtreeSidebarHTML(sp, [String(p.id_proyecto)], 0);
             });
-        }
-
-        // Epics Rows (Children) - si tiene epics cargados
-        if (tieneEpicsCargados) {
-            const displayStyle = ganttExpanded[p.id_proyecto] === true ? 'flex' : 'none';
-            ganttEpicsCache[p.id_proyecto].forEach(epic => {
-                const epicNombre = truncarNombreGantt(epic.subject || 'Epic #' + epic.epic_id);
-                html += '<div class="gantt-sidebar-row is-child epic-child-' + p.id_proyecto + '" style="display: ' + displayStyle + ';">';
-                html += '<span class="gantt-row-name" title="' + ((epic.subject || 'Epic #' + epic.epic_id) || '').replace(/"/g, '&quot;') + '">' + epicNombre + '</span>';
-                html += '</div>';
+        } else if (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0) {
+            const ancRoot = String(p.id_proyecto);
+            ganttEpicsCache[p.id_proyecto].forEach(function (epic) {
+                const fi = epic.start_date || epic.cf_21;
+                const ff = epic.due_date || epic.cf_22;
+                if (!fi || !ff) return;
+                const epicNom = truncarNombreGantt(epic.subject || 'Epic #' + epic.epic_id);
+                const epicTit = ((epic.subject || 'Epic #' + epic.epic_id) || '').replace(/"/g, '&quot;');
+                html += '<div class="gantt-sidebar-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + ancRoot + '" style="padding-left: 38px;">';
+                html += '<span style="display:inline-block;width:28px;flex-shrink:0;"></span>';
+                html += '<span class="gantt-row-name" title="' + epicTit + '">' + (epicNom || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
             });
         }
     });
@@ -333,34 +470,29 @@ async function renderizarGanttEquipo(proyectos) {
     // Rows Timeline
     html += '<div class="gantt-timeline-rows" style="width: ' + totalWidth + 'px;">';
 
-    proyectosValidos.forEach(p => {
-        // Calcular fechas del proyecto considerando subproyectos
+    proyectosValidos.forEach(function (p) {
         let fechaInicioProyecto = p.fecha_inicio_epics || p.fecha_inicio;
         let fechaFinProyecto = p.fecha_fin_epics || p.fecha_fin;
 
-        // Si tiene subproyectos, calcular la fecha fin máxima de todos los subproyectos
         if (itemsPorProyecto[p.id_proyecto] && itemsPorProyecto[p.id_proyecto].length > 0) {
             const fechasFinSubproyectos = itemsPorProyecto[p.id_proyecto]
-                .map(sp => sp.fechaFin)
-                .filter(f => f && f.trim() !== '')
-                .map(f => {
-                    // Convertir a formato comparable (YYYY-MM-DD)
+                .map(function (sp) { return sp.fechaFin; })
+                .filter(function (f) { return f && String(f).trim() !== ''; })
+                .map(function (f) {
                     const match = String(f).match(/^(\d{4})-(\d{2})-(\d{2})/);
                     return match ? match[0] : f;
                 })
                 .sort()
                 .reverse();
 
-            // Si hay fechas de subproyectos, usar la máxima
             if (fechasFinSubproyectos.length > 0) {
                 fechaFinProyecto = fechasFinSubproyectos[0];
             }
 
-            // También calcular fecha inicio mínima de subproyectos
             const fechasInicioSubproyectos = itemsPorProyecto[p.id_proyecto]
-                .map(sp => sp.fechaInicio)
-                .filter(f => f && f.trim() !== '')
-                .map(f => {
+                .map(function (sp) { return sp.fechaInicio; })
+                .filter(function (f) { return f && String(f).trim() !== ''; })
+                .map(function (f) {
                     const match = String(f).match(/^(\d{4})-(\d{2})-(\d{2})/);
                     return match ? match[0] : f;
                 })
@@ -368,14 +500,12 @@ async function renderizarGanttEquipo(proyectos) {
 
             if (fechasInicioSubproyectos.length > 0) {
                 const fechaInicioMinima = fechasInicioSubproyectos[0];
-                // Usar la fecha inicio mínima si no tiene fecha o si es anterior
                 if (!fechaInicioProyecto || fechaInicioMinima < fechaInicioProyecto) {
                     fechaInicioProyecto = fechaInicioMinima;
                 }
             }
         }
 
-        // Proyecto Bar Row
         html += '<div class="gantt-timeline-row is-parent">';
         html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
 
@@ -383,58 +513,36 @@ async function renderizarGanttEquipo(proyectos) {
         if (barra) {
             const estadoProyecto = p.estado || '-';
             const estadoFormateado = formatearEstado(estadoProyecto);
-            html += `<div class="gantt-bar bar-parent" style="left: ${barra.left}px; width: ${barra.width}px;" 
-                     onmouseenter="mostrarTooltipGantt(event, '${(p.nombre_proyecto || '').replace(/'/g, "\\'")}', '${formatearFechaGantt(fechaInicioProyecto)}', '${formatearFechaGantt(fechaFinProyecto)}', '${estadoFormateado.replace(/'/g, "\\'")}')"
-                     onmouseleave="ocultarTooltipGantt()"
-                     onclick="event.stopPropagation(); toggleGanttExpand('${p.id_proyecto}', true)">`;
-            html += `<span class="gantt-bar-label">${p.nombre_proyecto || ''}</span>`;
-            html += '</div>';
+            html += '<div class="gantt-bar bar-parent" style="left: ' + barra.left + 'px; width: ' + barra.width + 'px;"' +
+                ' onmouseenter="mostrarTooltipGantt(event, \'' + (p.nombre_proyecto || '').replace(/'/g, "\\'") + '\', \'' + formatearFechaGantt(fechaInicioProyecto) + '\', \'' + formatearFechaGantt(fechaFinProyecto) + '\', \'' + estadoFormateado.replace(/'/g, "\\'") + '\')"' +
+                ' onmouseleave="ocultarTooltipGantt()"' +
+                ' onclick="event.stopPropagation(); toggleGanttExpand(\'' + p.id_proyecto + '\', true)">';
+            html += '<span class="gantt-bar-label">' + (p.nombre_proyecto || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
         }
         html += '</div>';
 
-        // Subproyectos Bars Rows
-        if (itemsPorProyecto[p.id_proyecto]) {
-            const displayStyle = ganttExpanded[p.id_proyecto] === true ? 'flex' : 'none';
-            itemsPorProyecto[p.id_proyecto].forEach(sp => {
-                html += '<div class="gantt-timeline-row is-child project-child-' + p.id_proyecto + '" style="display: ' + displayStyle + ';">';
-                html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
-
-                const barraSp = calcularBarraGantt(sp.fechaInicio, sp.fechaFin, timelineCols, ganttZoom, baseCellWidth);
-                if (barraSp) {
-                    const estadoSubproyecto = sp.estado || '-';
-                    const estadoFormateado = formatearEstado(estadoSubproyecto);
-                    html += `<div class="gantt-bar bar-child" style="left: ${barraSp.left}px; width: ${barraSp.width}px;"
-                             onmouseenter="mostrarTooltipGantt(event, '${(sp.nombre || '').replace(/'/g, "\\'")}', '${formatearFechaGantt(sp.fechaInicio)}', '${formatearFechaGantt(sp.fechaFin)}', '${estadoFormateado.replace(/'/g, "\\'")}')"
-                             onmouseleave="ocultarTooltipGantt()">`;
-                    html += `<span class="gantt-bar-label">${sp.nombre || ''}</span>`;
-                    html += '</div>';
-                }
-                html += '</div>';
+        if (p.subproyectos && p.subproyectos.length > 0) {
+            (p.subproyectos || []).forEach(function (sp) {
+                html += renderTeamSubtreeTimelineHTML(sp, [String(p.id_proyecto)], 0, timelineCols, baseCellWidth);
             });
-        }
-
-        // Epics Bars Rows - si tiene epics cargados (precargados)
-        if (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0) {
-            const displayStyle = ganttExpanded[p.id_proyecto] === true ? 'flex' : 'none';
-            ganttEpicsCache[p.id_proyecto].forEach(epic => {
-                // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
+        } else if (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0) {
+            const ancRoot = String(p.id_proyecto);
+            ganttEpicsCache[p.id_proyecto].forEach(function (epic) {
                 const epicFechaInicio = epic.start_date || epic.cf_21 || null;
                 const epicFechaFin = epic.due_date || epic.cf_22 || null;
-                if (epicFechaInicio && epicFechaFin) {
-                    html += '<div class="gantt-timeline-row is-child epic-child-' + p.id_proyecto + '" style="display: ' + displayStyle + ';">';
-                    html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
-
-                    const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
-                    if (barraEpic) {
-                        const epicNombre = epic.subject || 'Epic #' + epic.epic_id;
-                        html += `<div class="gantt-bar bar-child" style="left: ${barraEpic.left}px; width: ${barraEpic.width}px;"
-                                 onmouseenter="mostrarTooltipGantt(event, '${(epicNombre || '').replace(/'/g, "\\'")}', '${formatearFechaGantt(epicFechaInicio)}', '${formatearFechaGantt(epicFechaFin)}', '-')"
-                                 onmouseleave="ocultarTooltipGantt()">`;
-                        html += `<span class="gantt-bar-label">${epicNombre}</span>`;
-                        html += '</div>';
-                    }
-                    html += '</div>';
+                if (!epicFechaInicio || !epicFechaFin) return;
+                const epicNombre = epic.subject || 'Epic #' + epic.epic_id;
+                const epicNombreEsc = (epicNombre || '').replace(/'/g, "\\'");
+                html += '<div class="gantt-timeline-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + ancRoot + '">';
+                html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
+                const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
+                if (barraEpic) {
+                    html += '<div class="gantt-bar bar-child" style="left: ' + barraEpic.left + 'px; width: ' + barraEpic.width + 'px;"' +
+                        ' onmouseenter="mostrarTooltipGantt(event, \'' + epicNombreEsc + '\', \'' + formatearFechaGantt(epicFechaInicio) + '\', \'' + formatearFechaGantt(epicFechaFin) + '\', \'-\')"' +
+                        ' onmouseleave="ocultarTooltipGantt()">';
+                    html += '<span class="gantt-bar-label">' + (epicNombre || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
                 }
+                html += '</div>';
             });
         }
     });
@@ -447,6 +555,8 @@ async function renderizarGanttEquipo(proyectos) {
 
     // Inicializar scroll
     inicializarComportamientoGantt(idGantt, minDate, maxDate);
+
+    refreshTeamGanttRowVisibility(container);
 }
 
 
@@ -1056,32 +1166,17 @@ function truncarNombreGantt(nombre) {
 }
 
 function toggleGanttExpand(idKey, esMultiProyecto) {
-    const idProyecto = parseInt(idKey);
     const estaExpandido = ganttExpanded[idKey] === true;
     ganttExpanded[idKey] = !estaExpandido;
 
     if (esMultiProyecto) {
-        // En modo equipo, alternamos la visibilidad de las filas hijas en el DOM
-        // Los epics ya están precargados, solo alternar visibilidad
         const container = document.getElementById('team-gantt-container');
         if (container) {
-            // Alternar visibilidad de subproyectos (ya están en el DOM)
-            const children = container.querySelectorAll('.project-child-' + idKey);
-            children.forEach(row => {
-                row.style.display = ganttExpanded[idKey] ? 'flex' : 'none';
-            });
-
-            // Alternar visibilidad de epics (ya están precargados en el DOM)
-            const epicChildren = container.querySelectorAll('.epic-child-' + idKey);
-            epicChildren.forEach(row => {
-                row.style.display = ganttExpanded[idKey] ? 'flex' : 'none';
-            });
-
-            // Actualizar botón del proyecto padre
+            refreshTeamGanttRowVisibility(container);
             const sidebarRows = container.querySelectorAll('.gantt-sidebar-row.is-parent');
-            sidebarRows.forEach(row => {
-                const btn = row.querySelector('.gantt-toggle-btn');
-                if (btn && btn.getAttribute('onclick').includes(idKey)) {
+            sidebarRows.forEach(function (row) {
+                const btn = row.querySelector('.gantt-toggle-btn:not(.gantt-node-toggle)');
+                if (btn && btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(String(idKey))) {
                     if (ganttExpanded[idKey]) btn.classList.remove('collapsed');
                     else btn.classList.add('collapsed');
                 }
@@ -1094,95 +1189,6 @@ function toggleGanttExpand(idKey, esMultiProyecto) {
             renderizarGanttChart(idKey, cached.esProyectoPadre, cached.items, cached.proyectoData);
         }
     }
-}
-
-// Función para agregar epics al Gantt sin re-renderizar todo
-function agregarEpicsAlGantt(idProyecto, epics, container, cached) {
-    if (!epics || epics.length === 0) return;
-
-    // Obtener el timeline y las columnas
-    const timeline = container.querySelector('#ganttTimeline_team_gantt');
-    if (!timeline) return;
-
-    const timelineRows = timeline.querySelector('.gantt-timeline-rows');
-    if (!timelineRows) return;
-
-    // Obtener el proyecto padre en el sidebar para insertar después
-    const sidebar = container.querySelector('.gantt-sidebar');
-    const allSidebarRows = sidebar.querySelectorAll('.gantt-sidebar-row.is-parent');
-    let proyectoRow = null;
-    let proyectoIndex = -1;
-    
-    allSidebarRows.forEach((row, index) => {
-        const btn = row.querySelector('.gantt-toggle-btn');
-        if (btn && btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(idProyecto.toString())) {
-            proyectoRow = row;
-            proyectoIndex = index;
-        }
-    });
-    
-    if (!proyectoRow) return;
-
-    // Obtener las columnas del timeline para calcular las barras
-    const minDate = cached.minDate || new Date();
-    const maxDate = cached.maxDate || new Date();
-    const timelineCols = generarColumnasTimeline(minDate, maxDate, ganttZoom);
-    const params = calcularDimensionesTimeline(timelineCols, ganttZoom);
-    const { baseCellWidth } = params;
-
-    // Generar HTML para los epics en el sidebar
-    epics.forEach(epic => {
-        const epicNombre = truncarNombreGantt(epic.subject || 'Epic #' + epic.epic_id);
-        const epicRow = document.createElement('div');
-        epicRow.className = 'gantt-sidebar-row is-child epic-child-' + idProyecto;
-        epicRow.style.display = ganttExpanded[idProyecto] ? 'flex' : 'none';
-        epicRow.innerHTML = `<span class="gantt-row-name" title="${(epic.subject || 'Epic #' + epic.epic_id).replace(/"/g, '&quot;')}">${epicNombre}</span>`;
-        
-        // Insertar después del proyecto padre o después de los subproyectos si existen
-        let insertAfter = proyectoRow;
-        let nextSibling = proyectoRow.nextElementSibling;
-        while (nextSibling && nextSibling.classList.contains('is-child') && nextSibling.classList.contains('project-child-' + idProyecto)) {
-            insertAfter = nextSibling;
-            nextSibling = nextSibling.nextElementSibling;
-        }
-        insertAfter.parentNode.insertBefore(epicRow, nextSibling);
-    });
-
-    // Obtener el proyecto padre en el timeline (mismo índice que en sidebar)
-    const allTimelineRows = timelineRows.querySelectorAll('.gantt-timeline-row.is-parent');
-    const proyectoTimelineRow = allTimelineRows[proyectoIndex];
-    if (!proyectoTimelineRow) return;
-
-    // Generar HTML para los epics en el timeline
-    epics.forEach(epic => {
-        // Usar campos nativos start_date/due_date con fallback a cf_21/cf_22
-        const epicFechaInicio = epic.start_date || epic.cf_21 || null;
-        const epicFechaFin = epic.due_date || epic.cf_22 || null;
-        if (epicFechaInicio && epicFechaFin) {
-            const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
-            if (barraEpic) {
-                const epicNombre = epic.subject || 'Epic #' + epic.epic_id;
-                const epicRow = document.createElement('div');
-                epicRow.className = 'gantt-timeline-row is-child epic-child-' + idProyecto;
-                epicRow.style.display = ganttExpanded[idProyecto] ? 'flex' : 'none';
-                epicRow.innerHTML = renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom) +
-                    `<div class="gantt-bar bar-child" style="left: ${barraEpic.left}px; width: ${barraEpic.width}px;"
-                         onmouseenter="mostrarTooltipGantt(event, '${(epicNombre || '').replace(/'/g, "\\'")}', '${formatearFechaGantt(epicFechaInicio)}', '${formatearFechaGantt(epicFechaFin)}', '-')"
-                         onmouseleave="ocultarTooltipGantt()">
-                        <span class="gantt-bar-label">${epicNombre}</span>
-                    </div>`;
-                
-                // Insertar después del proyecto padre o después de los subproyectos si existen
-                let insertAfter = proyectoTimelineRow;
-                let nextSibling = proyectoTimelineRow.nextElementSibling;
-                while (nextSibling && nextSibling.classList.contains('is-child') && nextSibling.classList.contains('project-child-' + idProyecto)) {
-                    insertAfter = nextSibling;
-                    nextSibling = nextSibling.nextElementSibling;
-                }
-                timelineRows.insertBefore(epicRow, nextSibling);
-            }
-        }
-    });
 }
 
 async function setGanttZoom(idGantt, zoom) {

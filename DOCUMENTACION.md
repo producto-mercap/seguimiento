@@ -106,7 +106,6 @@ El sistema utiliza un patrón de **separación de datos de Redmine y datos edita
 - `cliente`: Cliente (cf_20)
 - `linea_servicio`: Línea de servicio (cf_28)
 - `categoria`: Categoría (cf_29)
-- `limite_horas`: Límite de horas (cf_30)
 - `equipo`: Equipo (cf_75)
 - `reventa`: Es Reventa (cf_93)
 - `proyecto_sponsor`: Proyecto Sponsor (cf_94)
@@ -167,7 +166,6 @@ El sistema utiliza un patrón de **separación de datos de Redmine y datos edita
   - `cf_20` → `cliente`
   - `cf_28` → `linea_servicio`
   - `cf_29` → `categoria`
-  - `cf_30` → `limite_horas`
   - `cf_75` → `equipo`
   - `cf_93` → `reventa` (normalizado: "Si"/"No")
   - `cf_94` → `proyecto_sponsor`

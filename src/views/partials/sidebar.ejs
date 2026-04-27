@@ -1,69 +1,24 @@
 <aside class="sidebar" id="sidebar">
-    <!-- Ícono representativo cuando el sidebar está contraído -->
     <div class="sidebar-icon-collapsed">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 24px; height: 24px;">
             <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
         </svg>
     </div>
     <nav class="sidebar-nav">
-        <!-- Sección Seguimiento -->
         <div class="sidebar-section">
-            <div class="sidebar-section-label">Seguimiento</div>
-            <% 
-                // Orden personalizado de productos
-                const ordenProductos = ['Abbaco', 'Portfolio', 'Portfolio Cloud', 'Pepper', 'Unitrade', 'Trading Room', 'Order Management', 'OMS'];
-                const productosOrdenados = [...productosEquipos].sort((a, b) => {
-                    const indexA = ordenProductos.indexOf(a.producto);
-                    const indexB = ordenProductos.indexOf(b.producto);
-                    // Si no está en la lista, ponerlo al final
-                    const posA = indexA === -1 ? 999 : indexA;
-                    const posB = indexB === -1 ? 999 : indexB;
-                    return posA - posB;
-                });
-            %>
-            <% productosOrdenados.forEach(item => { 
-            const producto = item.producto;
-            const equipos = item.equipos || [];
-            const productoNormalizado = producto === 'OMS' ? 'Order Management' : producto;
-            const isActive = productoActual === producto;
-        %>
-            <div class="producto-section">
-                <a 
-                    href="/?producto=<%= encodeURIComponent(producto) %>&tipo=<%= tipoActual || 'mantenimiento' %>" 
-                    class="nav-item <%= isActive ? 'active' : '' %>"
-                    data-tooltip="<%= productoNormalizado %>"
-                    onclick="event.preventDefault(); toggleProducto('<%= producto %>');"
-                >
-                    <span><%= productoNormalizado %></span>
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="margin-left: auto; width: 16px; height: 16px; transition: transform 0.2s;" id="icon-<%= producto %>">
-                        <path d="<%= isActive ? 'M7 10l5 5 5-5z' : 'M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z' %>"/>
-                    </svg>
-                </a>
-                <div class="producto-equipos" id="equipos-<%= producto %>" style="display: <%= isActive ? 'block' : 'none' %>;">
-                    <% equipos.forEach(equipo => { %>
-                        <a 
-                            href="/?producto=<%= encodeURIComponent(producto) %>&equipo=<%= encodeURIComponent(equipo.id_equipo_redmine) %>" 
-                            class="nav-item nav-item-equipo <%= equipoActual === equipo.id_equipo_redmine ? 'active' : '' %>"
-                            data-tooltip="<%= equipo.equipo %>"
-                            style="padding-left: 48px;"
-                            onclick="contraerSidebarAlSeleccionarEquipo();"
-                        >
-                            <span><%= equipo.equipo %></span>
-                        </a>
-                    <% }); %>
-                </div>
-            </div>
-        <% }); %>
+            <a href="/"
+               class="nav-item <%= activeMenu === 'seguimiento' ? 'active' : '' %>"
+               data-tooltip="Seguimiento">
+                <span>Seguimiento</span>
+            </a>
         </div>
-        
-        <!-- Línea separadora -->
+
         <div class="sidebar-divider"></div>
-        
-        <!-- Item Sync -->
+
         <a href="/sync" class="nav-item <%= activeMenu === 'sync' ? 'active' : '' %>" data-tooltip="Sync - Equipos">
             <span>Sync - Equipos</span>
         </a>
-        
+
         <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
         <a href="/admin" class="nav-item <%= activeMenu === 'admin' ? 'active' : '' %>" data-tooltip="Administración">
             <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -76,46 +31,19 @@
 </aside>
 
 <script>
-    // Inicializar estado de flechas al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
-        <% productosEquipos.forEach(item => { 
-            const producto = item.producto;
-            const isActive = productoActual === producto;
-        %>
-            const icon<%= producto.replace(/[^a-zA-Z0-9]/g, '') %> = document.getElementById('icon-<%= producto %>');
-            const equiposDiv<%= producto.replace(/[^a-zA-Z0-9]/g, '') %> = document.getElementById('equipos-<%= producto %>');
-            if (icon<%= producto.replace(/[^a-zA-Z0-9]/g, '') %> && equiposDiv<%= producto.replace(/[^a-zA-Z0-9]/g, '') %>) {
-                if (equiposDiv<%= producto.replace(/[^a-zA-Z0-9]/g, '') %>.style.display === 'none' || (!equiposDiv<%= producto.replace(/[^a-zA-Z0-9]/g, '') %>.style.display && !<%= isActive %>)) {
-                    // Contraído: flecha hacia la derecha
-                    icon<%= producto.replace(/[^a-zA-Z0-9]/g, '') %>.innerHTML = '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
-                } else {
-                    // Expandido: flecha hacia abajo
-                    icon<%= producto.replace(/[^a-zA-Z0-9]/g, '') %>.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
-                }
-            }
-        <% }); %>
-        
-        // Inicializar sidebar:
-        // - Página inicial (sin producto/equipo): expandido por defecto.
-        // - Cuando hay producto/equipo seleccionados: contraído para aprovechar ancho de tablas.
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
-        
         if (sidebar && mainContent) {
             const sidebarWidth = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim() || '190px';
-            
-            // Usar valores del servidor (EJS) para saber si hay producto/equipo seleccionados
-            const tieneProducto = '<%= productoActual || '' %>' !== '';
-            const tieneEquipo = '<%= typeof equipoActual !== "undefined" ? (equipoActual || "") : "" %>' !== '';
-            
+            const tieneProducto = '<%= typeof productoActual !== "undefined" && productoActual ? String(productoActual) : "" %>' !== '';
+            const tieneEquipo = '<%= typeof equipoActual !== "undefined" ? String(equipoActual || "") : "" %>' !== '';
             if (tieneProducto && tieneEquipo) {
-                // Vista de un producto/equipo concreto -> contraer sidebar
                 sidebar.classList.add('contraido');
                 mainContent.style.marginLeft = '64px';
                 mainContent.style.width = 'calc(100% - 64px)';
                 mainContent.style.maxWidth = 'calc(100% - 64px)';
             } else {
-                // Vista general -> sidebar expandido
                 sidebar.classList.remove('contraido');
                 mainContent.style.marginLeft = sidebarWidth;
                 mainContent.style.width = 'calc(100% - ' + sidebarWidth + ')';
@@ -123,81 +51,14 @@
             }
         }
     });
-    
-    function toggleProducto(producto) {
-        const equiposDiv = document.getElementById('equipos-' + producto);
-        const icon = document.getElementById('icon-' + producto);
-        
-        if (equiposDiv.style.display === 'none') {
-            equiposDiv.style.display = 'block';
-            // Cambiar a flecha hacia abajo cuando está expandido
-            icon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
-        } else {
-            equiposDiv.style.display = 'none';
-            // Cambiar a flecha hacia la derecha cuando está contraído
-            icon.innerHTML = '<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>';
-        }
-    }
-    
-    function contraerSidebarAlSeleccionarEquipo() {
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.querySelector('.main-content');
-        
-        if (sidebar && mainContent) {
-            sidebar.classList.add('contraido');
-            mainContent.style.marginLeft = '64px';
-            mainContent.style.width = 'calc(100% - 64px)';
-            mainContent.style.maxWidth = 'calc(100% - 64px)';
-        }
-    }
 </script>
 
 <style>
-    .sidebar-section {
-        margin-bottom: 8px;
-    }
-    
-    .sidebar-section-label {
-        padding: 8px 16px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #5f6368;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-family: 'Google Sans', 'Roboto', sans-serif;
-    }
-    
-    .sidebar.contraido .sidebar-section-label {
-        opacity: 0;
-        width: 0;
-        overflow: hidden;
-        padding: 0;
-    }
-    
+    .sidebar-section { margin-bottom: 8px; }
     .sidebar-divider {
         height: 1px;
         background: var(--border-color);
         margin: 8px 16px;
     }
-    
-    .sidebar.contraido .sidebar-divider {
-        margin: 8px 8px;
-    }
-    
-    .producto-section {
-        margin-bottom: 0;
-    }
-    
-    .producto-equipos {
-        background: #f8f9fa;
-    }
-    
-    .nav-item-equipo {
-        font-size: 13px;
-        height: 40px;
-    }
-    
-    .nav-item svg {
-        transition: transform 0.2s;
-    }
+    .sidebar.contraido .sidebar-divider { margin: 8px 8px; }
 </style>
