@@ -46,7 +46,7 @@ function getSkeletonTablaHTML() {
 }
 
 /**
- * Cargar proyectos de todos los equipos (vista principal sin producto seleccionado).
+ * Cargar proyectos en vista "multi-equipo": sin producto (todos) o con producto sin equipo (todos los equipos del producto).
  * Primero carga y muestra el Gantt, luego la tabla. Gantt y tabla se renderizan en paralelo para mejor performance.
  */
 async function cargarDatosTodosEquipos() {
@@ -54,21 +54,34 @@ async function cargarDatosTodosEquipos() {
     const ganttContainer = document.getElementById('team-gantt-container');
     if (!contenido) return;
 
-    contenido.className = 'table-container proyectos-container';
+    const esVistaSinProducto = typeof productoActual === 'undefined' || !productoActual;
+
+    contenido.className = esVistaSinProducto ? 'table-container' : 'table-container proyectos-container';
     contenido.style.background = '';
     contenido.style.borderRadius = '';
     contenido.style.boxShadow = '';
     contenido.style.overflow = '';
     contenido.innerHTML = getSkeletonTablaHTML();
     if (ganttContainer) {
-        ganttContainer.style.display = 'block';
-        ganttContainer.innerHTML = getSkeletonGanttHTML();
+        if (esVistaSinProducto) {
+            ganttContainer.style.display = 'none';
+            ganttContainer.innerHTML = '';
+        } else {
+            ganttContainer.style.display = 'block';
+            ganttContainer.innerHTML = getSkeletonGanttHTML();
+        }
     }
 
     const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
     let params = 'incluirCerrados=' + (incluirCerrados ? 'true' : 'false');
+    if (typeof productoActual !== 'undefined' && productoActual) {
+        params += '&producto=' + encodeURIComponent(productoActual);
+    }
     if (typeof busquedaActual !== 'undefined' && busquedaActual) {
         params += '&busqueda=' + encodeURIComponent(busquedaActual);
+    }
+    if (typeof categoriaActual !== 'undefined' && categoriaActual) {
+        params += '&categoria=' + encodeURIComponent(categoriaActual);
     }
 
     try {
@@ -146,7 +159,7 @@ async function cargarDatosTodosEquipos() {
             ? Promise.resolve().then(function () { renderizarTabla(datosFiltrados); })
             : Promise.resolve();
 
-        if (ganttContainer && typeof renderizarGanttEquipo === 'function' && datosFiltrados.length > 0) {
+        if (!esVistaSinProducto && ganttContainer && typeof renderizarGanttEquipo === 'function' && datosFiltrados.length > 0) {
             await renderizarGanttEquipo(datosFiltrados);
             ganttContainer.style.display = 'block';
         } else if (ganttContainer) {
@@ -465,6 +478,44 @@ async function cargarDatos() {
     }
 
     try {
+        const esVistaGeneral = typeof productoActual === 'undefined' || !productoActual;
+
+        if (esVistaGeneral && typeof tipoActual !== 'undefined' && tipoActual === 'mantenimiento') {
+            let paramsM = '';
+            if (typeof busquedaActual !== 'undefined' && busquedaActual) {
+                paramsM = 'busqueda=' + encodeURIComponent(busquedaActual);
+            }
+            const responseM = await fetch('/api/mantenimiento?' + paramsM);
+            if (!responseM.ok) {
+                const errorText = await responseM.text();
+                throw new Error(errorText || 'Error al obtener mantenimiento');
+            }
+            const resultM = await responseM.json();
+            if (!resultM.success) throw new Error(resultM.error || 'Error al obtener datos');
+            const datosM = resultM.data || [];
+            datosOriginales = [...datosM];
+            datosTablaActual = [...datosM];
+            if (ganttContainer) {
+                ganttContainer.style.display = 'none';
+                ganttContainer.innerHTML = '';
+            }
+            if (datosM.length > 0) {
+                if (typeof renderizarTabla === 'function') {
+                    renderizarTabla(datosM);
+                }
+            } else {
+                contenido.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">No hay datos de mantenimiento</div><div class="empty-state-subtext">Haz clic en "Actualizar" para sincronizar</div></div>';
+                datosTablaActual = [];
+                datosOriginales = [];
+            }
+            return;
+        }
+
+        if (esVistaGeneral && typeof tipoActual !== 'undefined' && tipoActual !== 'mantenimiento') {
+            await cargarDatosTodosEquipos();
+            return;
+        }
+
         if (typeof productoActual === 'undefined' || !productoActual) {
             throw new Error('productoActual no está definido. No se puede cargar datos sin especificar el producto.');
         }
@@ -571,6 +622,9 @@ async function cargarDatos() {
                 }
                 if (typeof filtrosEstados !== 'undefined' && filtrosEstados.length > 0) {
                     datosFiltrados = datosFiltrados.filter(d => filtrosEstados.includes(d.estado));
+                }
+                if (typeof filtrosEquipos !== 'undefined' && filtrosEquipos.length > 0) {
+                    datosFiltrados = datosFiltrados.filter(d => d.equipo && filtrosEquipos.includes(String(d.equipo)));
                 }
                 const incluirCerrados = document.getElementById('incluirCerrados')?.checked || false;
                 if (!incluirCerrados) {

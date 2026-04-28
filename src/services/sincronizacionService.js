@@ -119,8 +119,8 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
                     INSERT INTO redmine_mantenimiento (
                         id_proyecto, nombre_proyecto, codigo_proyecto, proyecto_padre,
                         estado_redmine, producto, cliente, linea_servicio, categoria,
-                        limite_horas, equipo, reventa, proyecto_sponsor, fecha_creacion, sincronizado_en
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+                        equipo, reventa, proyecto_sponsor, fecha_creacion, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
                     ON CONFLICT (id_proyecto) 
                     DO UPDATE SET
                         nombre_proyecto = EXCLUDED.nombre_proyecto,
@@ -131,7 +131,6 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
                         cliente = EXCLUDED.cliente,
                         linea_servicio = EXCLUDED.linea_servicio,
                         categoria = EXCLUDED.categoria,
-                        limite_horas = EXCLUDED.limite_horas,
                         equipo = EXCLUDED.equipo,
                         reventa = EXCLUDED.reventa,
                         proyecto_sponsor = EXCLUDED.proyecto_sponsor,
@@ -148,7 +147,6 @@ async function sincronizarMantenimiento(producto = null, equipo = null, maxTotal
                     proyecto.cliente,
                     proyecto.linea_servicio,
                     proyecto.categoria,
-                    proyecto.limite_horas,
                     proyecto.equipo,
                     proyecto.reventa,
                     proyecto.proyecto_sponsor,
@@ -318,8 +316,8 @@ async function sincronizarProyectos(producto = null, equipo = null, maxTotal = n
                     INSERT INTO redmine_proyectos_externos (
                         id_proyecto, nombre_proyecto, codigo_proyecto, proyecto_padre,
                         estado_redmine, producto, cliente, linea_servicio, categoria,
-                        limite_horas, equipo, reventa, proyecto_sponsor, fecha_creacion, sincronizado_en
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+                        equipo, reventa, proyecto_sponsor, fecha_creacion, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
                     ON CONFLICT (id_proyecto) 
                     DO UPDATE SET
                         nombre_proyecto = EXCLUDED.nombre_proyecto,
@@ -330,7 +328,6 @@ async function sincronizarProyectos(producto = null, equipo = null, maxTotal = n
                         cliente = EXCLUDED.cliente,
                         linea_servicio = EXCLUDED.linea_servicio,
                         categoria = EXCLUDED.categoria,
-                        limite_horas = EXCLUDED.limite_horas,
                         equipo = EXCLUDED.equipo,
                         reventa = EXCLUDED.reventa,
                         proyecto_sponsor = EXCLUDED.proyecto_sponsor,
@@ -347,7 +344,6 @@ async function sincronizarProyectos(producto = null, equipo = null, maxTotal = n
                     proyecto.cliente,
                     proyecto.linea_servicio,
                     proyecto.categoria,
-                    proyecto.limite_horas,
                     proyecto.equipo,
                     proyecto.reventa,
                     proyecto.proyecto_sponsor,
@@ -481,8 +477,8 @@ async function sincronizarProyectosInternos(producto = null, maxTotal = null) {
                     INSERT INTO redmine_proyectos_externos (
                         id_proyecto, nombre_proyecto, codigo_proyecto, proyecto_padre,
                         estado_redmine, producto, cliente, linea_servicio, categoria,
-                        limite_horas, equipo, reventa, proyecto_sponsor, fecha_creacion, sincronizado_en
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+                        equipo, reventa, proyecto_sponsor, fecha_creacion, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
                     ON CONFLICT (id_proyecto) 
                     DO UPDATE SET
                         nombre_proyecto = EXCLUDED.nombre_proyecto,
@@ -493,7 +489,6 @@ async function sincronizarProyectosInternos(producto = null, maxTotal = null) {
                         cliente = EXCLUDED.cliente,
                         linea_servicio = EXCLUDED.linea_servicio,
                         categoria = EXCLUDED.categoria,
-                        limite_horas = EXCLUDED.limite_horas,
                         equipo = EXCLUDED.equipo,
                         reventa = EXCLUDED.reventa,
                         proyecto_sponsor = EXCLUDED.proyecto_sponsor,
@@ -510,7 +505,6 @@ async function sincronizarProyectosInternos(producto = null, maxTotal = null) {
                     proyecto.cliente,
                     proyecto.linea_servicio,
                     proyecto.categoria,
-                    proyecto.limite_horas,
                     proyecto.equipo,
                     proyecto.reventa || null,
                     proyecto.proyecto_sponsor || null,

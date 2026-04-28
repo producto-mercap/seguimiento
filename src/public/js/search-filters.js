@@ -42,7 +42,11 @@ async function buscarSugerencias(query) {
         // Si había una búsqueda activa y ahora está vacío, limpiar la búsqueda
         if (busquedaActual && busquedaActual.trim().length > 0) {
             busquedaActual = '';
-            cargarDatos();
+            if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+                cargarDatosTodosEquipos();
+            } else if (typeof cargarDatos === 'function') {
+                cargarDatos();
+            }
         }
         return;
     }
@@ -158,7 +162,11 @@ function seleccionarSugerencia(texto) {
         if (suggestionsContainer) {
             suggestionsContainer.style.display = 'none';
         }
-        cargarDatos();
+        if (typeof vistaTodosEquipos !== 'undefined' && vistaTodosEquipos && typeof cargarDatosTodosEquipos === 'function') {
+            cargarDatosTodosEquipos();
+        } else if (typeof cargarDatos === 'function') {
+            cargarDatos();
+        }
     }
 }
 

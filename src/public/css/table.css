@@ -293,8 +293,8 @@
 
 /* Para mantenimiento, ancho responsive con mínimo basado en columnas fijas */
 .modern-table.mantenimiento {
-    min-width: 730px;
-    /* Mínimo: 320+90+70+70+70+70+200(WIN mínimo)+padding+gaps ≈ 730px */
+    min-width: 640px;
+    /* Mínimo: 320+70×4+200(WIN mínimo)+padding+gaps */
     width: 100%;
     max-width: 100%;
     /* Ocupar todo el ancho disponible del contenedor */
@@ -311,10 +311,10 @@
 
 .modern-table-header {
     display: grid;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 10px 14px;
     background: rgba(230, 235, 239, 1);
-    font-size: 15px;
+    font-size: 14px;
     /* Heredar cursor grab del wrapper padre, excepto en las celdas */
     cursor: inherit;
     font-weight: 600;
@@ -339,9 +339,6 @@
 /* Header STICKY: queda fijo al scrollear verticalmente dentro del wrapper */
 .modern-table.proyectos .modern-table-header {
     width: 100%;
-    /* Se expande al 100% igual que las filas */
-    min-width: 1764px;
-    /* Mismo ancho mínimo que las filas (con Proyecto mínimo 300px) */
     box-sizing: border-box;
     position: sticky;
     top: 0;
@@ -394,7 +391,7 @@
 /* Celdas con textarea WIN deben ocupar todo el ancho */
 .modern-table-row .modern-table-cell:has(.win-textarea) {
     display: block !important;
-    padding: 8px !important;
+    padding: 6px !important;
     width: 100% !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
@@ -415,10 +412,10 @@
     text-align: center;
 }
 
-/* Mantenimiento: 7 columnas - WIN responsive (se adapta al tamaño de pantalla) */
+/* Mantenimiento: 6 columnas (Cliente, Overall, Demanda, Estabilidad, Satisfacción, WIN) */
 .modern-table.mantenimiento .modern-table-header,
 .modern-table.mantenimiento .modern-table-row {
-    grid-template-columns: 320px 90px 70px 70px 70px 70px minmax(200px, 1fr);
+    grid-template-columns: 320px 70px 70px 70px 70px minmax(200px, 1fr);
     /* última columna = WIN responsive: mínimo 200px, se expande con el espacio disponible */
     /* El 1fr permite que WIN ocupe todo el espacio restante dentro del contenedor */
     /* IMPORTANTE: El cálculo de 1fr se basa en el espacio disponible del contenedor, no en el contenido */
@@ -429,8 +426,8 @@
     width: 100%;
     max-width: 100%;
     /* Ancho máximo al 100% del contenedor - no exceder el viewport */
-    min-width: 730px;
-    /* Ancho mínimo basado en columnas fijas + WIN mínimo (320+90+70+70+70+70+200+padding+gaps) */
+    min-width: 640px;
+    /* Ancho mínimo basado en columnas fijas + WIN mínimo */
     box-sizing: border-box;
     /* Asegurar que las celdas se adapten al ancho disponible */
     overflow: hidden;
@@ -758,8 +755,8 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.5;
-    max-height: 3em; /* 2 líneas * 1.5 line-height */
+    line-height: 1.35;
+    max-height: 2.7em; /* 2 líneas * 1.35 line-height */
     transition: max-height 0.3s ease;
     word-wrap: break-word;
     white-space: normal;
@@ -799,8 +796,8 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.5;
-    max-height: 3em; /* 2 líneas * 1.5 line-height */
+    line-height: 1.35;
+    max-height: 2.7em; /* 2 líneas * 1.35 line-height */
     transition: max-height 0.3s ease;
 }
 
@@ -868,85 +865,58 @@
 .modern-table-wrapper.proyectos-wrapper .modern-table.proyectos {
     width: 100%;
     /* Se expande al 100% - Proyecto absorbe el espacio extra */
-    min-width: 1764px;
+    min-width: 1690px;
     /* Ancho mínimo (con Proyecto mínimo 300px) */
     padding-right: 0 !important;
     margin-right: 0 !important;
 }
 
-/* Proyectos: 15 columnas - Proyecto RESPONSIVE (min 300px, se expande), WIN FIJO 380px */
-/* 
- * Orden de columnas (índice 0-based):
- * 0: Vacío (30px)
- * 1: Cliente (150px)
- * 2: Proyecto (minmax(300px, 1fr)) - RESPONSIVE: mínimo 300px, se expande en pantallas grandes
- * 3: Categoría (90px)
- * 4: Estado (100px)
- * 5: Avance (80px)
- * 6: Overall (50px)
- * 7: Alcance (50px)
- * 8: Costo (45px)
- * 9: Plazos (45px)
- * 10: Accionables (70px)
- * 11: Fecha Inicio (100px)
- * 12: Fecha Fin (75px)
- * 13: WIN (380px) - FIJO, última columna - SIN gap al final
- * 
- * Total mínimo: 30+150+300(min)+90+100+80+50+50+45+45+70+100+75+75+380 = 1640px
- * Gaps: 14 gaps x 8px = 112px
- * Padding izquierdo: 12px
- * TOTAL MÍNIMO: ~1764px
- * 
- * Comportamiento:
- * - Pantallas > 1764px: Proyecto se expande para llenar el espacio
- * - Pantallas < 1764px: Aparece scroll horizontal
- */
+/* Proyectos sin Equipo: 14 columnas; WIN última; sin track 75px duplicado (evita mezclar Fecha Fin / WIN) */
 .modern-table.proyectos .modern-table-header,
 .modern-table.proyectos .modern-table-row {
-    /* Proyecto usa minmax(300px, 1fr) - RESPONSIVE, consistente para TODAS las filas */
-    /* WIN tiene ancho FIJO de 380px - NO responsive, SIN gap al final */
-    grid-template-columns: 30px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
+    grid-template-columns: 30px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 380px;
     padding-left: 12px;
     padding-right: 0;
-    /* SIN padding derecho - WIN termina en el borde */
     gap: 0 8px;
-    /* row-gap: 0, column-gap: 8px */
     width: 100%;
-    /* Se expande al 100% - Proyecto absorbe espacio extra */
-    min-width: 1764px;
+    min-width: 1690px;
     /* Ancho mínimo para activar scroll */
     box-sizing: border-box;
     overflow: visible;
 }
 
-/* Con columna Equipo (vista "Todos los equipos"): Equipo a la izquierda de Cliente, 16 columnas para evitar solapamiento Fecha Fin / WIN */
+/* Con columna Equipo (vista "Todos los equipos"): 15 columnas; orden fijo; WIN última */
 .modern-table.proyectos.con-equipo .modern-table-header,
 .modern-table.proyectos.con-equipo .modern-table-row {
-    grid-template-columns: 30px 140px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
-    /* 16 columnas: vacío, Equipo, Cliente, Proyecto, ..., Fecha Inicio, Fecha Fin, WIN */
-    min-width: 1904px;
+    grid-template-columns: 30px 140px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 380px;
+    min-width: 1830px;
 }
 
-/* Fecha Fin (15) y WIN (16) con ancho fijo para no solaparse */
-.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell:nth-child(15),
-.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(15) {
+/* Fecha Fin: sin Equipo columna 13; con Equipo columna 14 */
+.modern-table.proyectos:not(.con-equipo) .modern-table-header > .modern-table-cell:nth-child(13),
+.modern-table.proyectos:not(.con-equipo) .modern-table-row > .modern-table-cell:nth-child(13),
+.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell:nth-child(14),
+.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(14) {
     min-width: 75px !important;
     max-width: 75px !important;
 }
+
+/* WIN siempre última: sin Equipo columna 14; con Equipo columna 15 */
+.modern-table.proyectos:not(.con-equipo) .modern-table-header > .modern-table-cell.win-header-cell,
+.modern-table.proyectos:not(.con-equipo) .modern-table-header > .modern-table-cell:nth-child(14),
+.modern-table.proyectos:not(.con-equipo) .modern-table-row > .modern-table-cell:nth-child(14),
 .modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell.win-header-cell,
-.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell:nth-child(16),
-.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(16) {
+.modern-table.proyectos.con-equipo .modern-table-header > .modern-table-cell:nth-child(15),
+.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(15) {
     min-width: 380px !important;
     max-width: 380px !important;
 }
 
-/* Columna Proyecto (índice 3 sin Equipo, índice 4 con Equipo) - RESPONSIVE: mínimo 300px, se expande */
-.modern-table.proyectos .modern-table-header>.modern-table-cell:nth-child(3),
-.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(3) {
+/* Columna Proyecto solo sin Equipo (3ª celda); con Equipo la regla específica está más abajo */
+.modern-table.proyectos:not(.con-equipo) .modern-table-header > .modern-table-cell:nth-child(3),
+.modern-table.proyectos:not(.con-equipo) .modern-table-row > .modern-table-cell:nth-child(3) {
     grid-column: 3;
     min-width: 300px;
-    /* Mínimo 300px */
-    /* max-width: NO se define para permitir expansión con 1fr */
     overflow: hidden !important;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -954,23 +924,18 @@
 
 /* NOTA: No agregar estilos específicos para Accionables (columna 10) - usar solo el grid-template-columns */
 
-/* Forzar ancho de la columna WIN (posición 14 sin Equipo, 15 con Equipo; última columna) */
-.modern-table.proyectos .modern-table-header>.modern-table-cell:nth-child(14),
-.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(14),
-.modern-table.proyectos .modern-table-header>.modern-table-cell.win-header-cell,
-.modern-table.proyectos.con-equipo .modern-table-header>.modern-table-cell:nth-child(16),
-.modern-table.proyectos.con-equipo .modern-table-row>.modern-table-cell:nth-child(16),
-.modern-table.proyectos .modern-table-header>.modern-table-cell:last-child,
-.modern-table.proyectos .modern-table-row>.modern-table-cell:last-child {
+/* Ancho WIN (380px): ver reglas segmentadas por :not(.con-equipo) / .con-equipo arriba; refuerzo última celda */
+.modern-table.proyectos .modern-table-header > .modern-table-cell:last-child,
+.modern-table.proyectos .modern-table-row > .modern-table-cell:last-child {
     min-width: 380px !important;
     width: 380px !important;
     max-width: 380px !important;
 }
 
 /* Asegurar que el textarea WIN ocupe todo el ancho de su celda */
-.modern-table.proyectos .modern-table-row>.modern-table-cell:nth-child(14) .win-textarea,
-.modern-table.proyectos.con-equipo .modern-table-row>.modern-table-cell:nth-child(16) .win-textarea,
-.modern-table.proyectos .modern-table-row>.modern-table-cell:last-child .win-textarea {
+.modern-table.proyectos:not(.con-equipo) .modern-table-row > .modern-table-cell:nth-child(14) .win-textarea,
+.modern-table.proyectos.con-equipo .modern-table-row > .modern-table-cell:nth-child(15) .win-textarea,
+.modern-table.proyectos .modern-table-row > .modern-table-cell:last-child .win-textarea {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
@@ -994,16 +959,13 @@
 /* Tabla se expande al 100%, con min-width para activar scroll */
 .modern-table.proyectos {
     width: 100%;
-    /* Se expande al 100% - Proyecto absorbe espacio extra */
-    min-width: 1764px;
-    /* Ancho mínimo (con Proyecto mínimo 300px) */
+    min-width: 1690px;
     box-sizing: border-box;
     overflow: visible;
 }
 
 .modern-table.proyectos.con-equipo {
-    min-width: 1904px;
-    /* 1764 + 140 (columna Equipo) */
+    min-width: 1830px;
 }
 
 /* Columna Proyecto - RESPONSIVE: mínimo 300px, se expande en pantallas grandes (3ª sin Equipo, 4ª con Equipo) */
@@ -1078,12 +1040,14 @@
 /* Asegurar que los subproyectos tengan el mismo grid que las filas principales */
 /* IMPORTANTE: Mantener el mismo orden y anchos que el grid principal */
 .modern-table.proyectos .modern-table-row.subproyecto-row:not(.subproyectos-ocultos) {
-    /* Mismo grid que las filas principales - Proyecto RESPONSIVE con minmax(300px, 1fr) */
-    grid-template-columns: 30px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 75px 380px;
-    min-width: 1764px;
-    /* Mismo ancho mínimo que las filas principales */
+    grid-template-columns: 30px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 380px;
+    min-width: 1690px;
     width: 100%;
-    /* Se expande igual que las filas principales */
+}
+
+.modern-table.proyectos.con-equipo .modern-table-row.subproyecto-row:not(.subproyectos-ocultos) {
+    grid-template-columns: 30px 140px 150px minmax(300px, 1fr) 105px 100px 80px 50px 50px 45px 45px 70px 100px 75px 380px;
+    min-width: 1830px;
 }
 
 .modern-table-row.subproyecto-row .modern-table-cell {
@@ -1106,8 +1070,8 @@
 
 .modern-table-row {
     display: grid;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 8px 12px;
     border-bottom: none;
     transition: all 0.2s;
     align-items: center;
@@ -1133,6 +1097,21 @@
     background: #f8f9fa;
 }
 
+/* Prueba de densidad compacta para PROYECTOS (más legible y menos alto) */
+.modern-table.proyectos .modern-table-row {
+    gap: 8px;
+    padding: 8px 12px;
+}
+
+.modern-table.proyectos .modern-table-header {
+    padding: 10px 12px;
+}
+
+.modern-table.proyectos .modern-table-row .modern-table-cell {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
 .modern-table-row:not(:last-child) {
     border-bottom: 1px solid #f1f3f4;
 }
@@ -1142,7 +1121,7 @@
     color: var(--text-secondary);
     display: flex;
     align-items: center;
-    min-height: 40px;
+    min-height: 34px;
     font-family: 'Google Sans', 'Roboto', sans-serif;
 }
 
@@ -1308,7 +1287,7 @@
     
     .modern-table.mantenimiento .modern-table-header,
     .modern-table.mantenimiento .modern-table-row {
-        grid-template-columns: 250px 80px 60px 60px 60px 60px minmax(150px, 1fr);
+        grid-template-columns: 250px 60px 60px 60px 60px minmax(150px, 1fr);
         min-width: 600px;
     }
 }
@@ -1321,7 +1300,7 @@
     
     .modern-table.mantenimiento .modern-table-header,
     .modern-table.mantenimiento .modern-table-row {
-        grid-template-columns: 200px 70px 50px 50px 50px 50px minmax(100px, 1fr);
+        grid-template-columns: 200px 50px 50px 50px 50px minmax(100px, 1fr);
         min-width: 500px;
         padding-left: 8px;
         padding-right: 8px;

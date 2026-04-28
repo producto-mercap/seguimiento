@@ -42,7 +42,6 @@ function mapearProyecto(proyecto) {
     const cliente = extraerCustomField(customFields, 20) || extraerCustomField(customFields, 'Cliente');
     const lineaServicio = extraerCustomField(customFields, 28) || extraerCustomField(customFields, 'Línea de Servicio');
     const categoria = extraerCustomField(customFields, 29) || extraerCustomField(customFields, 'Categoría');
-    const limiteHoras = extraerCustomField(customFields, 30) || extraerCustomField(customFields, 'Límite de Horas');
     const equipo = extraerCustomField(customFields, 75) || extraerCustomField(customFields, 'Equipo');
     const reventa = extraerCustomField(customFields, 93) || extraerCustomField(customFields, 'Es Reventa');
     const proyectoSponsor = extraerCustomField(customFields, 94) || extraerCustomField(customFields, 'Proyecto Sponsor');
@@ -70,7 +69,6 @@ function mapearProyecto(proyecto) {
         cliente: cliente || null,
         linea_servicio: lineaServicio || null,
         categoria: categoria || null,
-        limite_horas: limiteHoras || null,
         equipo: equipo || null,
         reventa: reventaNormalizada,
         proyecto_sponsor: proyectoSponsor || null,
@@ -434,6 +432,15 @@ async function obtenerEpics(projectId) {
     return epics;
 }
 
+function parseDateIso(dateStr) {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    if (date instanceof Date && !isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+    }
+    return null;
+}
+
 /**
  * Mapear epic de Redmine al formato de la base de datos
  * @param {Object} epic - Epic de Redmine
@@ -445,23 +452,10 @@ function mapearEpic(epic) {
     const cf_23 = extraerCustomField(customFields, 23) || extraerCustomField(customFields, 'id_services');
     const cf_15 = extraerCustomField(customFields, 15) || extraerCustomField(customFields, 'fecha real finalización');
 
-    // Convertir fechas (asegurarse de que el formato sea YYYY-MM-DD o similar válido)
-    const isValidDate = (d) => d instanceof Date && !isNaN(d.getTime());
-
-    // Función auxiliar para parsear fecha string a YYYY-MM-DD
-    const parseDate = (dateStr) => {
-        if (!dateStr) return null;
-        const date = new Date(dateStr);
-        if (isValidDate(date)) {
-            return date.toISOString().split('T')[0];
-        }
-        return null;
-    };
-
     // Usar campos nativos de Redmine: start_date y due_date
     // Estos reemplazan a los custom fields cf_21 y cf_22
-    const start_date = parseDate(epic.start_date);
-    const due_date = parseDate(epic.due_date);
+    const start_date = parseDateIso(epic.start_date);
+    const due_date = parseDateIso(epic.due_date);
 
     return {
         epic_id: epic.id,
@@ -475,7 +469,7 @@ function mapearEpic(epic) {
         // Usar campos nativos: start_date y due_date (guardados en cf_21 y cf_22 para compatibilidad con BD)
         cf_21: start_date,  // start_date nativo de Redmine
         cf_22: due_date,   // due_date nativo de Redmine
-        cf_15: parseDate(cf_15),
+        cf_15: parseDateIso(cf_15),
         // También exponer los campos nativos directamente para uso en frontend
         start_date: start_date,
         due_date: due_date
