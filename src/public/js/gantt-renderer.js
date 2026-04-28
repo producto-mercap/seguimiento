@@ -10,6 +10,40 @@ let ganttDataCache = {}; // Cache para re-renderizar al cambiar zoom
 let ganttTooltipElement = null; // Elemento del tooltip
 let ganttEpicsCache = {}; // Cache de epics cargados por proyecto (solo hojas del árbol: sin subproyectos)
 
+// Orden visual (drag&drop) en Gantt de equipo
+const TEAM_GANTT_ORDER_KEY = 'teamGanttOrder.v1';
+
+function _teamGanttLoadOrder() {
+    try {
+        const raw = localStorage.getItem(TEAM_GANTT_ORDER_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function _teamGanttSaveOrder(obj) {
+    try {
+        localStorage.setItem(TEAM_GANTT_ORDER_KEY, JSON.stringify(obj || {}));
+    } catch (e) { /* noop */ }
+}
+
+function _teamGanttApplySavedOrder(parentKey, arr, getKey) {
+    const order = _teamGanttLoadOrder();
+    const saved = Array.isArray(order[parentKey]) ? order[parentKey] : null;
+    if (!saved || !arr || arr.length < 2) return arr || [];
+    const idx = new Map();
+    saved.forEach(function (k, i) { idx.set(String(k), i); });
+    return (arr || []).slice().sort(function (a, b) {
+        const ka = String(getKey(a));
+        const kb = String(getKey(b));
+        const ia = idx.has(ka) ? idx.get(ka) : 999999;
+        const ib = idx.has(kb) ? idx.get(kb) : 999999;
+        if (ia !== ib) return ia - ib;
+        return 0;
+    });
+}
+
 // Constantes
 const GANTT_CONFIG = {
     rowHeight: 40,
@@ -97,12 +131,59 @@ function refreshTeamGanttRowVisibility(container) {
     });
 }
 
+function ajustarAnchoSidebarGanttEquipo(container) {
+    if (!container) return;
+    const sidebar = container.querySelector('.gantt-sidebar');
+    if (!sidebar) return;
+
+    const rows = sidebar.querySelectorAll('.gantt-sidebar-row');
+    if (!rows || rows.length === 0) return;
+
+    // Medir también filas colapsadas: forzarlas a display:flex temporalmente
+    // y garantizar que el texto no esté truncado durante la medición.
+    const prev = [];
+    const prevText = [];
+    rows.forEach(function (r) {
+        prev.push(r.style.display);
+        r.style.display = 'flex';
+        const name = r.querySelector('.gantt-row-name');
+        if (name) {
+            prevText.push({ el: name, overflow: name.style.overflow, whiteSpace: name.style.whiteSpace });
+            name.style.overflow = 'visible';
+            name.style.whiteSpace = 'nowrap';
+        }
+    });
+
+    let maxW = 0;
+    rows.forEach(function (r) {
+        const w = r.scrollWidth || 0;
+        if (w > maxW) maxW = w;
+    });
+
+    // Restaurar display previo y reaplicar visibilidad por ancestros
+    rows.forEach(function (r, i) {
+        r.style.display = prev[i];
+    });
+    prevText.forEach(function (x) {
+        x.el.style.overflow = x.overflow;
+        x.el.style.whiteSpace = x.whiteSpace;
+    });
+
+    // Evitar valores absurdos
+    const minW = 320;
+    const maxSafe = 900;
+    const finalW = Math.max(minW, Math.min(maxW, maxSafe));
+
+    container.style.setProperty('--gantt-sidebar-width', finalW + 'px');
+}
+
 function toggleGanttNodeExpand(nodeId) {
     const k = String(nodeId);
     ganttExpanded[k] = !(ganttExpanded[k] === true);
     const container = document.getElementById('team-gantt-container');
     if (!container) return;
     refreshTeamGanttRowVisibility(container);
+    ajustarAnchoSidebarGanttEquipo(container);
     const btn = container.querySelector('.gantt-node-toggle[data-node-id="' + k + '"]');
     if (btn) {
         if (ganttExpanded[k]) btn.classList.remove('collapsed');
@@ -115,13 +196,14 @@ function renderTeamSubtreeSidebarHTML(sp, ancestorIds, depth) {
     const chain = ancestorIds.length ? ancestorIds.join(',') : '';
     const ancAttr = chain ? ' data-gantt-ancestors="' + chain + '"' : '';
     const padLeft = 24 + depth * 14;
-    const subs = sp.subproyectos || [];
-    const epicsHijo = ganttEpicsCache[sp.id_proyecto] || [];
+    const parentKey = 'SP:' + String(sp.id_proyecto);
+    const subs = _teamGanttApplySavedOrder(parentKey, (sp.subproyectos || []), function (x) { return 'SP:' + String(x.id_proyecto); });
+    const epicsHijo = _teamGanttApplySavedOrder(parentKey, (ganttEpicsCache[sp.id_proyecto] || []), function (e) { return 'E:' + String(e.epic_id); });
     const tieneMas = subs.length > 0 || epicsHijo.length > 0;
     const spNom = truncarNombreGantt(sp.nombre_proyecto);
     const spTit = (sp.nombre_proyecto || '').replace(/"/g, '&quot;');
 
-    html += '<div class="gantt-sidebar-row is-child"' + ancAttr + ' style="padding-left: ' + padLeft + 'px;">';
+    html += '<div class="gantt-sidebar-row is-child gantt-draggable-row" draggable="true" data-gantt-row-id="SP:' + sp.id_proyecto + '" data-gantt-parent-key="' + parentKey + '"' + ancAttr + ' style="padding-left: ' + padLeft + 'px;">';
     if (tieneMas) {
         const exp = ganttExpanded[String(sp.id_proyecto)] === true;
         html += '<button type="button" class="gantt-toggle-btn gantt-node-toggle' + (exp ? '' : ' collapsed') + '" data-node-id="' + sp.id_proyecto + '" onclick="event.stopPropagation(); toggleGanttNodeExpand(\'' + sp.id_proyecto + '\')">';
@@ -144,7 +226,7 @@ function renderTeamSubtreeSidebarHTML(sp, ancestorIds, depth) {
         if (!fi || !ff) return;
         const epicNom = truncarNombreGantt(epic.subject || 'Epic #' + epic.epic_id);
         const epicTit = ((epic.subject || 'Epic #' + epic.epic_id) || '').replace(/"/g, '&quot;');
-        html += '<div class="gantt-sidebar-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + epicAncCsv + '" style="padding-left: ' + (padLeft + 14) + 'px;">';
+        html += '<div class="gantt-sidebar-row is-child gantt-epic-ganttrow gantt-draggable-row" draggable="true" data-gantt-row-id="E:' + epic.epic_id + '" data-gantt-parent-key="' + parentKey + '" data-gantt-ancestors="' + epicAncCsv + '" style="padding-left: ' + (padLeft + 14) + 'px;">';
         html += '<span style="display:inline-block;width:28px;flex-shrink:0;"></span>';
         html += '<span class="gantt-row-name" title="' + epicTit + '">' + (epicNom || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
     });
@@ -156,12 +238,13 @@ function renderTeamSubtreeTimelineHTML(sp, ancestorIds, depth, timelineCols, bas
     let html = '';
     const chain = ancestorIds.length ? ancestorIds.join(',') : '';
     const ancAttr = chain ? ' data-gantt-ancestors="' + chain + '"' : '';
-    const subs = sp.subproyectos || [];
-    const epicsHijo = ganttEpicsCache[sp.id_proyecto] || [];
+    const parentKey = 'SP:' + String(sp.id_proyecto);
+    const subs = _teamGanttApplySavedOrder(parentKey, (sp.subproyectos || []), function (x) { return 'SP:' + String(x.id_proyecto); });
+    const epicsHijo = _teamGanttApplySavedOrder(parentKey, (ganttEpicsCache[sp.id_proyecto] || []), function (e) { return 'E:' + String(e.epic_id); });
 
     const fiSp = sp.fecha_inicio_epics || sp.fecha_inicio;
     const ffSp = sp.fecha_fin_epics || sp.fecha_fin;
-    html += '<div class="gantt-timeline-row is-child"' + ancAttr + '>';
+    html += '<div class="gantt-timeline-row is-child" data-gantt-row-id="SP:' + sp.id_proyecto + '" data-gantt-parent-key="' + parentKey + '"' + ancAttr + '>';
     html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
     if (fiSp && ffSp) {
         const barraSp = calcularBarraGantt(fiSp, ffSp, timelineCols, ganttZoom, baseCellWidth);
@@ -187,13 +270,13 @@ function renderTeamSubtreeTimelineHTML(sp, ancestorIds, depth, timelineCols, bas
         const epicFechaInicio = epic.start_date || epic.cf_21 || null;
         const epicFechaFin = epic.due_date || epic.cf_22 || null;
         if (!epicFechaInicio || !epicFechaFin) return;
-        html += '<div class="gantt-timeline-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + epicAncCsv + '">';
+        html += '<div class="gantt-timeline-row is-child gantt-epic-ganttrow" data-gantt-row-id="E:' + epic.epic_id + '" data-gantt-parent-key="' + parentKey + '" data-gantt-ancestors="' + epicAncCsv + '">';
         html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
         const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
         if (barraEpic) {
             const epicNombre = epic.subject || 'Epic #' + epic.epic_id;
             const epicNombreEsc = (epicNombre || '').replace(/'/g, "\\'");
-            html += '<div class="gantt-bar bar-child" style="left: ' + barraEpic.left + 'px; width: ' + barraEpic.width + 'px;"' +
+            html += '<div class="gantt-bar bar-child gantt-bar-epic" style="left: ' + barraEpic.left + 'px; width: ' + barraEpic.width + 'px;"' +
                 ' onmouseenter="mostrarTooltipGantt(event, \'' + epicNombreEsc + '\', \'' + formatearFechaGantt(epicFechaInicio) + '\', \'' + formatearFechaGantt(epicFechaFin) + '\', \'-\')"' +
                 ' onmouseleave="ocultarTooltipGantt()">';
             html += '<span class="gantt-bar-label">' + (epicNombre || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
@@ -417,6 +500,7 @@ async function renderizarGanttEquipo(proyectos) {
 
     // Renderizar Rows en Sidebar
     proyectosValidos.forEach(function (p) {
+        const rootKey = 'P:' + String(p.id_proyecto);
         const tieneHijosOEpicsRaiz = (p.subproyectos && p.subproyectos.length > 0) ||
             (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0);
 
@@ -437,18 +521,18 @@ async function renderizarGanttEquipo(proyectos) {
         html += '</div>';
 
         if (p.subproyectos && p.subproyectos.length > 0) {
-            (p.subproyectos || []).forEach(function (sp) {
+            _teamGanttApplySavedOrder(rootKey, (p.subproyectos || []), function (x) { return 'SP:' + String(x.id_proyecto); }).forEach(function (sp) {
                 html += renderTeamSubtreeSidebarHTML(sp, [String(p.id_proyecto)], 0);
             });
         } else if (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0) {
             const ancRoot = String(p.id_proyecto);
-            ganttEpicsCache[p.id_proyecto].forEach(function (epic) {
+            _teamGanttApplySavedOrder(rootKey, ganttEpicsCache[p.id_proyecto], function (e) { return 'E:' + String(e.epic_id); }).forEach(function (epic) {
                 const fi = epic.start_date || epic.cf_21;
                 const ff = epic.due_date || epic.cf_22;
                 if (!fi || !ff) return;
                 const epicNom = truncarNombreGantt(epic.subject || 'Epic #' + epic.epic_id);
                 const epicTit = ((epic.subject || 'Epic #' + epic.epic_id) || '').replace(/"/g, '&quot;');
-                html += '<div class="gantt-sidebar-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + ancRoot + '" style="padding-left: 38px;">';
+                html += '<div class="gantt-sidebar-row is-child gantt-epic-ganttrow gantt-draggable-row" draggable="true" data-gantt-row-id="E:' + epic.epic_id + '" data-gantt-parent-key="' + rootKey + '" data-gantt-ancestors="' + ancRoot + '" style="padding-left: 38px;">';
                 html += '<span style="display:inline-block;width:28px;flex-shrink:0;"></span>';
                 html += '<span class="gantt-row-name" title="' + epicTit + '">' + (epicNom || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
             });
@@ -471,6 +555,7 @@ async function renderizarGanttEquipo(proyectos) {
     html += '<div class="gantt-timeline-rows" style="width: ' + totalWidth + 'px;">';
 
     proyectosValidos.forEach(function (p) {
+        const rootKey = 'P:' + String(p.id_proyecto);
         let fechaInicioProyecto = p.fecha_inicio_epics || p.fecha_inicio;
         let fechaFinProyecto = p.fecha_fin_epics || p.fecha_fin;
 
@@ -522,22 +607,22 @@ async function renderizarGanttEquipo(proyectos) {
         html += '</div>';
 
         if (p.subproyectos && p.subproyectos.length > 0) {
-            (p.subproyectos || []).forEach(function (sp) {
+            _teamGanttApplySavedOrder(rootKey, (p.subproyectos || []), function (x) { return 'SP:' + String(x.id_proyecto); }).forEach(function (sp) {
                 html += renderTeamSubtreeTimelineHTML(sp, [String(p.id_proyecto)], 0, timelineCols, baseCellWidth);
             });
         } else if (ganttEpicsCache[p.id_proyecto] && ganttEpicsCache[p.id_proyecto].length > 0) {
             const ancRoot = String(p.id_proyecto);
-            ganttEpicsCache[p.id_proyecto].forEach(function (epic) {
+            _teamGanttApplySavedOrder(rootKey, ganttEpicsCache[p.id_proyecto], function (e) { return 'E:' + String(e.epic_id); }).forEach(function (epic) {
                 const epicFechaInicio = epic.start_date || epic.cf_21 || null;
                 const epicFechaFin = epic.due_date || epic.cf_22 || null;
                 if (!epicFechaInicio || !epicFechaFin) return;
                 const epicNombre = epic.subject || 'Epic #' + epic.epic_id;
                 const epicNombreEsc = (epicNombre || '').replace(/'/g, "\\'");
-                html += '<div class="gantt-timeline-row is-child gantt-epic-ganttrow" data-gantt-ancestors="' + ancRoot + '">';
+                html += '<div class="gantt-timeline-row is-child gantt-epic-ganttrow" data-gantt-row-id="E:' + epic.epic_id + '" data-gantt-parent-key="' + rootKey + '" data-gantt-ancestors="' + ancRoot + '">';
                 html += renderizarFondoRow(timelineCols, baseCellWidth, ganttZoom);
                 const barraEpic = calcularBarraGantt(epicFechaInicio, epicFechaFin, timelineCols, ganttZoom, baseCellWidth);
                 if (barraEpic) {
-                    html += '<div class="gantt-bar bar-child" style="left: ' + barraEpic.left + 'px; width: ' + barraEpic.width + 'px;"' +
+                    html += '<div class="gantt-bar bar-child gantt-bar-epic" style="left: ' + barraEpic.left + 'px; width: ' + barraEpic.width + 'px;"' +
                         ' onmouseenter="mostrarTooltipGantt(event, \'' + epicNombreEsc + '\', \'' + formatearFechaGantt(epicFechaInicio) + '\', \'' + formatearFechaGantt(epicFechaFin) + '\', \'-\')"' +
                         ' onmouseleave="ocultarTooltipGantt()">';
                     html += '<span class="gantt-bar-label">' + (epicNombre || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>';
@@ -557,6 +642,8 @@ async function renderizarGanttEquipo(proyectos) {
     inicializarComportamientoGantt(idGantt, minDate, maxDate);
 
     refreshTeamGanttRowVisibility(container);
+    ajustarAnchoSidebarGanttEquipo(container);
+    inicializarDragDropGanttEquipo(container);
 }
 
 
@@ -1173,6 +1260,7 @@ function toggleGanttExpand(idKey, esMultiProyecto) {
         const container = document.getElementById('team-gantt-container');
         if (container) {
             refreshTeamGanttRowVisibility(container);
+            ajustarAnchoSidebarGanttEquipo(container);
             const sidebarRows = container.querySelectorAll('.gantt-sidebar-row.is-parent');
             sidebarRows.forEach(function (row) {
                 const btn = row.querySelector('.gantt-toggle-btn:not(.gantt-node-toggle)');
@@ -1189,6 +1277,82 @@ function toggleGanttExpand(idKey, esMultiProyecto) {
             renderizarGanttChart(idKey, cached.esProyectoPadre, cached.items, cached.proyectoData);
         }
     }
+}
+
+function inicializarDragDropGanttEquipo(container) {
+    if (!container) return;
+    const sidebar = container.querySelector('.gantt-sidebar');
+    const timelineRows = container.querySelector('.gantt-timeline-rows');
+    if (!sidebar || !timelineRows) return;
+
+    let dragRowId = null;
+    let dragParentKey = null;
+
+    function getRowId(el) { return el ? el.getAttribute('data-gantt-row-id') : null; }
+    function getParentKey(el) { return el ? el.getAttribute('data-gantt-parent-key') : null; }
+
+    function setDraggingStyles(el, on) {
+        if (!el) return;
+        if (on) el.classList.add('gantt-dragging');
+        else el.classList.remove('gantt-dragging');
+    }
+
+    sidebar.querySelectorAll('.gantt-draggable-row').forEach(function (row) {
+        row.addEventListener('dragstart', function (e) {
+            dragRowId = getRowId(row);
+            dragParentKey = getParentKey(row);
+            setDraggingStyles(row, true);
+            try {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', dragRowId || '');
+            } catch (err) { /* noop */ }
+        });
+        row.addEventListener('dragend', function () {
+            setDraggingStyles(row, false);
+            dragRowId = null;
+            dragParentKey = null;
+            sidebar.querySelectorAll('.gantt-drag-over').forEach(function (x) { x.classList.remove('gantt-drag-over'); });
+        });
+
+        row.addEventListener('dragover', function (e) {
+            const targetParent = getParentKey(row);
+            if (!dragRowId || !dragParentKey || targetParent !== dragParentKey) return;
+            e.preventDefault();
+            row.classList.add('gantt-drag-over');
+        });
+        row.addEventListener('dragleave', function () {
+            row.classList.remove('gantt-drag-over');
+        });
+
+        row.addEventListener('drop', function (e) {
+            const targetId = getRowId(row);
+            const targetParent = getParentKey(row);
+            if (!dragRowId || !targetId || dragRowId === targetId) return;
+            if (!dragParentKey || targetParent !== dragParentKey) return;
+            e.preventDefault();
+
+            // Mover en sidebar
+            const draggedSidebar = sidebar.querySelector('[data-gantt-row-id="' + dragRowId + '"]');
+            if (draggedSidebar && row.parentNode === draggedSidebar.parentNode) {
+                row.parentNode.insertBefore(draggedSidebar, row);
+            }
+
+            // Mover en timeline (mismo orden que sidebar para ese parent)
+            const draggedTimeline = timelineRows.querySelector('[data-gantt-row-id="' + dragRowId + '"]');
+            const targetTimeline = timelineRows.querySelector('[data-gantt-row-id="' + targetId + '"]');
+            if (draggedTimeline && targetTimeline && targetTimeline.parentNode === draggedTimeline.parentNode) {
+                targetTimeline.parentNode.insertBefore(draggedTimeline, targetTimeline);
+            }
+
+            // Persistir orden en localStorage
+            const order = _teamGanttLoadOrder();
+            const siblings = Array.from(sidebar.querySelectorAll('.gantt-draggable-row[data-gantt-parent-key="' + dragParentKey + '"]'));
+            order[dragParentKey] = siblings.map(function (s) { return getRowId(s); }).filter(Boolean);
+            _teamGanttSaveOrder(order);
+
+            ajustarAnchoSidebarGanttEquipo(container);
+        });
+    });
 }
 
 async function setGanttZoom(idGantt, zoom) {

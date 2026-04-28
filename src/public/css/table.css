@@ -312,7 +312,8 @@
 .modern-table-header {
     display: grid;
     gap: 10px;
-    padding: 10px 14px;
+    /* Reducir ~20% el alto del header (54px -> ~44px) */
+    padding: 5px 14px;
     background: rgba(230, 235, 239, 1);
     font-size: 14px;
     /* Heredar cursor grab del wrapper padre, excepto en las celdas */
@@ -391,7 +392,7 @@
 /* Celdas con textarea WIN deben ocupar todo el ancho */
 .modern-table-row .modern-table-cell:has(.win-textarea) {
     display: block !important;
-    padding: 6px !important;
+    padding: 4px !important;
     width: 100% !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
@@ -1071,7 +1072,8 @@
 .modern-table-row {
     display: grid;
     gap: 10px;
-    padding: 8px 12px;
+    /* Igualar altura al header (~44px): 5px arriba + min-height 34px + 5px abajo */
+    padding: 5px 12px;
     border-bottom: none;
     transition: all 0.2s;
     align-items: center;
@@ -1100,11 +1102,11 @@
 /* Prueba de densidad compacta para PROYECTOS (más legible y menos alto) */
 .modern-table.proyectos .modern-table-row {
     gap: 8px;
-    padding: 8px 12px;
+    padding: 5px 12px;
 }
 
 .modern-table.proyectos .modern-table-header {
-    padding: 10px 12px;
+    padding: 5px 12px;
 }
 
 .modern-table.proyectos .modern-table-row .modern-table-cell {
