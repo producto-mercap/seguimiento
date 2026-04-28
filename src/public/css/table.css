@@ -311,10 +311,10 @@
 
 .modern-table-header {
     display: grid;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 10px 14px;
     background: rgba(230, 235, 239, 1);
-    font-size: 15px;
+    font-size: 14px;
     /* Heredar cursor grab del wrapper padre, excepto en las celdas */
     cursor: inherit;
     font-weight: 600;
@@ -391,7 +391,7 @@
 /* Celdas con textarea WIN deben ocupar todo el ancho */
 .modern-table-row .modern-table-cell:has(.win-textarea) {
     display: block !important;
-    padding: 8px !important;
+    padding: 6px !important;
     width: 100% !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
@@ -755,8 +755,8 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.5;
-    max-height: 3em; /* 2 líneas * 1.5 line-height */
+    line-height: 1.35;
+    max-height: 2.7em; /* 2 líneas * 1.35 line-height */
     transition: max-height 0.3s ease;
     word-wrap: break-word;
     white-space: normal;
@@ -796,8 +796,8 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.5;
-    max-height: 3em; /* 2 líneas * 1.5 line-height */
+    line-height: 1.35;
+    max-height: 2.7em; /* 2 líneas * 1.35 line-height */
     transition: max-height 0.3s ease;
 }
 
@@ -1070,8 +1070,8 @@
 
 .modern-table-row {
     display: grid;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 8px 12px;
     border-bottom: none;
     transition: all 0.2s;
     align-items: center;
@@ -1097,6 +1097,21 @@
     background: #f8f9fa;
 }
 
+/* Prueba de densidad compacta para PROYECTOS (más legible y menos alto) */
+.modern-table.proyectos .modern-table-row {
+    gap: 8px;
+    padding: 8px 12px;
+}
+
+.modern-table.proyectos .modern-table-header {
+    padding: 10px 12px;
+}
+
+.modern-table.proyectos .modern-table-row .modern-table-cell {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
 .modern-table-row:not(:last-child) {
     border-bottom: 1px solid #f1f3f4;
 }
@@ -1106,7 +1121,7 @@
     color: var(--text-secondary);
     display: flex;
     align-items: center;
-    min-height: 40px;
+    min-height: 34px;
     font-family: 'Google Sans', 'Roboto', sans-serif;
 }
 
